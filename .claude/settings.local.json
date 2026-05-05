@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Force \"c:\\\\Users\\\\dowja\\\\OneDrive\\\\Documents\\\\VSCode\\\\FinTrak\\\\FinTrak\")",
+      "PowerShell(docker compose -f \"c:\\\\Users\\\\dowja\\\\OneDrive\\\\Documents\\\\VSCode\\\\FinTrak\\\\FinTrak\\\\docker-compose.yml\" ps)"
+    ]
+  }
+}
