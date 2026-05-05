@@ -17,6 +17,7 @@ FinTrak is a personal finance tracker built for James's own use and as a portfol
 - `docker-compose.yml` — PostgreSQL (port 5432) + pgAdmin (port 5050) running locally
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
 - Both Docker containers are confirmed running
+- Git repo with `main` and `dev` branches — all active work happens on `dev`
 
 ## Core Features (priority order)
 
