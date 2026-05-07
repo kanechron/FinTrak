@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in the **planning and early setup phase** — no application code written yet.
+FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in the **early development phase** — backend scaffolded, entity classes in progress.
 
 ## Tech Stack
 
@@ -18,6 +18,19 @@ FinTrak is a personal finance tracker built for James's own use and as a portfol
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
 - Both Docker containers are confirmed running
 - Git repo with `main` and `dev` branches — all active work happens on `dev`
+- ASP.NET Core backend scaffolded: `FinTrak.Api`, `FinTrak.Core`, `FinTrak.Infrastructure`
+- NuGet packages installed: Npgsql EF Core, SQLite, Google Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog
+
+## Entity Classes (in progress)
+
+Located in `backend/FinTrak.Core/Entities/`:
+
+- `User.cs` — Google ID, email, display name, timestamps
+- `Category.cs` — Id, Name, IsSystem flag
+- `Transaction.cs` — full transaction record with dedup fields, soft delete, Plaid + manual support
+- `DedupStatus.cs` — enum: Accepted, Flagged, Discarded
+
+Still to create: `RefreshToken`, `PlaidItem`, `Account`, `Budget`, `Goal`, `Bill`, `MerchantAlias`, `SyncQueue`
 
 ## Core Features (priority order)
 
@@ -45,10 +58,11 @@ Google OAuth 2.0:
 
 ## Next Steps
 
-- Scaffold the ASP.NET Core backend
+- Finish remaining entity classes (RefreshToken, PlaidItem, Account, Budget, Goal, Bill, MerchantAlias, SyncQueue)
+- Create `FinTrakDbContext.cs` and wire up EF Core
+- Run `InitialSchema` migration and verify in pgAdmin
 - Set up Google OAuth 2.0 (token receipt, validation, lifecycle, storage, deletion)
 - Wire up Plaid integration
-- Define the database schema (transactions, categories, budgets, goals, bills)
 
 ## Key Constraints
 
