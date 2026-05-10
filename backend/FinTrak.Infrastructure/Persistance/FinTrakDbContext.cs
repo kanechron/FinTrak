@@ -3,6 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Infrastructure.Persistance
 {
+    /// <summary>
+    /// Primary EF Core database context for FinTrak.
+    /// Configures all entity sets, soft delete global query filters, unique indexes,
+    /// and enum-as-string storage conventions.
+    /// </summary>
     public class FinTrakDbContext(DbContextOptions<FinTrakDbContext> options) : DbContext(options)
     {
 
