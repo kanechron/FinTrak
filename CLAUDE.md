@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in the **early development phase** — backend scaffolded, entity classes in progress.
+FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active backend development** — infrastructure complete, auth done, Plaid integration done, dedup pipeline next.
 
 ## Tech Stack
 
@@ -16,21 +16,54 @@ FinTrak is a personal finance tracker built for James's own use and as a portfol
 
 - `docker-compose.yml` — PostgreSQL (port 5432) + pgAdmin (port 5050) running locally
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
-- Both Docker containers are confirmed running
+- Both Docker containers confirmed running
 - Git repo with `main` and `dev` branches — all active work happens on `dev`
 - ASP.NET Core backend scaffolded: `FinTrak.Api`, `FinTrak.Core`, `FinTrak.Infrastructure`
-- NuGet packages installed: Npgsql EF Core, SQLite, Google Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog
+- NuGet packages installed: Npgsql EF Core, SQLite, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog, dotenv.net
 
-## Entity Classes (in progress)
+## Entity Classes
 
-Located in `backend/FinTrak.Core/Entities/`:
+Located in `backend/FinTrak.Core/Entities/` — all complete:
 
 - `User.cs` — Google ID, email, display name, timestamps
 - `Category.cs` — Id, Name, IsSystem flag
 - `Transaction.cs` — full transaction record with dedup fields, soft delete, Plaid + manual support
 - `DedupStatus.cs` — enum: Accepted, Flagged, Discarded
+- `RefreshToken.cs` — Google refresh tokens stored server-side, with revocation support
+- `PlaidItem.cs` — one per linked bank institution, holds Plaid access token and sync cursor
+- `Account.cs` — individual bank accounts under a PlaidItem
+- `Budget.cs` — per-category spending limits with BudgetPeriod enum
+- `Goal.cs` — named savings goals with target amount and optional deadline
+- `Bill.cs` — recurring bills with BillFrequency enum (supports Custom date)
+- `MerchantAlias.cs` — raw → normalized merchant name mappings for dedup pipeline
+- `SyncQueue.cs` — Plaid sync job tracking
 
-Still to create: `RefreshToken`, `PlaidItem`, `Account`, `Budget`, `Goal`, `Bill`, `MerchantAlias`, `SyncQueue`
+## Database
+
+- `FinTrakDbContext.cs` in `FinTrak.Infrastructure/Persistance/`
+- `FinTrakDbContextFactory.cs` — design-time factory for EF migrations, reads `.env`
+- `InitialSchema` migration applied and verified in pgAdmin
+- Soft delete filters, unique indexes, and enum-as-string storage configured
+
+## Auth — Complete
+
+Google OAuth 2.0 implemented in `FinTrak.Api/Controllers/AuthController.cs`:
+
+- PKCE flow — `GET /auth/login` builds the Google auth URL, `GET /auth/callback` exchanges the code
+- Refresh + access token pair from Google; refresh tokens stored in PostgreSQL
+- Auth cookie is HTTP-only, Secure, SameSite=Lax (never exposed to JS)
+- Email allowlist via `ALLOWED_EMAIL` env var — rejects unauthorized users before any DB writes
+- Silent refresh via `SilentRefreshMiddleware` — transparently renews expired auth cookies using stored refresh tokens
+- `fintrak_uid` long-lived cookie stores the user GUID to identify sessions after cookie expiry
+- `POST /auth/logout` revokes all refresh tokens and clears both cookies
+
+## API Setup
+
+`Program.cs` wires up:
+- DbContext with Npgsql connection string from `.env`
+- Cookie authentication (1-hour expiry, sliding)
+- Session (15-minute idle timeout, used only for PKCE code_verifier)
+- Middleware order: HTTPS → Session → Authentication → SilentRefresh → Authorization → Controllers
 
 ## Core Features (priority order)
 
@@ -46,23 +79,18 @@ Still to create: `RefreshToken`, `PlaidItem`, `Account`, `Budget`, `Goal`, `Bill
 - Manual entry exists as a fallback for cash or pre-settlement logging
 - Deduplication pipeline: rule-based normalization → FuzzySharp → Claude Haiku fallback → hash check → insert or discard
 
-## Auth Plan (brainstormed, not yet built)
+## Plaid Integration — Complete
 
-Google OAuth 2.0:
-- PKCE flow for secure code exchange
-- Refresh + access token pair from Google
-- Refresh tokens stored server-side in PostgreSQL only
-- Access tokens in HTTP-only, Secure, SameSite cookies (never exposed to JS)
-- Silent token refresh on expiry; graceful re-auth prompt if refresh token is revoked
-- HTTPS enforced from the start
+Implemented in `FinTrak.Api/Controllers/PlaidController.cs`:
+
+- `POST /plaid/link-token` — creates a Plaid link token for the frontend Link widget
+- `POST /plaid/exchange-token` — exchanges public token, creates PlaidItem + Accounts records
+- `POST /plaid/sync` — cursor-based transaction sync (added/modified/removed), tested and verified in sandbox
 
 ## Next Steps
 
-- Finish remaining entity classes (RefreshToken, PlaidItem, Account, Budget, Goal, Bill, MerchantAlias, SyncQueue)
-- Create `FinTrakDbContext.cs` and wire up EF Core
-- Run `InitialSchema` migration and verify in pgAdmin
-- Set up Google OAuth 2.0 (token receipt, validation, lifecycle, storage, deletion)
-- Wire up Plaid integration
+- Build transaction deduplication pipeline
+- Start frontend (React web)
 
 ## Key Constraints
 
