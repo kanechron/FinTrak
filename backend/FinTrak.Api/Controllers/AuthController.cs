@@ -44,9 +44,14 @@ namespace FinTrak.Api.Controllers
             // The verifier is stored in session; the challenge is sent to Google.
             // On callback, Google verifies that the challenge matches the verifier —
             // this prevents auth code interception attacks.
+
+            // Generate a high-entropy random string as the code_verifier. Lives in RAM and is never sent to the client.
             var codeVerifier = Base64UrlEncode(RandomNumberGenerator.GetBytes(64));
+
+            // Derive the code_challenge from the verifier using SHA256. Sent to Google in the initial auth request.
             var codeChallenge = Base64UrlEncode(SHA256.HashData(Encoding.UTF8.GetBytes(codeVerifier)));
 
+            //Saves codeVerifier in RAM as key-value pair. 
             HttpContext.Session.SetString("code_verifier", codeVerifier);
 
             var query = QueryString.Create(new Dictionary<string, string?>
@@ -95,7 +100,10 @@ namespace FinTrak.Api.Controllers
             if (!tokenResponse.IsSuccessStatusCode)
                 return BadRequest("Token exchange with Google failed.");
 
+            // Parse the token response JSON into a JsonElement for easy access to the ID token and refresh token.
             var tokenJson = await tokenResponse.Content.ReadFromJsonAsync<JsonElement>();
+
+            // The ID token is a JWT containing the user's identity claims (email, name, Google subject ID).
             var idToken = tokenJson.GetProperty("id_token").GetString()!;
             var refreshToken = tokenJson.GetProperty("refresh_token").GetString()!;
 
@@ -145,6 +153,8 @@ namespace FinTrak.Api.Controllers
 
             // Issue an HTTP-only auth cookie containing the user's identity claims.
             // The cookie is the only thing the client ever sees — tokens never leave the server.
+
+            //Creates the claims that will be stored in the auth cookie. These claims can be accessed later to identify the user.
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -152,12 +162,15 @@ namespace FinTrak.Api.Controllers
                 new(ClaimTypes.Name, user.Name)
             };
 
+            // Signs in the user by creating an auth cookie with the specified claims. The cookie is HTTP-only and Secure, so it's not accessible to JavaScript and only sent over HTTPS.
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
 
+            // Clear the PKCE code_verifier from session since it's no longer needed after successful login.
             HttpContext.Session.Remove("code_verifier");
 
+            // Also set a separate cookie with the user's ID for easy access in the frontend (e.g. to associate Plaid items with the user).
             Response.Cookies.Append("fintrak_uid", user.Id.ToString(), new CookieOptions
                 {
                     HttpOnly = true,
@@ -167,7 +180,9 @@ namespace FinTrak.Api.Controllers
                 });
 
 
-            return Ok("Login successful.");
+            // Redirect back to the frontend after successful login.
+            // FRONTEND_URL can be overridden in .env — defaults to the React dev server.
+            return Redirect(Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:5173");
         }
 
         /// <summary>
