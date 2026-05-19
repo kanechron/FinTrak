@@ -2,14 +2,13 @@ import { api } from './client'
 
 export interface Transaction {
   id: string
-  accountId: string
-  amount: number
-  merchantName: string
   date: string
-  isPending: boolean
-  categoryId: string | null
+  merchant: string
+  amount: number
+  category: string
+  pending: boolean
 }
 
-export const transactionsApi = {
-  getAll: () => api.get<Transaction[]>('/transactions'),
+export function getTransactions(): Promise<Transaction[]> {
+  return api.get<Transaction[]>('/transactions')
 }
