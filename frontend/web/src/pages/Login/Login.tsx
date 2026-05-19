@@ -1,0 +1,22 @@
+export default function Login() {
+  // Redirects the browser to the backend login endpoint which kicks off Google OAuth.
+  // The backend handles the full PKCE flow and redirects back to the frontend on success.
+  function handleLogin() {
+    window.location.href = 'https://localhost:7146/auth/login'
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans flex items-center justify-center">
+      <div className="border border-gray-800 rounded-xl p-10 flex flex-col items-center gap-6 w-80">
+        <span className="text-2xl font-semibold tracking-tight">FinTrak</span>
+        <p className="text-sm text-gray-500 text-center">Sign in to access your dashboard</p>
+        <button
+          onClick={handleLogin}
+          className="w-full bg-white text-gray-900 font-medium py-2.5 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+        >
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+  )
+}
