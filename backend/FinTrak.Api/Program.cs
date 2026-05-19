@@ -24,9 +24,8 @@ var connectionString =
     $"Username={Env("POSTGRES_USER")};" +
     $"Password={Env("POSTGRES_PASSWORD")}";
 
+
 builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString));
-
-
 
 // -------------------------------------------------------------------------
 // Plaid
@@ -103,6 +102,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Serve static files from wwwroot (e.g. test-plaid.html).
+app.UseStaticFiles();
+
 // Session must come before Authentication so the session cookie is available
 // when the auth middleware runs (needed for PKCE code_verifier lookup).
 app.UseSession();
@@ -134,6 +136,7 @@ static void LoadEnv()
         var path = Path.Combine(dir.FullName, ".env");
         if (File.Exists(path))
         {
+
             foreach (var line in File.ReadAllLines(path))
             {
                 var trimmed = line.Trim();
