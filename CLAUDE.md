@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active backend development** — infrastructure complete, auth done, Plaid integration done, dedup pipeline next.
+FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active frontend development** — backend complete, React web dashboard in progress, Plaid production connection pending NFCU OAuth approval.
 
 ## Tech Stack
 
@@ -17,7 +17,7 @@ FinTrak is a personal finance tracker built for James's own use and as a portfol
 - `docker-compose.yml` — PostgreSQL (port 5432) + pgAdmin (port 5050) running locally
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
 - Both Docker containers confirmed running
-- Git repo with `main` and `dev` branches — all active work happens on `dev`
+- Git repo with `main`, `dev`, and `feature/frontend-web` branches — frontend work on `feature/frontend-web`
 - ASP.NET Core backend scaffolded: `FinTrak.Api`, `FinTrak.Core`, `FinTrak.Infrastructure`
 - NuGet packages installed: Npgsql EF Core, SQLite, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog, dotenv.net
 
@@ -86,11 +86,31 @@ Implemented in `FinTrak.Api/Controllers/PlaidController.cs`:
 - `POST /plaid/link-token` — creates a Plaid link token for the frontend Link widget
 - `POST /plaid/exchange-token` — exchanges public token, creates PlaidItem + Accounts records
 - `POST /plaid/sync` — cursor-based transaction sync (added/modified/removed), tested and verified in sandbox
+- Switched to **production** environment — awaiting NFCU OAuth approval from Plaid before real bank sync can be tested
+
+## Frontend — In Progress
+
+React web app scaffolded at `frontend/web/` using Vite + TypeScript + Tailwind CSS:
+
+- `src/App.tsx` — layout shell (nav + wrapper)
+- `src/pages/Dashboard/Dashboard.tsx` — main dashboard page
+- `src/api/client.ts` — fetch wrapper with cookie credentials
+- `src/api/plaid.ts` — Plaid endpoint calls
+- `src/api/transactions.ts` — transactions endpoint + TypeScript interface
+- Vite proxy configured: `/api/*` → `https://localhost:7146`
+- Dashboard has: Balance Card, 3 Progress Widgets (Spent This Month, Savings Goal, Joint Account), Recent Transactions table, Budget bars
+
+## Known Issues / Environment
+
+- Local Windows PostgreSQL 18 service conflicts with Docker on port 5432 — disable it with `Stop-Service postgresql-x64-18 -Force` if it starts up again
+- Run backend: `dotnet run --project backend/FinTrak.Api --launch-profile https` from repo root
+- Run frontend: `npm run dev` from `frontend/web/`
 
 ## Next Steps
 
+- Complete frontend dashboard with real API data
 - Build transaction deduplication pipeline
-- Start frontend (React web)
+- Connect real bank account once NFCU OAuth is approved
 
 ## Key Constraints
 
