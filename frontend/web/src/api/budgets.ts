@@ -7,5 +7,5 @@ export interface Budget {
 }
 
 export function getBudgets(): Promise<Budget[]> {
-  return api.get<Budget[]>('/budgets')
+  return api.get<Budget[]>('/budgets/get-budgets')
 }

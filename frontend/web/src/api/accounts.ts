@@ -9,5 +9,5 @@ export interface Account {
 }
 
 export function getAccounts(): Promise<Account[]> {
-  return api.get<Account[]>('/accounts')
+  return api.get<Account[]>('/accounts/get-accounts')
 }

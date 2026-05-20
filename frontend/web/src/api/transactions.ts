@@ -10,5 +10,5 @@ export interface Transaction {
 }
 
 export function getTransactions(): Promise<Transaction[]> {
-  return api.get<Transaction[]>('/transactions')
+  return api.get<Transaction[]>('/transactions/get-transactions')
 }
