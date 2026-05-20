@@ -18,7 +18,7 @@ namespace FinTrak.Api.Controllers
             _db = db;
         }
 
-        [HttpGet]
+        [HttpGet("get-budgets")]
         public async Task<IActionResult> GetBudgets()
         {
             try

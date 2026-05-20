@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active frontend development** — backend complete, React web dashboard in progress, Plaid production connection pending NFCU OAuth approval.
+FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active full-stack development** — backend endpoints live, React dashboard wired to real data, Plaid production connection working with NFCU.
 
 ## Tech Stack
 
@@ -17,7 +17,7 @@ FinTrak is a personal finance tracker built for James's own use and as a portfol
 - `docker-compose.yml` — PostgreSQL (port 5432) + pgAdmin (port 5050) running locally
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
 - Both Docker containers confirmed running
-- Git repo with `main`, `dev`, and `feature/frontend-web` branches — frontend work on `feature/frontend-web`
+- Git repo with `main`, `dev`, `feature/frontend-web`, and `feature/backend` branches
 - ASP.NET Core backend scaffolded: `FinTrak.Api`, `FinTrak.Core`, `FinTrak.Infrastructure`
 - NuGet packages installed: Npgsql EF Core, SQLite, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog, dotenv.net
 
@@ -85,20 +85,33 @@ Implemented in `FinTrak.Api/Controllers/PlaidController.cs`:
 
 - `POST /plaid/link-token` — creates a Plaid link token for the frontend Link widget
 - `POST /plaid/exchange-token` — exchanges public token, creates PlaidItem + Accounts records
-- `POST /plaid/sync` — cursor-based transaction sync (added/modified/removed), tested and verified in sandbox
-- Switched to **production** environment — awaiting NFCU OAuth approval from Plaid before real bank sync can be tested
+- `POST /plaid/sync` — cursor-based transaction sync (added/modified/removed)
+- Running in **production** environment — NFCU OAuth approved and working
 
-## Frontend — In Progress
+## Data API Endpoints — Complete
 
-React web app scaffolded at `frontend/web/` using Vite + TypeScript + Tailwind CSS:
+All endpoints require auth cookie (`[Authorize]`), routes use `[controller]/get-[controller]` pattern:
 
-- `src/App.tsx` — layout shell (nav + wrapper)
-- `src/pages/Dashboard/Dashboard.tsx` — main dashboard page
-- `src/api/client.ts` — fetch wrapper with cookie credentials
-- `src/api/plaid.ts` — Plaid endpoint calls
-- `src/api/transactions.ts` — transactions endpoint + TypeScript interface
-- Vite proxy configured: `/api/*` → `https://localhost:7146`
-- Dashboard has: Balance Card, 3 Progress Widgets (Spent This Month, Savings Goal, Joint Account), Recent Transactions table, Budget bars
+- `GET /accounts/get-accounts` — active accounts with balance, type, last4
+- `GET /transactions/get-transactions` — all non-deleted transactions ordered by date descending
+- `GET /budgets/get-budgets` — active budgets with `spent` computed for current period from transactions
+
+## Frontend — Dashboard Wired to Real Data
+
+React web app at `frontend/web/` using Vite + TypeScript + Tailwind CSS:
+
+- `src/App.tsx` — auth-gated routing via React Router; checks auth on mount, redirects to `/login` if unauthenticated
+- `src/pages/Login/Login.tsx` — Google OAuth redirect
+- `src/pages/Dashboard/Dashboard.tsx` — fetches accounts, transactions, budgets in parallel via `Promise.all` on mount; passes real data to components
+- `src/components/Navbar.tsx` — Sync button with Plaid Link flow: checks if accounts exist → if not, opens Plaid Link widget to connect bank → exchanges token → syncs; states: idle/connecting/syncing/done/error
+- `src/components/BalanceCard.tsx` — total balance + per-account breakdown
+- `src/components/ProgressWidget.tsx` — reusable progress bar widget (Spent This Month, Savings Goal, Joint Account)
+- `src/components/RecentTransactions.tsx` — shows 10 most recent, expandable to all; Plaid sign convention flipped for display (positive = debit = red, negative = credit = green)
+- `src/components/BudgetList.tsx` — per-category budget progress bars
+- `src/components/ProgressBar.tsx` — color-coded bar (green <70%, yellow <90%, red ≥90%)
+- `src/api/client.ts` — base fetch wrapper with cookie credentials
+- `src/api/accounts.ts`, `transactions.ts`, `budgets.ts` — typed fetch functions with interfaces matching API response shape
+- Vite proxy: `/api/*` → `https://localhost:7146`
 
 ## Known Issues / Environment
 
@@ -108,9 +121,10 @@ React web app scaffolded at `frontend/web/` using Vite + TypeScript + Tailwind C
 
 ## Next Steps
 
-- Complete frontend dashboard with real API data
 - Build transaction deduplication pipeline
-- Connect real bank account once NFCU OAuth is approved
+- Wire ProgressWidgets to real data (currently hardcoded values)
+- Add dashboard refresh after sync completes
+- Mobile app (React Native)
 
 ## Key Constraints
 
