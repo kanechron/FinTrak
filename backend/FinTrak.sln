@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinTrak.Api", "FinTrak.Api\FinTrak.Api.csproj", "{07D27F98-E38F-4789-89DF-C5385A048091}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinTrak.Core", "FinTrak.Core\FinTrak.Core.csproj", "{098896F9-697E-4B38-88DC-9460C71C7563}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FinTrak.Infrastructure", "FinTrak.Infrastructure\FinTrak.Infrastructure.csproj", "{E819A25C-B028-46A1-A92E-FE7B20831E81}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Debug|x64.Build.0 = Debug|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Debug|x86.Build.0 = Debug|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Release|x64.ActiveCfg = Release|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Release|x64.Build.0 = Release|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Release|x86.ActiveCfg = Release|Any CPU
+		{07D27F98-E38F-4789-89DF-C5385A048091}.Release|x86.Build.0 = Release|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Debug|x64.Build.0 = Debug|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Debug|x86.Build.0 = Debug|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Release|Any CPU.Build.0 = Release|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Release|x64.ActiveCfg = Release|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Release|x64.Build.0 = Release|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Release|x86.ActiveCfg = Release|Any CPU
+		{098896F9-697E-4B38-88DC-9460C71C7563}.Release|x86.Build.0 = Release|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Debug|x64.Build.0 = Debug|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Debug|x86.Build.0 = Debug|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Release|x64.ActiveCfg = Release|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Release|x64.Build.0 = Release|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Release|x86.ActiveCfg = Release|Any CPU
+		{E819A25C-B028-46A1-A92E-FE7B20831E81}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
