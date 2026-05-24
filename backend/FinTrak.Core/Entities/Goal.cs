@@ -15,7 +15,7 @@ namespace FinTrak.Core.Entities
         public string Name { get; set; } = string.Empty;
 
         /// <summary>The total amount the user wants to save.</summary>
-        public decimal TargetAmount { get; set; } = 0m;
+        public decimal? TargetAmount { get; set; } = 0m;
 
         /// <summary>How much has been saved toward the goal so far.</summary>
         public decimal CurrentAmount { get; set; } = 0m;

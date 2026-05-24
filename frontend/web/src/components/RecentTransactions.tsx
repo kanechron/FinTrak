@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatAmount } from '../utils/format'
 
 interface Transaction {
@@ -14,11 +15,21 @@ interface Props {
 }
 
 export default function RecentTransactions({ transactions }: Props) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? transactions : transactions.slice(0, 10)
+
   return (
     <section className="col-span-3 border border-gray-800 rounded-xl p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-medium">Recent Transactions</h2>
-        <button className="text-xs text-gray-500 hover:text-gray-300">View all</button>
+        {transactions.length > 10 && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-gray-500 hover:text-gray-300"
+          >
+            {expanded ? 'Show less' : 'View all'}
+          </button>
+        )}
       </div>
       <table className="w-full text-sm">
         <thead>
@@ -30,7 +41,7 @@ export default function RecentTransactions({ transactions }: Props) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-900">
-          {transactions.map((t) => (
+          {visible.map((t) => (
             <tr key={t.id} className="text-gray-300">
               <td className="py-2.5">
                 {t.merchant}
@@ -38,8 +49,8 @@ export default function RecentTransactions({ transactions }: Props) {
               </td>
               <td className="py-2.5 text-gray-500">{t.category}</td>
               <td className="py-2.5 text-gray-500">{t.date}</td>
-              <td className={`py-2.5 text-right font-mono ${t.amount > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {formatAmount(t.amount)}
+              <td className={`py-2.5 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {formatAmount(-t.amount)}
               </td>
             </tr>
           ))}
