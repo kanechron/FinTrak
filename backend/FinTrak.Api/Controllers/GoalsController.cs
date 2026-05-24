@@ -34,7 +34,8 @@ namespace FinTrak.Api.Controllers
                     targetAmount = g.TargetAmount,
                     currentAmount = g.CurrentAmount,
                     targetDate = g.TargetDate,
-                    isCompleted = g.CompletedAt != null
+                    isCompleted = g.CompletedAt != null,
+                    isActive = g.IsActive
                 });
 
                 return Ok(result);

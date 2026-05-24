@@ -1,0 +1,27 @@
+import {api} from './client'
+
+export interface Goal {
+  id: string
+  name: string
+  targetAmount: number | null
+  currentAmount: number
+  targetDate: string | null
+  isActive: boolean
+}
+
+export function getGoals() {
+    return api.get<Goal[]>('/goals/get-goals')
+}
+
+export function addGoal(goal: Omit<Goal, 'id'>) {
+    return api.post<Goal>('/goals/add-goal', goal)
+}
+
+export function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>) {
+    return api.patch<Goal>(`/goals/update-goal/${id}`, updates)
+}
+
+export function deleteGoal(id: string) {
+    return api.delete(`/goals/delete-goal/${id}`)
+}
+
