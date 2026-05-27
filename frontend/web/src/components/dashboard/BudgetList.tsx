@@ -1,4 +1,4 @@
-import ProgressBar from './ProgressBar'
+import ProgressBar from '../common/ProgressBar'
 
 interface Budget {
   category: string

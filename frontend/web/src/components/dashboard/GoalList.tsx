@@ -1,7 +1,7 @@
-import AddGoalModal from "../components/modals/AddGoalModal";
-import ProgressBar from "../components/common/ProgressBar";
+import AddGoalModal from "../modals/AddGoalModal";
+import ProgressBar from "../common/ProgressBar";
 import { useState, useEffect } from "react";
-import { deleteGoal, updateGoal, type Goal } from "../api/goals";
+import { deleteGoal, updateGoal, type Goal } from "../../api/goals";
 import {
     DndContext,
     closestCenter,
@@ -83,8 +83,9 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
         setLocalGoals(reorderedWithPriority);
 
         await Promise.all(
-            reorderedWithPriority.map((g) => updateGoal(g.id, { priority: g.priority }))
+            reorderedWithPriority.map((g) => updateGoal(g.id, { priority: g.priority })),
         );
+        onGoalAdded(); // Refresh data after reordering
     }
 
     return (

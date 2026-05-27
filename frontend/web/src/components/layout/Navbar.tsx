@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePlaidLink } from 'react-plaid-link'
-import { getAccounts } from '../api/accounts'
+import { getAccounts } from '../../api/accounts'
 
 type Status = 'idle' | 'connecting' | 'syncing' | 'done' | 'error'
 
