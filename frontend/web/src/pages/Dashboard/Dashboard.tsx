@@ -40,13 +40,13 @@ async function fetchGoals() {
 }
 
 const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0)
-
+const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-8">
 
       {/* Top row: Balance Card + Progress Widgets */}
       <section className="grid grid-cols-3 gap-4">
-        <BalanceCard totalBalance={totalBalance} accounts={accounts} />
+        <BalanceCard availableBalance={availableBalance} accounts={accounts} />
         <div className="col-span-2 flex flex-col gap-4">
           <GoalList goals={goals} onGoalAdded={fetchGoals}/>
         </div>

@@ -31,7 +31,7 @@ namespace FinTrak.Api.Controllers
                         name = a.OfficialName ?? a.Name,
                         type = a.Subtype ?? a.Type.ToString(),
                         last4 = a.Mask,
-                        balance = a.CurrentBalance ?? 0
+                        balance = a.AvailableBalance ?? 0
                     })
                     .ToListAsync();
 
