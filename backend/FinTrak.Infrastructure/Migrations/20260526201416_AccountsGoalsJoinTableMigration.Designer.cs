@@ -3,6 +3,7 @@ using System;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinTrak.Infrastructure.Migrations
 {
     [DbContext(typeof(FinTrakDbContext))]
-    partial class FinTrakDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526201416_AccountsGoalsJoinTableMigration")]
+    partial class AccountsGoalsJoinTableMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,7 +37,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("LinkedGoalsId");
 
-                    b.ToTable("GoalAccounts", (string)null);
+                    b.ToTable("AccountGoal");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Account", b =>
@@ -236,9 +239,6 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("integer");
 
                     b.Property<decimal?>("TargetAmount")
                         .HasColumnType("numeric");

@@ -32,7 +32,11 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<Account>().HasQueryFilter(a => a.DeletedAt == null);
             modelBuilder.Entity<PlaidItem>().HasQueryFilter(p => p.DeletedAt == null);
             modelBuilder.Entity<Budget>().HasQueryFilter(b => b.DeletedAt == null);
-            modelBuilder.Entity<Goal>().HasQueryFilter(g => g.DeletedAt == null);
+            modelBuilder.Entity<Goal>()
+            .HasQueryFilter(g => g.DeletedAt == null)
+            .HasMany(g => g.LinkedAccounts)
+            .WithMany(a => a.LinkedGoals)
+            .UsingEntity(j => j.ToTable("GoalAccounts"));
             modelBuilder.Entity<Bill>().HasQueryFilter(b => b.DeletedAt == null);
 
             // Unique indexes
