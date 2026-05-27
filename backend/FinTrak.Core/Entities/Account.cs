@@ -45,6 +45,9 @@ namespace FinTrak.Core.Entities
         /// <summary>When the balance figures were last updated from Plaid.</summary>
         public DateTime? BalanceLastUpdated { get; set; } = null;
 
+        ///<summary>For linking Goals with Accounts.</summary>
+        public List<Goal> LinkedGoals { get; set; } = new();
+
         /// <summary>When this account record was created.</summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -119,6 +119,7 @@ public async Task<IActionResult> ExchangeToken(
             Name = a.Name,
             OfficialName = a.OfficialName,
             Mask = a.Mask ?? string.Empty,
+            
             Type = a.Type switch
                 {
                     Going.Plaid.Entity.AccountType.Depository => Core.Entities.AccountType.Depository,
@@ -232,6 +233,28 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
         item.TransactionCursor = cursor;
         item.LastSyncedAt = DateTime.UtcNow;
+
+        // Refresh account balances
+        var balanceResponse = await plaid.AccountsGetAsync(
+            new Going.Plaid.Accounts.AccountsGetRequest
+            {
+                AccessToken = item.AccessToken
+            });
+
+        if (balanceResponse.Error == null)
+        {
+            foreach (var a in balanceResponse.Accounts)
+            {
+                var account = await _db.Accounts
+                    .FirstOrDefaultAsync(x => x.PlaidAccountId == a.AccountId);
+
+                if (account == null) continue;
+
+                account.CurrentBalance = (decimal?)a.Balances.Current;
+                account.AvailableBalance = (decimal?)a.Balances.Available;
+                account.BalanceLastUpdated = DateTime.UtcNow;
+            }
+        }
     }
 
     await _db.SaveChangesAsync();
