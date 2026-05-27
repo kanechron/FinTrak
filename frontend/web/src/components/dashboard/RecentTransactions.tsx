@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { formatAmount } from '../utils/format'
+import { formatAmount } from '../../utils/format'
 
 interface Transaction {
   id: string

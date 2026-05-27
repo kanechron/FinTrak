@@ -7,6 +7,8 @@ export interface Goal {
   currentAmount: number
   targetDate: string | null
   isActive: boolean
+  priority: number
+  linkedAccounts: { id: string }[]
 }
 
 export function getGoals() {

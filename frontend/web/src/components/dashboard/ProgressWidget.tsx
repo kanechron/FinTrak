@@ -1,5 +1,5 @@
-import ProgressBar from './ProgressBar'
-import { formatAmount } from '../utils/format'
+import ProgressBar from '../common/ProgressBar'
+import { formatAmount } from '../../utils/format'
 
 interface Props {
   label: string

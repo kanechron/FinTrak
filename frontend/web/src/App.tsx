@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Login from './pages/Login/Login'
-import Navbar from './components/Navbar'
+import Navbar from './components/layout/Navbar'
 
 // Checks if the user is authenticated by calling a protected endpoint.
 // Returns true if the server responds with 200, false if 401.

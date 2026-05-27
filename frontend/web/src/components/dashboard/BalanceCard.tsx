@@ -1,4 +1,4 @@
-import { formatAmount } from '../utils/format'
+import { formatAmount } from '../../utils/format'
 
 interface Account {
   name: string

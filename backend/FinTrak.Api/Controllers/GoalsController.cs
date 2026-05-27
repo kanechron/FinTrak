@@ -37,7 +37,7 @@ namespace FinTrak.Api.Controllers
                     targetDate = g.TargetDate,
                     isCompleted = g.CompletedAt != null,
                     isActive = g.IsActive,
-                    currentAmount = g.LinkedAccounts.Sum(a => a.AvailableBalance ?? 0), // Sum of available balances from linked accounts
+                    currentAmount = 0, // Sum of available balances from linked accounts
                     priority = g.Priority,
                     linkedAccounts = g.LinkedAccounts.Select(a => new
                     {
@@ -68,6 +68,14 @@ namespace FinTrak.Api.Controllers
                 var accountIds = goal.LinkedAccounts?.Select(a => a.Id).ToList() ?? new();
                 var linkedAccounts = await _db.Accounts.Where(a => accountIds.Contains(a.Id)).ToListAsync();
 
+                var maxPriority = await _db.Goals
+                .Where(g => g.DeletedAt == null)
+                .Select(g => (int?)g.Priority)
+                .MaxAsync() ?? -1;
+
+        
+
+
 
                 var newGoal = new Goal
                 {
@@ -79,13 +87,13 @@ namespace FinTrak.Api.Controllers
                     CreatedAt = DateTime.UtcNow,
                     TargetDate = goal.TargetDate,
                     LinkedAccounts = linkedAccounts,
-                    Priority = goal.Priority
+                    Priority = maxPriority + 1 // Set priority to be one greater than the current max
                 };
 
                 _db.Goals.Add(newGoal);
                 await _db.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(AddGoal), new { id = newGoal.Id }, newGoal);
+                return Ok(new { message = "Goal added successfully.", id = newGoal.Id });
             }
             catch (Exception ex)
             {
