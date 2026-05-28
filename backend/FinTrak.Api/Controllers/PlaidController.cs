@@ -187,6 +187,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 var account = await _db.Accounts
                     .FirstOrDefaultAsync(a => a.PlaidAccountId == t.AccountId);
 
+
                 _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
                 {
                     Id = Guid.NewGuid(),
@@ -203,6 +204,9 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                     CreatedAt = DateTime.UtcNow
                 });
             }
+
+            
+
 
             // Handle modified transactions
             foreach (var t in response.Modified)
@@ -241,18 +245,49 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 AccessToken = item.AccessToken
             });
 
+            
+
+
         if (balanceResponse.Error == null)
         {
             foreach (var a in balanceResponse.Accounts)
             {
+                Console.WriteLine($"Plaid account: {a.AccountId} | {a.Name} | {a.Mask}");
                 var account = await _db.Accounts
                     .FirstOrDefaultAsync(x => x.PlaidAccountId == a.AccountId);
 
-                if (account == null) continue;
-
-                account.CurrentBalance = (decimal?)a.Balances.Current;
-                account.AvailableBalance = (decimal?)a.Balances.Available;
-                account.BalanceLastUpdated = DateTime.UtcNow;
+                if (account == null)
+                {
+                    _db.Accounts.Add(new FinTrak.Core.Entities.Account
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        PlaidItemId = item.Id,
+                        PlaidAccountId = a.AccountId,
+                        Name = a.Name,
+                        OfficialName = a.OfficialName,
+                        Mask = a.Mask ?? string.Empty,
+                        Type = a.Type switch
+                        {
+                            Going.Plaid.Entity.AccountType.Depository => Core.Entities.AccountType.Depository,
+                            Going.Plaid.Entity.AccountType.Credit => FinTrak.Core.Entities.AccountType.Credit,
+                            Going.Plaid.Entity.AccountType.Loan => FinTrak.Core.Entities.AccountType.Loan,
+                            Going.Plaid.Entity.AccountType.Investment => FinTrak.Core.Entities.AccountType.Investment,
+                            _ => FinTrak.Core.Entities.AccountType.Depository
+                        },
+                        Subtype = a.Subtype?.ToString(),
+                        CurrentBalance = (decimal?)a.Balances.Current,
+                        AvailableBalance = (decimal?)a.Balances.Available,
+                        BalanceLastUpdated = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    account.CurrentBalance = (decimal?)a.Balances.Current;
+                    account.AvailableBalance = (decimal?)a.Balances.Available;
+                    account.BalanceLastUpdated = DateTime.UtcNow;
+                }
             }
         }
     }
