@@ -18,13 +18,11 @@ export default function allocateGoalAmounts(
     
 )
 {
-    console.log("Initial goals: ", goals);
-    console.log("Initial accounts: ", accounts);
+    
 
     // Sort goals by priority
     const sortedGoals = goals.map(g => ({ ...g })).sort((a, b) => a.priority - b.priority);
 
-    console.log("Initial sorted goals: ", sortedGoals);
 
     //For each account
     for (const acc of accounts) {
@@ -33,7 +31,6 @@ export default function allocateGoalAmounts(
         let remaining = acc.balance;
         for (const goal of sortedGoals) {
             if (!goal.linkedAccounts.some(a => a.id === acc.id)) continue;
-            console.log("First check: ", sortedGoals);
             let ta = goal.targetAmount ?? 0
             let ca = goal.currentAmount
             let gap = ta - ca
@@ -46,13 +43,10 @@ export default function allocateGoalAmounts(
             const allocation = Math.min(remaining, gap);
             remaining -= allocation;
 
-            console.log("Second check: ", sortedGoals);
 
             // Update the goal's current amount
             goal.currentAmount += allocation;
-            console.log("Third check: ", sortedGoals);
         }
-        console.log("Fourth check: ", sortedGoals);
     }
     return sortedGoals;
     

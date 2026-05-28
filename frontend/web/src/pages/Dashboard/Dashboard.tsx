@@ -9,6 +9,7 @@ import { getAccounts, type Account } from '../../api/accounts'
 import { getBudgets, type Budget } from '../../api/budgets'
 import { getGoals, type Goal } from '../../api/goals'
 import allocateGoalAmounts from '../../utils/AllocateGoalAmounts'
+import ReloadPage from '../../utils/ReloadPage'
 
 export default function Dashboard() {
 
@@ -31,11 +32,10 @@ async function fetchData() {
   setAccounts(accounts)
   setBudgets(budgets)
   setGoals(goals)
-  console.log('goals before allocation', goals.map(g => ({ id: g.id, currentAmount: g.currentAmount })))
 
   const allocated = allocateGoalAmounts(goals, accounts)
-  console.log(allocated)
   setAllocatedGoals(allocated)
+  
 }
 useEffect(() => {
   fetchData()
@@ -47,7 +47,6 @@ async function fetchGoals() {
   const goals = await getGoals()
   setGoals(goals)
   setAllocatedGoals(allocateGoalAmounts(goals, accounts))
-  
 }
 
   

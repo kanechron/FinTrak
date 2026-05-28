@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePlaidLink } from 'react-plaid-link'
 import { getAccounts } from '../../api/accounts'
+import ReloadPage from '../../utils/ReloadPage'
 
 type Status = 'idle' | 'connecting' | 'syncing' | 'done' | 'error'
 
@@ -38,6 +39,7 @@ export default function Navbar() {
         setStatus('syncing')
         await runSync()
         setStatus('done')
+        ReloadPage()
       } catch {
         setStatus('error')
       }
@@ -59,6 +61,7 @@ export default function Navbar() {
         setStatus('syncing')
         await runSync()
         setStatus('done')
+        ReloadPage()
       }
     } catch {
       setStatus('error')
