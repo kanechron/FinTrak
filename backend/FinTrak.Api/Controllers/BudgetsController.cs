@@ -43,14 +43,18 @@ namespace FinTrak.Api.Controllers
                         .Sum(t => (decimal?)t.Amount) ?? 0m;
 
                     // Plaid amounts are negative for debits — flip to positive for display
-                    spent = Math.Abs(spent);
+                    var spentAbs = Math.Abs(spent);
 
                     return new
                     {
                         id = b.Id,
+                        name = b.Name,
                         category = b.Category?.Name ?? b.Name,
-                        spent = spent,
-                        limit = b.Amount,
+                        spent = spentAbs,
+                        amount = b.Amount,
+                        startDate = b.StartDate,
+                        endDate = b.EndDate,
+                        isRecurring = b.IsRecurring,
                         period = b.Period?.ToString() ?? "Monthly"
                     };
                 });
@@ -79,7 +83,7 @@ namespace FinTrak.Api.Controllers
                     Name = budget.Name,
                     Amount = budget.Amount,
                     Period = budget.Period,
-                    StartDate = budget.StartDate,
+                    StartDate = DateTime.SpecifyKind(budget.StartDate, DateTimeKind.Utc),
                     CategoryId = budget.CategoryId,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
