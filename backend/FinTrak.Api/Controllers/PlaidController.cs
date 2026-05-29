@@ -197,7 +197,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                             Amount = t.Amount,
                             MerchantNameRaw = t.MerchantName ?? string.Empty,
                             MerchantName = t.MerchantName ?? string.Empty,
-                            Date = t.AuthorizedDate,
+                            Date = t.AuthorizedDate ?? t.Date,
                             IsPending = t.Pending,
                             IsManual = false,
                             DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
