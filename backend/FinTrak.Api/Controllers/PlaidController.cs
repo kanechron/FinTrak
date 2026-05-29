@@ -188,21 +188,21 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                     .FirstOrDefaultAsync(a => a.PlaidAccountId == t.AccountId);
 
 
-                _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    AccountId = account?.Id ?? Guid.Empty,
-                    PlaidTransactionId = t.TransactionId,
-                    Amount = (decimal)t.Amount,
-                    MerchantNameRaw = t.MerchantName ?? t.Name ?? string.Empty,
-                    MerchantName = t.MerchantName ?? t.Name ?? string.Empty,
-                    Date = (DateOnly)t.Date,
-                    IsPending = (bool)t.Pending,
-                    IsManual = false,
-                    DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
-                    CreatedAt = DateTime.UtcNow
-                });
+                        _ = _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = userId,
+                            AccountId = account?.Id ?? Guid.Empty,
+                            PlaidTransactionId = t.TransactionId,
+                            Amount = t.Amount,
+                            MerchantNameRaw = t.MerchantName ?? string.Empty,
+                            MerchantName = t.MerchantName ?? string.Empty,
+                            Date = t.AuthorizedDate,
+                            IsPending = t.Pending,
+                            IsManual = false,
+                            DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
+                            CreatedAt = DateTime.UtcNow
+                        });
             }
 
             
@@ -216,9 +216,9 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
                 if (existing == null) continue;
 
-                existing.Amount = (decimal)t.Amount;
-                existing.IsPending = (bool)t.Pending;
-                existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                existing.Amount = t.Amount;
+                existing.IsPending = t.Pending;
+                existing.MerchantName = t.MerchantName ?? string.Empty;
             }
 
             // Handle removed transactions
