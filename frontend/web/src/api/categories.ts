@@ -1,7 +1,7 @@
 import { api } from "./client";
 
 export interface Category {
-    id: number;
+    id: string;
     name: string;
     isSystem: boolean;
 }
