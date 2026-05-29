@@ -15,7 +15,7 @@ namespace FinTrak.Core.Entities
         /// <summary>Display name for the budget, e.g. "Monthly Groceries".</summary>
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>The spending limit for this budget period.</summary>
+        ///<summary>The spending limit for this budget period.</summary>
         public decimal Amount { get; set; } = 0m;
 
         /// <summary>FK to the category this budget applies to. Null means it applies to all spending.</summary>

@@ -49,6 +49,11 @@ async function fetchGoals() {
   setAllocatedGoals(allocateGoalAmounts(goals, accounts))
 }
 
+async function fetchBudgets() {
+  const budgets = await getBudgets()
+  setBudgets(budgets)
+}
+
   
 const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
   return (
@@ -64,7 +69,7 @@ const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : 
 
       <div className="grid grid-cols-5 gap-6">
         <RecentTransactions transactions={transactions} />
-        <BudgetList budgets={budgets} /> 
+        <BudgetList budgets={budgets} onBudgetAdded={fetchBudgets} />
         
       </div>
 
