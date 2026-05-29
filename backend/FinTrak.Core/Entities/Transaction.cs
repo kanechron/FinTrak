@@ -15,10 +15,10 @@ namespace FinTrak.Core.Entities
         public Guid AccountId { get; set; } = Guid.Empty;
 
         /// <summary>Plaid's identifier for this transaction. Empty for manual entries.</summary>
-        public string PlaidTransactionId { get; set; } = string.Empty;
+        public string? PlaidTransactionId { get; set; } = string.Empty;
 
         /// <summary>Transaction amount. Positive = debit (money out), negative = credit (money in).</summary>
-        public decimal Amount { get; set; } = 0m;
+        public decimal? Amount { get; set; } = 0m;
 
         /// <summary>Raw merchant name as provided by Plaid, before normalization.</summary>
         public string MerchantNameRaw { get; set; } = string.Empty;
@@ -36,7 +36,7 @@ namespace FinTrak.Core.Entities
         public string Description { get; set; } = string.Empty;
 
         /// <summary>True if the transaction has not yet settled with the bank.</summary>
-        public bool IsPending { get; set; } = false;
+        public bool? IsPending { get; set; } = false;
 
         /// <summary>True if the transaction was entered manually rather than pulled from Plaid.</summary>
         public bool IsManual { get; set; } = false;
@@ -54,6 +54,6 @@ namespace FinTrak.Core.Entities
         public DateTime? DeletedAt { get; set; } = null;
 
         /// <summary>The date the transaction occurred, as reported by the bank.</summary>
-        public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+        public DateOnly? Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
     }
 }

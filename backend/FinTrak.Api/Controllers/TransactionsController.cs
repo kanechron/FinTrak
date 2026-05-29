@@ -30,12 +30,13 @@ namespace FinTrak.Api.Controllers
                         {
                             id = t.Id,
                             accountId = t.AccountId,
-                            date = t.Date.ToString("yyyy-MM-dd"),
+                            date = t.Date.Value.ToString("yyyy-MM-dd"),
                             merchant = t.MerchantName ?? t.MerchantNameRaw,
                             amount = t.Amount,
                             category = t.Category != null ? t.Category.Name : "Uncategorized",
                             categoryId = t.CategoryId,
-                            pending = t.IsPending
+                            pending = t.IsPending,
+                            
                         })
                     .ToListAsync();
 
