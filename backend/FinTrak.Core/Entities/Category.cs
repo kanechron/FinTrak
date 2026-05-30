@@ -14,9 +14,9 @@ namespace FinTrak.Core.Entities
         /// <summary>True for built-in categories; false for categories created by the user.</summary>
         public bool IsSystem { get; set; } = true;
 
-        // public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        // public DateTime? DeletedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? DeletedAt { get; set; }
 
-        // public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = true;
     }
 }

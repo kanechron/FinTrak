@@ -4,6 +4,7 @@ using FinTrak.Infrastructure.Persistance;
 using System.Security.Claims;
 using Going.Plaid;
 using Microsoft.EntityFrameworkCore;
+using FinTrak.Core.Entities;
 
 
 namespace FinTrak.Api.Controllers
@@ -187,6 +188,20 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 var account = await _db.Accounts
                     .FirstOrDefaultAsync(a => a.PlaidAccountId == t.AccountId);
 
+                        
+                        var categoryName = t.PersonalFinanceCategory?.Primary ?? string.Empty;
+
+                        var category = await _db.Categories
+                            .FirstOrDefaultAsync(c => c.Name == categoryName);
+
+                        if (category == null && !string.IsNullOrEmpty(categoryName))
+                        {
+                            category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
+                            _db.Categories.Add(category);
+                        }
+
+                        // then set CategoryId when creating the transaction
+                        
 
                         _ = _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
                         {
@@ -201,7 +216,8 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                             IsPending = t.Pending,
                             IsManual = false,
                             DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.UtcNow,
+                            CategoryId = category?.Id,
                         });
             }
 
@@ -246,6 +262,10 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
             });
 
             
+        
+
+         // Handle accounts and balances
+
 
 
         if (balanceResponse.Error == null)
