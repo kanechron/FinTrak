@@ -31,10 +31,10 @@ namespace FinTrak.Core.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>When the budget takes effect.</summary>
-        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
         /// <summary>When the budget ends. Null for open-ended budgets.</summary>
-        public DateTime? EndDate { get; set; } = null;
+        public DateOnly? EndDate { get; set; } = null;
 
         /// <summary>Soft delete timestamp. Null means the budget is active.</summary>
         public DateTime? DeletedAt { get; set; } = null;

@@ -177,6 +177,9 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 break;
             }
 
+            Console.WriteLine($"Sync response - Added: {response.Added.Count}, Modified: {response.Modified.Count}, Removed: {response.Removed.Count}, HasMore: {response.HasMore}");
+
+
             // Handle added transactions
             foreach (var t in response.Added)
             {
@@ -202,6 +205,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
                         // then set CategoryId when creating the transaction
                         
+                        Console.WriteLine($"Adding transaction: {t.TransactionId} - {t.MerchantName}");
 
                         _ = _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
                         {
