@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ProgressBar from '../common/ProgressBar'
-import { type Budget } from '../../api/budgets'
+import { deleteBudget, type Budget } from '../../api/budgets'
 import AddBudgetModal from '../modals/AddBudgetModal'
 
 interface Props {
@@ -10,11 +10,14 @@ interface Props {
 
 function formatDate(date: string | null) {
   if (!date) return '—'
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const d = new Date(date.includes('T') ? date : date + 'T00:00:00')
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+
+
 function computeEndDate(period: string, startDate: string): string {
-  const start = new Date(startDate)
+  const start = new Date(startDate + 'T00:00:00')
   switch (period) {
     case 'Weekly': {
       const end = new Date(start)
@@ -35,8 +38,22 @@ function computeEndDate(period: string, startDate: string): string {
   }
 }
 
+
+
+
 export default function BudgetList({ budgets, onBudgetAdded }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
+
+  
+  const handleDelete = async (id: string) => {
+  try {
+    await deleteBudget(id);
+    onBudgetAdded();
+  }
+  catch (error) {
+      console.error('Failed to delete budget:', error);
+  }
+}
 
   return (
     <section className="col-span-2 border border-gray-800 rounded-xl p-5 space-y-4">
@@ -47,6 +64,8 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
           + Add Budget
         </button>
       </div>
+
+      
       <div className="space-y-4">
         {budgets.map((b) => {
           const endDate = b.period === 'Custom' ? b.endDate : computeEndDate(b.period, b.startDate)
@@ -59,7 +78,10 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
                     <span className="text-xs text-emerald-400 border border-emerald-800 rounded px-1.5 py-0.5">Recurring</span>
                   )}
                 </div>
-                <span className="text-gray-500">${b.spent.toFixed(2)} / ${b.amount.toFixed(2)}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-500">${b.spent.toFixed(2)} / ${b.amount.toFixed(2)}</span>
+                  <button onClick={() => handleDelete(b.id)} className="text-gray-600 hover:text-red-400 transition-colors text-xs">✕</button>
+                </div>
               </div>
               <div className="text-xs text-gray-500">
                 {b.period} · {formatDate(b.startDate)} – {formatDate(endDate)}

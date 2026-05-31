@@ -8,7 +8,7 @@ export interface Budget {
   isRecurring: boolean
   spent: number
   period: string
-  // category: string
+  categoryId: string | null
   amount: number
 }
 
