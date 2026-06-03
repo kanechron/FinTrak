@@ -10,6 +10,7 @@ export interface Budget {
   period: string
   categoryId: string | null
   amount: number
+  recurringDate: string | null
 }
 
 export function getBudgets(): Promise<Budget[]> {
