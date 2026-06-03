@@ -15,32 +15,6 @@ function formatDate(date: string | null) {
 }
 
 
-
-function computeEndDate(period: string, startDate: string): string {
-  const start = new Date(startDate + 'T00:00:00')
-  switch (period) {
-    case 'Weekly': {
-      const end = new Date(start)
-      end.setDate(end.getDate() + 6)
-      return end.toISOString()
-    }
-    case 'Yearly': {
-      const end = new Date(start)
-      end.setFullYear(end.getFullYear() + 1)
-      end.setDate(end.getDate() - 1)
-      return end.toISOString()
-    }
-    case 'Monthly':
-    default: {
-      const end = new Date(start.getFullYear(), start.getMonth() + 1, 0)
-      return end.toISOString()
-    }
-  }
-}
-
-
-
-
 export default function BudgetList({ budgets, onBudgetAdded }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -68,7 +42,7 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
       
       <div className="space-y-4">
         {budgets.map((b) => {
-          const endDate = b.period === 'Custom' ? b.endDate : computeEndDate(b.period, b.startDate)
+          const endDate = b.endDate
           return (
             <div key={b.id} className="space-y-2 border border-gray-800 rounded-lg p-3">
               <div className="flex items-center justify-between text-sm">
@@ -84,7 +58,7 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
                 </div>
               </div>
               <div className="text-xs text-gray-500">
-                {b.period} · {formatDate(b.startDate)} – {formatDate(endDate)}
+                {b.period} · {formatDate(b.startDate)} - {formatDate(endDate)}
               </div>
               <ProgressBar value={b.spent} max={b.amount} />
             </div>

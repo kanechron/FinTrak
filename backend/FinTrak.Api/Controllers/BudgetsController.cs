@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
 using System.IO.Compression;
+using static FinTrak.Core.Utilities.RecurringDateUtil;
 
 namespace FinTrak.Api.Controllers
 {
@@ -59,7 +60,8 @@ namespace FinTrak.Api.Controllers
                         startDate = b.StartDate,
                         endDate = b.EndDate,
                         isRecurring = b.IsRecurring,
-                        period = b.Period?.ToString() ?? "Monthly"
+                        period = b.Period?.ToString() ?? "Monthly",
+                        recurringDate = b.RecurringDate
                     };
                 });
 
@@ -81,6 +83,8 @@ namespace FinTrak.Api.Controllers
                     return BadRequest(new { error = "Invalid budget data." });
                 }
 
+                Console.WriteLine($"StartDate: {budget.StartDate}, RecurringDate: '{budget.RecurringDate}', Period: {budget.Period}");
+
                 var newBudget = new Budget
                 {
                     Id = Guid.NewGuid(),
@@ -91,7 +95,18 @@ namespace FinTrak.Api.Controllers
                     CategoryId = budget.CategoryId,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
-                    IsRecurring = budget.IsRecurring
+                    IsRecurring = budget.IsRecurring,
+                    RecurringDate = budget.RecurringDate,
+                    
+                    EndDate = budget.Period switch
+                        {
+                            BudgetPeriod.Custom => budget.EndDate,
+                            BudgetPeriod.Weekly => GetRecurringDateWeek(budget.StartDate, budget.RecurringDate ?? string.Empty),
+                            BudgetPeriod.Yearly => GetRecurringDateYear(budget.StartDate, budget.RecurringDate ?? string.Empty),
+                            _ => GetRecurringDateMonth(budget.StartDate, budget.RecurringDate ?? string.Empty)
+                        },
+
+
                 };
                 _db.Budgets.Add(newBudget);
                 await _db.SaveChangesAsync();

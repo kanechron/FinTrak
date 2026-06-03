@@ -46,6 +46,7 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }: Props) {
         endDate: period === 'Custom' ? endDate : null,
         isRecurring,
         categoryId, // TODO: add category selection
+        recurringDate: isRecurring ? recurringDay : null,
       })
       onSuccess()
       onClose()
@@ -121,7 +122,7 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }: Props) {
 
       {isRecurring && (
         <div className="flex gap-2">
-            {recurringDay === 'custom' && (
+            {recurringDay === 'custom' && period !== 'Weekly' && (
               <input
                 type="number"
                 min={1}
@@ -131,14 +132,29 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }: Props) {
                 className="w-16 p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
               />
             )}
+            
             <select
               value={recurringDay}
               onChange={e => setRecurringDay(e.target.value)}
               className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
             >
-              <option value="first">First</option>
-              <option value="last">Last</option>
-              <option value="custom">Custom</option>
+              {period === 'Weekly' ? (
+                <>
+                  <option value="monday">Monday</option>
+                  <option value="tuesday">Tuesday</option>
+                  <option value="wednesday">Wednesday</option>
+                  <option value="thursday">Thursday</option>
+                  <option value="friday">Friday</option>
+                  <option value="saturday">Saturday</option>
+                  <option value="sunday">Sunday</option>
+                </>
+              ) : (
+                <>
+                  <option value="first">First</option>
+                  <option value="last">Last</option>
+                  <option value="custom">Custom</option>
+                </>
+              )}
             </select>
           </div>
         )}
