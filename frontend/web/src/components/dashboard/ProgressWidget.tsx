@@ -1,5 +1,5 @@
-import ProgressBar from './ProgressBar'
-import { formatAmount } from '../utils/format'
+import ProgressBar from '../common/ProgressBar'
+import { formatAmount } from '../../utils/format'
 
 interface Props {
   label: string
@@ -9,6 +9,7 @@ interface Props {
 }
 
 export default function ProgressWidget({ label, value, max, subtext }: Props) {
+  // Cap at 100 so the label never shows > 100% when spending exceeds the budget
   const pct = Math.min(Math.round((value / max) * 100), 100)
 
   return (

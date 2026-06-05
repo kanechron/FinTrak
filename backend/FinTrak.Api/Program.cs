@@ -1,8 +1,10 @@
 using FinTrak.Infrastructure.Persistance;
+using FinTrak.Infrastructure.BackgroundServices;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Api.Middleware;
 using Going.Plaid;
+using Microsoft.AspNetCore.Mvc;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -10,6 +12,15 @@ using Going.Plaid;
 LoadEnv();
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// -------------------------------------------------------------------------
+// Background services
+//--------------------------------------------------------------------------
+// Hosted services run in the background alongside the main web server. They are ideal for tasks that need to run periodically or continuously, such as cleaning up old records from the database.
+builder.Services.AddHostedService<DbDeleteService>();
+builder.Services.AddHostedService<RecurringDateService>();  // custom service to permanently delete soft-deleted records after a retention period
+
 
 // -------------------------------------------------------------------------
 // Database
@@ -87,7 +98,29 @@ builder.Services.AddSession(options =>
 // API infrastructure
 // -------------------------------------------------------------------------
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()))
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // Override the default model validation error response to return a 400 with a JSON body instead of a 422 with an HTML body.
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(e => e.Value.Errors.Count > 0)
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+
+            var result = new
+            {
+                error = "Invalid request data.",
+                details = errors
+            };
+
+            return new BadRequestObjectResult(result);
+        };
+    });
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -112,6 +145,7 @@ app.UseSession();
 app.UseAuthentication();
 
 
+app.UseMiddleware<ErrorHandlingMiddleware>();  // custom middleware to catch unhandled exceptions and return JSON error responses instead of crashing the server
 app.UseMiddleware<SilentRefreshMiddleware>();  // custom middleware to transparently renew auth cookies using refresh tokens
 
 app.UseAuthorization();

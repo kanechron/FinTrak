@@ -3,6 +3,7 @@ using System;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinTrak.Infrastructure.Migrations
 {
     [DbContext(typeof(FinTrakDbContext))]
-    partial class FinTrakDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260527002410_AccountsGoalsJoinTableMigration2")]
+    partial class AccountsGoalsJoinTableMigration2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -165,8 +168,8 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<string>("DeletedReason")
                         .HasColumnType("text");
 
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -181,12 +184,8 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<string>("Period")
                         .HasColumnType("text");
 
-                    b.Property<string>("RecurringDate")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -203,15 +202,6 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsSystem")
                         .HasColumnType("boolean");
@@ -422,7 +412,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<Guid>("AccountId")
                         .HasColumnType("uuid");
 
-                    b.Property<decimal?>("Amount")
+                    b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
                     b.Property<Guid?>("CategoryId")
@@ -431,7 +421,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateOnly?>("Date")
+                    b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
                     b.Property<string>("DedupHash")
@@ -452,7 +442,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<bool>("IsManual")
                         .HasColumnType("boolean");
 
-                    b.Property<bool?>("IsPending")
+                    b.Property<bool>("IsPending")
                         .HasColumnType("boolean");
 
                     b.Property<string>("MerchantName")
@@ -464,6 +454,7 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PlaidTransactionId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("UserId")

@@ -4,6 +4,7 @@ using FinTrak.Infrastructure.Persistance;
 using System.Security.Claims;
 using Going.Plaid;
 using Microsoft.EntityFrameworkCore;
+using FinTrak.Core.Entities;
 
 
 namespace FinTrak.Api.Controllers
@@ -119,6 +120,7 @@ public async Task<IActionResult> ExchangeToken(
             Name = a.Name,
             OfficialName = a.OfficialName,
             Mask = a.Mask ?? string.Empty,
+            
             Type = a.Type switch
                 {
                     Going.Plaid.Entity.AccountType.Depository => Core.Entities.AccountType.Depository,
@@ -175,6 +177,8 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 break;
             }
 
+
+
             // Handle added transactions
             foreach (var t in response.Added)
             {
@@ -186,22 +190,39 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 var account = await _db.Accounts
                     .FirstOrDefaultAsync(a => a.PlaidAccountId == t.AccountId);
 
-                _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    AccountId = account?.Id ?? Guid.Empty,
-                    PlaidTransactionId = t.TransactionId,
-                    Amount = (decimal)t.Amount,
-                    MerchantNameRaw = t.MerchantName ?? t.Name ?? string.Empty,
-                    MerchantName = t.MerchantName ?? t.Name ?? string.Empty,
-                    Date = (DateOnly)t.Date,
-                    IsPending = (bool)t.Pending,
-                    IsManual = false,
-                    DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
-                    CreatedAt = DateTime.UtcNow
-                });
+                        
+                        var categoryName = t.PersonalFinanceCategory?.Primary ?? string.Empty;
+
+                        var category = await _db.Categories
+                            .FirstOrDefaultAsync(c => c.Name == categoryName);
+
+                        if (category == null && !string.IsNullOrEmpty(categoryName))
+                        {
+                            category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
+                            _db.Categories.Add(category);
+                        }
+
+
+                        _ = _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = userId,
+                            AccountId = account?.Id ?? Guid.Empty,
+                            PlaidTransactionId = t.TransactionId,
+                            Amount = t.Amount,
+                            MerchantNameRaw = t.MerchantName ?? string.Empty,
+                            MerchantName = t.MerchantName ?? string.Empty,
+                            Date = t.AuthorizedDate ?? t.Date,
+                            IsPending = t.Pending.Value,
+                            IsManual = false,
+                            DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
+                            CreatedAt = DateTime.UtcNow,
+                            CategoryId = category?.Id,
+                        });
             }
+
+            
+
 
             // Handle modified transactions
             foreach (var t in response.Modified)
@@ -211,9 +232,9 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
                 if (existing == null) continue;
 
-                existing.Amount = (decimal)t.Amount;
-                existing.IsPending = (bool)t.Pending;
-                existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                existing.Amount = t.Amount;
+                existing.IsPending = t.Pending.Value;
+                existing.MerchantName = t.MerchantName ?? string.Empty;
             }
 
             // Handle removed transactions
@@ -232,6 +253,62 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
         item.TransactionCursor = cursor;
         item.LastSyncedAt = DateTime.UtcNow;
+
+        // Refresh account balances
+        var balanceResponse = await plaid.AccountsGetAsync(
+            new Going.Plaid.Accounts.AccountsGetRequest
+            {
+                AccessToken = item.AccessToken
+            });
+
+            
+        
+
+         // Handle accounts and balances
+
+
+
+        if (balanceResponse.Error == null)
+        {
+            foreach (var a in balanceResponse.Accounts)
+            {
+                var account = await _db.Accounts
+                    .FirstOrDefaultAsync(x => x.PlaidAccountId == a.AccountId);
+
+                if (account == null)
+                {
+                    _db.Accounts.Add(new FinTrak.Core.Entities.Account
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        PlaidItemId = item.Id,
+                        PlaidAccountId = a.AccountId,
+                        Name = a.Name,
+                        OfficialName = a.OfficialName,
+                        Mask = a.Mask ?? string.Empty,
+                        Type = a.Type switch
+                        {
+                            Going.Plaid.Entity.AccountType.Depository => Core.Entities.AccountType.Depository,
+                            Going.Plaid.Entity.AccountType.Credit => FinTrak.Core.Entities.AccountType.Credit,
+                            Going.Plaid.Entity.AccountType.Loan => FinTrak.Core.Entities.AccountType.Loan,
+                            Going.Plaid.Entity.AccountType.Investment => FinTrak.Core.Entities.AccountType.Investment,
+                            _ => FinTrak.Core.Entities.AccountType.Depository
+                        },
+                        Subtype = a.Subtype?.ToString(),
+                        CurrentBalance = (decimal?)a.Balances.Current,
+                        AvailableBalance = (decimal?)a.Balances.Available,
+                        BalanceLastUpdated = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    account.CurrentBalance = (decimal?)a.Balances.Current;
+                    account.AvailableBalance = (decimal?)a.Balances.Available;
+                    account.BalanceLastUpdated = DateTime.UtcNow;
+                }
+            }
+        }
     }
 
     await _db.SaveChangesAsync();

@@ -25,6 +25,8 @@ namespace FinTrak.Api.Controllers
             {
                 var goals = await _db.Goals
                     .Where(g => g.DeletedAt == null)
+                    .Include(g => g.LinkedAccounts) // Include linked accounts to calculate current amount
+                    .OrderBy(g => g.Priority) // Order by user-defined priority
                     .ToListAsync();
 
                 var result = goals.Select(g => new
@@ -32,10 +34,17 @@ namespace FinTrak.Api.Controllers
                     id = g.Id,
                     name = g.Name,
                     targetAmount = g.TargetAmount,
-                    currentAmount = g.CurrentAmount,
                     targetDate = g.TargetDate,
                     isCompleted = g.CompletedAt != null,
-                    isActive = g.IsActive
+                    isActive = g.IsActive,
+                    currentAmount = 0, // Sum of available balances from linked accounts
+                    priority = g.Priority,
+                    linkedAccounts = g.LinkedAccounts.Select(a => new
+                    {
+                        id = a.Id,
+                        name = a.OfficialName ?? a.Name,
+                        mask = a.Mask
+                    }).ToList()
                 });
 
                 return Ok(result);
@@ -56,6 +65,18 @@ namespace FinTrak.Api.Controllers
                     return BadRequest(new { message = "Invalid goal data. Name and TargetAmount are required." });
                 }
 
+                var accountIds = goal.LinkedAccounts?.Select(a => a.Id).ToList() ?? new();
+                var linkedAccounts = await _db.Accounts.Where(a => accountIds.Contains(a.Id)).ToListAsync();
+
+                var maxPriority = await _db.Goals
+                .Where(g => g.DeletedAt == null)
+                .Select(g => (int?)g.Priority)
+                .MaxAsync() ?? -1;
+
+        
+
+
+
                 var newGoal = new Goal
                 {
                     Id = Guid.NewGuid(),
@@ -64,13 +85,15 @@ namespace FinTrak.Api.Controllers
                     TargetAmount = goal.TargetAmount,
                     CurrentAmount = 0m,
                     CreatedAt = DateTime.UtcNow,
-                    TargetDate = goal.TargetDate
+                    TargetDate = goal.TargetDate,
+                    LinkedAccounts = linkedAccounts,
+                    Priority = maxPriority + 1 // Set priority to be one greater than the current max
                 };
 
                 _db.Goals.Add(newGoal);
                 await _db.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(AddGoal), new { id = newGoal.Id }, newGoal);
+                return Ok(new { message = "Goal added successfully.", id = newGoal.Id });
             }
             catch (Exception ex)
             {
@@ -83,15 +106,23 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
-                var existingGoal = await _db.Goals.FirstOrDefaultAsync(g => g.Id == id && g.DeletedAt == null);
+                var existingGoal = await _db.Goals
+                .Include(g => g.LinkedAccounts) // Include linked accounts to update them if needed
+                .FirstOrDefaultAsync(g => g.Id == id && g.DeletedAt == null);
                 if (existingGoal == null)
                 {
                     return NotFound(new { message = "Goal not found." });
                 }
+
+                var accountIds = goal.LinkedAccounts?.Select(a => a.Id).ToList() ?? new();
+                var linkedAccounts = await _db.Accounts.Where(a => accountIds.Contains(a.Id)).ToListAsync();
+                existingGoal.LinkedAccounts = linkedAccounts.Count > 0 ? linkedAccounts : existingGoal.LinkedAccounts;
+                
                 existingGoal.Name = string.IsNullOrWhiteSpace(goal.Name) ? existingGoal.Name : goal.Name;
                 existingGoal.TargetAmount = goal.TargetAmount > 0 ? goal.TargetAmount : existingGoal.TargetAmount;
                 existingGoal.CurrentAmount = goal.CurrentAmount >= 0 ? goal.CurrentAmount : existingGoal.CurrentAmount;
                 existingGoal.TargetDate = goal.TargetDate ?? existingGoal.TargetDate;
+                existingGoal.Priority = goal.Priority >= 0 ? goal.Priority : existingGoal.Priority;
 
                 await _db.SaveChangesAsync();
                 return Ok(new { message = "Goal updated successfully." });

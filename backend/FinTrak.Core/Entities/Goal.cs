@@ -20,6 +20,12 @@ namespace FinTrak.Core.Entities
         /// <summary>How much has been saved toward the goal so far.</summary>
         public decimal CurrentAmount { get; set; } = 0m;
 
+        //<summary>List of accounts linked to this goal. A goal can be funded from multiple accounts.</summary>
+        public List<Account> LinkedAccounts { get; set; } = new();
+
+        /// <summary>User-defined priority for ordering goals. Lower numbers are higher priority.</summary>
+        public int Priority { get; set; } = 0;
+
         /// <summary>When the goal was created.</summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

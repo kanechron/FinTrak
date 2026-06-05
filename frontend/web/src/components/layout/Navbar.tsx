@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePlaidLink } from 'react-plaid-link'
-import { getAccounts } from '../api/accounts'
+import { getAccounts } from '../../api/accounts'
+import ReloadPage from '../../utils/ReloadPage'
 
 type Status = 'idle' | 'connecting' | 'syncing' | 'done' | 'error'
 
@@ -38,6 +39,7 @@ export default function Navbar() {
         setStatus('syncing')
         await runSync()
         setStatus('done')
+        ReloadPage()
       } catch {
         setStatus('error')
       }
@@ -59,6 +61,7 @@ export default function Navbar() {
         setStatus('syncing')
         await runSync()
         setStatus('done')
+        ReloadPage()
       }
     } catch {
       setStatus('error')
@@ -92,7 +95,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-gray-950 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
       <span className="text-lg font-semibold tracking-tight">FinTrak</span>
       <button
         onClick={handleClick}

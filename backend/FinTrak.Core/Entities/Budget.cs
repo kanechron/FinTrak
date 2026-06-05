@@ -15,7 +15,7 @@ namespace FinTrak.Core.Entities
         /// <summary>Display name for the budget, e.g. "Monthly Groceries".</summary>
         public string Name { get; set; } = string.Empty;
 
-        /// <summary>The spending limit for this budget period.</summary>
+        ///<summary>The spending limit for this budget period.</summary>
         public decimal Amount { get; set; } = 0m;
 
         /// <summary>FK to the category this budget applies to. Null means it applies to all spending.</summary>
@@ -31,10 +31,12 @@ namespace FinTrak.Core.Entities
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>When the budget takes effect.</summary>
-        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
         /// <summary>When the budget ends. Null for open-ended budgets.</summary>
-        public DateTime? EndDate { get; set; } = null;
+        public DateOnly? EndDate { get; set; } = null;
+
+        public string RecurringDate {get; set; } = string.Empty;
 
         /// <summary>Soft delete timestamp. Null means the budget is active.</summary>
         public DateTime? DeletedAt { get; set; } = null;
