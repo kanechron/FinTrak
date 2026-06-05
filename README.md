@@ -52,7 +52,7 @@ FinTrak is a personal finance tracker built for real day-to-day use. It connects
 - Node.js 20+
 - PostgreSQL (or Docker)
 - Plaid developer account
-- Google OAuth credentials
+- Google OAuth credentials (The email allowlist needs to be re-configured for use, reach out to have me create the credentials in GCC)
 
 ### Setup
 
