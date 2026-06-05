@@ -8,14 +8,16 @@ export interface Goal {
   targetDate: string | null
   isActive: boolean
   priority: number
-  linkedAccounts: { id: string }[]
+  linkedAccounts: { id: string; name: string; mask: string }[]
 }
 
 export function getGoals() {
     return api.get<Goal[]>('/goals/get-goals')
 }
 
-export function addGoal(goal: Omit<Goal, 'id'>) {
+export type GoalRequest = Omit<Goal, 'id' | 'linkedAccounts'> & { linkedAccounts: { id: string }[] }
+
+export function addGoal(goal: GoalRequest) {
     return api.post<Goal>('/goals/add-goal', goal)
 }
 

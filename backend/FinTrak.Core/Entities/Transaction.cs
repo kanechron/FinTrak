@@ -36,7 +36,7 @@ namespace FinTrak.Core.Entities
         public string Description { get; set; } = string.Empty;
 
         /// <summary>True if the transaction has not yet settled with the bank.</summary>
-        public bool? IsPending { get; set; } = false;
+        public bool IsPending { get; set; } = false;
 
         /// <summary>True if the transaction was entered manually rather than pulled from Plaid.</summary>
         public bool IsManual { get; set; } = false;
