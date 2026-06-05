@@ -1,11 +1,11 @@
 import { useState } from "react"
-import { addGoal } from "../../api/goals"
+import { addGoal, type GoalRequest, type Goal } from "../../api/goals"
 
 
 interface Props {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
+    isOpen: boolean
+    onClose: () => void
+    onSuccess: () => void
     accounts: {id: string, name: string, balance: number}[]
 }
 

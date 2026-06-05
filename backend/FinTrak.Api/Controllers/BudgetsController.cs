@@ -39,7 +39,7 @@ namespace FinTrak.Api.Controllers
                     var spent = _db.Transactions
                         .Where(t =>
                             t.DeletedAt == null &&
-                            !t.IsPending.Value &&
+                            t.IsPending &&
                             t.Amount > 0 &&
                             t.Date >= periodStart &&
                             (b.CategoryId == null || t.CategoryId == b.CategoryId))
@@ -135,6 +135,15 @@ namespace FinTrak.Api.Controllers
                 existingBudget.Period = budget.Period ?? existingBudget.Period;
                 existingBudget.StartDate = budget.StartDate != default ? budget.StartDate : existingBudget.StartDate;
                 existingBudget.CategoryId = budget.CategoryId ?? existingBudget.CategoryId;
+                existingBudget.EndDate = budget.Period switch
+                {
+                    BudgetPeriod.Custom => budget.EndDate,
+                            BudgetPeriod.Weekly => GetRecurringDateWeek(budget.StartDate, budget.RecurringDate ?? string.Empty),
+                            BudgetPeriod.Yearly => GetRecurringDateYear(budget.StartDate, budget.RecurringDate ?? string.Empty),
+                            _ => GetRecurringDateMonth(budget.StartDate, budget.RecurringDate ?? string.Empty)
+                };
+                existingBudget.IsRecurring = budget.IsRecurring;
+                existingBudget.RecurringDate = budget.RecurringDate ?? existingBudget.RecurringDate;
                 // No need to call _db.Budgets.Update() — EF tracks it automatically
                 await _db.SaveChangesAsync();
 

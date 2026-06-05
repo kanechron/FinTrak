@@ -95,7 +95,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-gray-950 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
       <span className="text-lg font-semibold tracking-tight">FinTrak</span>
       <button
         onClick={handleClick}
