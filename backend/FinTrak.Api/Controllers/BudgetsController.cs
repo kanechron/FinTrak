@@ -47,7 +47,6 @@ namespace FinTrak.Api.Controllers
 
                     // Plaid amounts are negative for debits — flip to positive for display
                     var spentAbs = spent;
-                    Console.WriteLine($"Budget: {b.Name}, PeriodStart: {periodStart}, CategoryId: {b.CategoryId}, Spent: {spentAbs}");
 
 
                     return new
@@ -83,7 +82,6 @@ namespace FinTrak.Api.Controllers
                     return BadRequest(new { error = "Invalid budget data." });
                 }
 
-                Console.WriteLine($"StartDate: {budget.StartDate}, RecurringDate: '{budget.RecurringDate}', Period: {budget.Period}");
 
                 var newBudget = new Budget
                 {
