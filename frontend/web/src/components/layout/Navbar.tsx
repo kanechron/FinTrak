@@ -1,7 +1,25 @@
 import { useState, useEffect, useRef } from 'react'
+import { NavLink } from 'react-router-dom'
 import { usePlaidLink } from 'react-plaid-link'
 import { getAccounts } from '../../api/accounts'
 import ReloadPage from '../../utils/ReloadPage'
+
+const leftTabs = [
+  { label: 'Dashboard', path: '/' },
+  { label: 'Transactions', path: '/transactions' },
+  { label: 'Budgets', path: '/budgets' },
+]
+
+const rightTabs = [
+  { label: 'Goals', path: '/goals' },
+  { label: 'Bills', path: '/bills' },
+  { label: 'Reports', path: '/reports' },
+]
+
+const tabClass = ({ isActive }: { isActive: boolean }) =>
+  `flex-1 self-stretch flex items-center justify-center text-sm font-semibold tracking-widest uppercase transition-colors ${
+    isActive ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+  }`
 
 type Status = 'idle' | 'connecting' | 'syncing' | 'done' | 'error'
 
@@ -87,24 +105,38 @@ export default function Navbar() {
   }
 
   const color: Record<Status, string> = {
-    idle: 'text-gray-400 border-gray-700 hover:border-gray-500 hover:text-gray-200',
-    connecting: 'text-gray-500 border-gray-800 cursor-not-allowed',
-    syncing: 'text-gray-500 border-gray-800 cursor-not-allowed',
-    done: 'text-emerald-400 border-emerald-800',
-    error: 'text-red-400 border-red-800',
+    idle: 'text-purple-400 hover:text-purple-200',
+    connecting: 'text-purple-500 cursor-not-allowed',
+    syncing: 'text-purple-500 cursor-not-allowed',
+    done: 'text-emerald-400',
+    error: 'text-red-400',
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-gray-950 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-      <span className="text-lg font-semibold tracking-tight">FinTrak</span>
-      <button
-        onClick={handleClick}
-        disabled={status === 'syncing' || status === 'connecting'}
-        className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${color[status]}`}
-      >
-        {label[status]}
-      </button>
-      <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm">J</div>
+    <header className="sticky top-0 z-40 bg-gray-950 border-b border-gray-800 h-14 flex items-stretch justify-between">
+<nav className="flex-1 flex items-stretch">
+        {leftTabs.map(tab => (
+          <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className={tabClass}>
+            {tab.label}
+          </NavLink>
+        ))}
+        <button
+          onClick={handleClick}
+          disabled={status === 'syncing' || status === 'connecting'}
+          className={`self-stretch flex items-center px-8 text-sm font-semibold tracking-widest uppercase transition-colors ${color[status]}`}
+        >
+          {label[status]}
+        </button>
+        {rightTabs.map(tab => (
+          <NavLink key={tab.path} to={tab.path} className={tabClass}>
+            {tab.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="flex items-center px-6">
+        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm">J</div>
+      </div>
     </header>
   )
 }
