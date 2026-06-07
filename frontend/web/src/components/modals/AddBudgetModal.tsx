@@ -45,7 +45,7 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }: Props) {
         startDate,
         endDate: period === 'Custom' ? endDate : null,
         isRecurring,
-        categoryId, // TODO: add category selection
+        categoryId,
         recurringDate: isRecurring ? recurringDay : null
       })
       onSuccess()

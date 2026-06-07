@@ -1,93 +1,86 @@
-# FinTrak — Project Context
+# FinTrak
 
 >**Status & License**  
-![Status](https://img.shields.io/badge/Status-In_Development-yellow?style=for-the-badge)  
+![Status](https://img.shields.io/badge/Status-Alpha-orange?style=for-the-badge)  
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
 >**Platform**  
-![iOS](https://img.shields.io/badge/iOS-000000?style=for-the-badge&logo=apple&logoColor=white)  
 ![Web](https://img.shields.io/badge/Web-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
 
 >**Tech Stack**  
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)  
-![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)  
 ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp&logoColor=white)  
 ![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)  
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)  
-![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)  
-![Plaid](https://img.shields.io/badge/Plaid-00D64F?style=for-the-badge&logoColor=white)  
-![Claude Haiku](https://img.shields.io/badge/Claude_Haiku-CC785C?style=for-the-badge&logoColor=white)
+![Plaid](https://img.shields.io/badge/Plaid-00D64F?style=for-the-badge&logoColor=white)
 
 ## What is it?
 
-A personal finance tracker called FinTrak. The goal is to build something genuinely useful day-to-day, and that also makes a strong resume project.
+FinTrak is a personal finance tracker built for real day-to-day use. It connects directly to your bank via Plaid, syncs transactions automatically, and gives you a clear picture of your spending, budgets, and savings goals — all in one dashboard.
+
+## Features
+
+- **Automatic bank sync** via Plaid — transactions, balances, and accounts stay current
+- **Transaction tracking** — categorized automatically from Plaid's Personal Finance Category taxonomy
+- **Budget management** — per-category or all-spending budgets with recurring support (weekly, monthly, yearly), live spending progress bars
+- **Savings goals** — named goals linked to specific accounts, priority-based balance allocation, drag-and-drop reordering
+- **Google OAuth** — secure login with HTTP-only cookie auth, silent token refresh, email allowlist
 
 ## Tech Stack
 
-- Frontend: React (web) + React Native (mobile)
-- Backend: C# with ASP.NET Core
-- Database: PostgreSQL/SQL Server (cloud) + SQLite (local offline)
-- Data sync: offline-first with background sync queue to cloud
-- Bank integration: Plaid API (transaction pull, pending transactions, account balances)
-- AI/ML: Rule-based normalization + FuzzySharp for merchant matching, Claude Haiku API as fallback
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
+| Backend | C# 13, ASP.NET Core 9, Entity Framework Core |
+| Database | PostgreSQL (cloud), EF migrations |
+| Auth | Google OAuth 2.0 (PKCE flow), cookie-based sessions |
+| Bank data | Plaid API (production) |
+| Drag & drop | @dnd-kit |
 
-## Core Features (in priority order)
+## Architecture Highlights
 
-1. Expense tracking — automatic bank sync via Plaid, manual entry as fallback for cash
-2. Budget planning — set category budgets, visual progress, alerts at 80%
-3. Savings goals — named goals with target amounts, contribution tracking, progress bars
-4. Bill reminders — recurring bills, due-date notifications, payment history
+- **Cursor-based Plaid sync** — only fetches new/changed transactions since last sync, no redundant pulls
+- **Soft deletes** — budgets and goals are flagged inactive rather than hard-deleted, with a background service for cleanup after a 60-day retention window
+- **Recurring budget rollover** — a daily background service automatically advances start/end dates on recurring budgets when their period expires
+- **Client-side goal allocation** — available balances are distributed across goals in priority order on the frontend, keeping the backend projection simple
+- **Error handling middleware** — all unhandled exceptions return structured JSON; model binding errors surface field-level detail
 
-## Transaction Logger
+## Running Locally
 
-The primary flow is automatic: Plaid pulls transactions from connected bank/card accounts, including pending items. Manual sync can be triggered at any time. Manual entry exists as a fallback (cash, pre-settlement logging).
+### Prerequisites
+- .NET 9 SDK
+- Node.js 20+
+- PostgreSQL (or Docker)
+- Plaid developer account
+- Google OAuth credentials
 
-### Deduplication Pipeline
+### Setup
 
-Duplicate detection runs on every ingest — handles both Plaid-vs-Plaid and Plaid-vs-manual conflicts:
+1. Clone the repo
+2. Copy `.env.example` to `.env` and fill in your credentials
+3. Start PostgreSQL (or run `docker-compose up -d`)
+4. Apply database migrations:
+   ```
+   dotnet ef database update --project backend/FinTrak.Infrastructure --startup-project backend/FinTrak.Api
+   ```
+5. Start the backend:
+   ```
+   dotnet run --project backend/FinTrak.Api --launch-profile https
+   ```
+6. Start the frontend:
+   ```
+   cd frontend/web && npm install && npm run dev
+   ```
+7. Open `https://localhost:5173`
 
-1. Normalize merchant name (rule-based regex strips store numbers, location codes, transaction IDs)
-2. Fuzzy match against known merchant aliases (FuzzySharp)
-3. If confidence is low, fall back to Claude Haiku for normalization
-4. Hash `(amount + date + normalized_merchant)` and check DB
-5. Exact hash match → discard; near-match or same-day same-amount → flag for user review
+## Project Status
 
-## Target Usage Pattern
+Alpha — core features are functional with real bank data. The following are planned for future development:
 
-Light — a weekly check-in habit (~5 minutes). The home screen should answer:
+- Bill reminders
+- Automatic recurring purchase/subscription detection
+- Manual transaction entry
+- Mobile app (React Native)
+- Reporting and charts
+- Transaction recategorization UI
 
-- How am I doing on spending this week?
-- Am I on track with savings goals?
-- Any bills coming up in the next 7–10 days?
-
-## Key UX Principles
-
-- Low friction: automatic sync means no manual logging required for most transactions
-- Forgiving: no guilt-trip if a week is missed
-- Celebrate wins: acknowledge hitting savings milestones or staying under budget
-
-## User Pain Points Being Solved
-
-- Overspending without realizing it (automatic sync + budget alerts + weekly visibility)
-- Struggling to save consistently (savings treated as a committed expense)
-- No clear picture of where money goes (monthly category breakdown / charts)
-
-## Resume Value
-
-- Offline-first architecture with sync conflict resolution
-- Financial data pipeline via Plaid integration
-- AI-assisted merchant normalization with rule-based + fuzzy + LLM fallback
-- Idempotent transaction ingestion (deduplication via hashing)
-- User auth + data security
-- Cross-platform (mobile + desktop)
-- Real personal usage → iterated based on actual needs
-
-## Next Steps (suggested milestones)
-
-- MVP: Plaid integration + expense logging + category budgets, local storage only
-- v1.0: Savings goals + bill reminders, cloud accounts, basic sync
-- v1.5: Reporting dashboard, notifications, CSV export
-
-## README
-
-A README.md is planned. Markdown reference gathered. Will include: heading/description, badges (shields.io), feature checklist, install/usage instructions, tech stack section.
