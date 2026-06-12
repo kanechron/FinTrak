@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
-using System.IO.Compression;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
 
 namespace FinTrak.Api.Controllers

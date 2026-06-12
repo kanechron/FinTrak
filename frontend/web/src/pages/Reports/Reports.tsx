@@ -1,19 +1,48 @@
-// Charts are not yet implemented — each section is a placeholder for a future chart component.
-// Recommended library: Recharts (recharts.org) — works well with React and Tailwind.
-// Filter state (period, categories, accounts) will be wired to chart data before passing to Recharts.
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getCategorySpending, getMonthlySpending, getCashFlow, type CategorySpending, type CashFlow } from '../../api/reports'
+import { getBudgets, type Budget } from '../../api/budgets'
+import CategorySpendingChart from '../../components/charts/CategorySpendingChart'
+import MonthlySpendingChart, { type MonthlySpending } from '../../components/charts/MonthlySpendingChart'
+import BudgetPerformanceChart from '../../components/charts/BudgetPerformanceChart'
+import CashFlowChart from '../../components/charts/CashFlowChart'
 
 const PERIODS = ['7d', '30d', '90d', '6m', '1y', 'All']
 
-const selectClass = "bg-gray-900 border border-gray-700 rounded-md text-xs text-gray-400 px-2 py-1 focus:outline-none focus:border-gray-500"
+function periodToDates(period: string): { from?: string; to?: string } {
+  const to = new Date()
+  const from = new Date()
+  switch (period) {
+    case '7d': from.setDate(from.getDate() - 7); break
+    case '30d': from.setDate(from.getDate() - 30); break
+    case '90d': from.setDate(from.getDate() - 90); break
+    case '6m': from.setMonth(from.getMonth() - 6); break
+    case '1y': from.setFullYear(from.getFullYear() - 1); break
+    case 'All': return {}
+  }
+  return {
+    from: from.toISOString().split('T')[0],
+    to: to.toISOString().split('T')[0],
+  }
+}
+
 
 export default function Reports() {
   const [period, setPeriod] = useState('30d')
-  const [categoryChartType, setCategoryChartType] = useState('Pie')
-  const [trendChartType, setTrendChartType] = useState('Line')
-  const [budgetChartType, setBudgetChartType] = useState('Bar')
-  const [cashFlowChartType, setCashFlowChartType] = useState('Bar')
+  const [categorySpending, setCategorySpending] = useState<CategorySpending[]>([])
+  const [monthlySpending, setMonthlySpending] = useState<MonthlySpending[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([])
+  const [cashFlow, setCashFlow] = useState<CashFlow[]>([])
+
+  useEffect(() => {
+    const { from, to } = periodToDates(period)
+    getCategorySpending(from, to).then(setCategorySpending)
+    getMonthlySpending(from, to).then(setMonthlySpending)
+    getCashFlow(from, to).then(setCashFlow)
+  }, [period])
+
+  useEffect(() => {
+    getBudgets().then(setBudgets)
+  }, [])
 
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-6">
@@ -47,75 +76,26 @@ export default function Reports() {
         </button>
       </div>
 
-      {/* Spending by Category */}
-      <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-medium">Spending by Category</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Breakdown for selected period</p>
-          </div>
-          <select value={categoryChartType} onChange={e => setCategoryChartType(e.target.value)} className={selectClass}>
-            <option>Pie</option>
-            <option>Donut</option>
-            <option>Bar</option>
-          </select>
-        </div>
-        <div className="h-64 flex items-center justify-center rounded-lg bg-gray-900/50 text-gray-500 text-sm">
-          {categoryChartType} chart placeholder
-        </div>
-      </section>
+      <CategorySpendingChart data={categorySpending} />
 
-      {/* Monthly Spending Trend */}
-      <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-medium">Monthly Spending Trend</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Total spend over selected period</p>
-          </div>
-          <select value={trendChartType} onChange={e => setTrendChartType(e.target.value)} className={selectClass}>
-            <option>Line</option>
-            <option>Area</option>
-            <option>Bar</option>
-          </select>
-        </div>
-        <div className="h-64 flex items-center justify-center rounded-lg bg-gray-900/50 text-gray-500 text-sm">
-          {trendChartType} chart placeholder
-        </div>
-      </section>
+      <MonthlySpendingChart data={monthlySpending} />
 
       {/* Side-by-side */}
       <div className="grid grid-cols-2 gap-6">
         <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-medium">Budget Performance</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Spent vs limit per budget</p>
-            </div>
-            <select value={budgetChartType} onChange={e => setBudgetChartType(e.target.value)} className={selectClass}>
-              <option>Bar</option>
-              <option>Line</option>
-            </select>
+          <div>
+            <h2 className="font-medium">Budget Performance</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Spent vs limit per budget</p>
           </div>
-          <div className="h-48 flex items-center justify-center rounded-lg bg-gray-900/50 text-gray-500 text-sm">
-            {budgetChartType} chart placeholder
-          </div>
+          <BudgetPerformanceChart data={budgets} />
         </section>
 
         <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-medium">Income vs Expenses</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Net cash flow per month</p>
-            </div>
-            <select value={cashFlowChartType} onChange={e => setCashFlowChartType(e.target.value)} className={selectClass}>
-              <option>Bar</option>
-              <option>Line</option>
-              <option>Area</option>
-            </select>
+          <div>
+            <h2 className="font-medium">Income vs Expenses</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Net cash flow per month</p>
           </div>
-          <div className="h-48 flex items-center justify-center rounded-lg bg-gray-900/50 text-gray-500 text-sm">
-            {cashFlowChartType} chart placeholder
-          </div>
+          <CashFlowChart data={cashFlow} />
         </section>
       </div>
 
