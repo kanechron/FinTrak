@@ -32,6 +32,8 @@ namespace FinTrak.Core.Entities
         /// <summary>Navigation property for the assigned category.</summary>
         public Category? Category { get; set; }
 
+        public string? CategoryDetailed { get; set; } = string.Empty;
+
         /// <summary>Optional user-facing description or note.</summary>
         public string Description { get; set; } = string.Empty;
 

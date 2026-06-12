@@ -192,15 +192,19 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
                         
                         var categoryName = t.PersonalFinanceCategory?.Primary ?? string.Empty;
+                        var detailedCategoryName = t.PersonalFinanceCategory?.Detailed ?? string.Empty;
 
                         var category = await _db.Categories
                             .FirstOrDefaultAsync(c => c.Name == categoryName);
+                        var categoryDetailed = detailedCategoryName;
 
                         if (category == null && !string.IsNullOrEmpty(categoryName))
                         {
                             category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
                             _db.Categories.Add(category);
                         }
+
+                        
 
 
                         _ = _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
@@ -213,11 +217,12 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                             MerchantNameRaw = t.MerchantName ?? string.Empty,
                             MerchantName = t.MerchantName ?? string.Empty,
                             Date = t.AuthorizedDate ?? t.Date,
-                            IsPending = t.Pending.Value,
+                            IsPending = t.Pending!.Value,
                             IsManual = false,
                             DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
                             CreatedAt = DateTime.UtcNow,
                             CategoryId = category?.Id,
+                            CategoryDetailed = categoryDetailed
                         });
             }
 

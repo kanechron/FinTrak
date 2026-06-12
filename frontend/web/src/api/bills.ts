@@ -4,21 +4,24 @@ export interface Bill {
     id: string
     name: string
     amount: number
-    dueDate: string
-    isRecurring: boolean
+    frequency: string
+    dueDay: number | null
+    customDate: string | null
+    lastPaidDate: string | null
+    nextDueDate: string | null
+    isAutoPay: boolean
     categoryId: string | null
     category: string | null
-    isAutoPay: boolean
-    frequency: string | null
+    isAutoDetected: boolean
 }
 
 export function getBills(): Promise<Bill[]> {
     return api.get<Bill[]>('/bills/get-bills')
 }
 
-export function addBill(bill: Omit<Bill, 'id' | 'category'>): Promise<void> {
+export function addBill(bill: Omit<Bill, 'id' | 'category' | 'nextDueDate' | 'isAutoDetected'>): Promise<void> {
     return api.post('/bills/add-bill', bill)
-} 
+}
 
 export function updateBill(id: string, bill: Partial<Omit<Bill, 'id'>>): Promise<void> {
     return api.patch(`/bills/update-bill/${id}`, bill)
@@ -26,4 +29,8 @@ export function updateBill(id: string, bill: Partial<Omit<Bill, 'id'>>): Promise
 
 export function deleteBill(id: string): Promise<void> {
     return api.delete(`/bills/delete-bill/${id}`)
+}
+
+export function markBillPaid(id: string): Promise<void> {
+    return api.post(`/bills/mark-paid/${id}`, {})
 }

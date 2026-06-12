@@ -53,8 +53,8 @@ namespace FinTrak.Api.Middleware
                             var claims = new List<Claim>
                             {
                                 new(ClaimTypes.NameIdentifier, userId.ToString()),
-                                new(ClaimTypes.Email, newIdToken.Email),
-                                new(ClaimTypes.Name, newIdToken.Name)
+                                new(ClaimTypes.Email, newIdToken.Email ?? string.Empty),
+                                new(ClaimTypes.Name, newIdToken.Name ?? string.Empty)
                             };
 
                             await context.SignInAsync(
