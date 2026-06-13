@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getBills, deleteBill, type Bill } from '../../api/bills'
+import { getBills, getSuggestions, addBill, deleteBill, type Bill, type TransactionGroup } from '../../api/bills'
 import { formatAmount } from '../../utils/format'
 import AddBillModal from '../../components/modals/AddBillModal'
 import EditBillModal from '../../components/modals/EditBillModal'
@@ -49,16 +49,19 @@ function formatFrequency(f: string): string {
 
 export default function Bills() {
   const [bills, setBills] = useState<Bill[]>([])
+  const [suggestions, setSuggestions] = useState<TransactionGroup[][]>([])
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const fetchBills = () => getBills().then(setBills)
 
-  useEffect(() => { fetchBills() }, [])
+  useEffect(() => {
+    fetchBills()
+    getSuggestions().then(setSuggestions)
+  }, [])
 
   const manualBills = bills.filter(b => !b.isAutoDetected)
-  const detectedBills = bills.filter(b => b.isAutoDetected)
 
   const monthlyTotal = bills.reduce((sum, b) => {
     switch (b.frequency) {
@@ -180,7 +183,54 @@ export default function Bills() {
       </section>
 
       <BillSection title="Manual" items={manualBills} />
-      <BillSection title="Auto-Detected" items={detectedBills} />
+
+      {/* Auto-Detected Suggestions */}
+      <section className="border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-800">
+          <h2 className="font-medium">Auto-Detected</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Recurring patterns found in your transactions</p>
+        </div>
+        {suggestions.length === 0 ? (
+          <div className="px-5 py-12 text-center text-gray-600 text-sm">No suggestions found.</div>
+        ) : (
+          <div>
+            {suggestions.map((group, i) => {
+              const s = group[0]
+              const amount = s.amounts[0]
+              return (
+                <div key={i} className="border-b border-gray-800 last:border-0 px-5 py-4 flex items-center justify-between hover:bg-gray-900/40 transition-colors">
+                  <div className="space-y-0.5">
+                    <span className="text-gray-100 font-semibold text-sm">{s.merchantName}</span>
+                    <div className="flex items-center gap-3">
+                      {s.category && <p className="text-xs text-gray-500">{s.category}</p>}
+                      <p className="text-xs text-gray-600">{s.count} occurrences</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-gray-100 font-bold text-base">{amount != null ? formatAmount(-amount) : '—'}</span>
+                    <button
+                      onClick={async () => {
+                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: null })
+                        fetchBills()
+                        setSuggestions(prev => prev.filter((_, idx) => idx !== i))
+                      }}
+                      className="text-emerald-500 hover:text-emerald-400 transition-colors text-lg"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      onClick={() => setSuggestions(prev => prev.filter((_, idx) => idx !== i))}
+                      className="text-gray-600 hover:text-red-400 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
     </main>
   )
 }
