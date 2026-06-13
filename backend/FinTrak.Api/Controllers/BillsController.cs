@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
-using FinTrak.Core.BackgroundServices;
+using FinTrak.Infrastructure.BackgroundServices;
 
 namespace FinTrak.Api.Controllers
 {
@@ -13,14 +13,13 @@ namespace FinTrak.Api.Controllers
     [Route("[controller]")]
     public class BillsController : ControllerBase
     {
-        
         private readonly FinTrakDbContext _db;
-        private readonly BillsAutoDetectService _billsAutoDetectService;
+        private readonly BillDetectionService _billDetectionService;
 
-        public BillsController(FinTrakDbContext db, BillsAutoDetectService billsAutoDetectService)
+        public BillsController(FinTrakDbContext db, BillDetectionService billDetectionService)
         {
             _db = db;
-            _billsAutoDetectService = billsAutoDetectService;
+            _billDetectionService = billDetectionService;
         }
 
         [HttpGet("get-bills")]
@@ -146,7 +145,7 @@ namespace FinTrak.Api.Controllers
         [HttpGet("get-suggestions")]
         public async Task<IActionResult> GetSuggestions()
         {
-            var suggestions = await _billsAutoDetectService.DetectAsync(CancellationToken.None);
+            var suggestions = await _billDetectionService.DetectAsync(CancellationToken.None);
             return Ok(suggestions);
         }
 

@@ -14,9 +14,13 @@ export interface Budget {
   recurringDate: string | null
 }
 
+
+
 export function getBudgets(): Promise<Budget[]> {
   return api.get<Budget[]>('/budgets/get-budgets')
 }
+
+
 
 export function addBudget(budget: Omit<Budget, 'id' | 'spent' | 'category'>): Promise<void> {
   return api.post('/budgets/add-budget', budget)

@@ -15,8 +15,20 @@ export interface Bill {
     isAutoDetected: boolean
 }
 
+export interface TransactionGroup {
+  merchantName: string
+  count: number
+  amounts: (number | null)[]
+  dates: (string | null)[]
+  category: string | null
+}
+
 export function getBills(): Promise<Bill[]> {
     return api.get<Bill[]>('/bills/get-bills')
+}
+
+export function getSuggestions(): Promise<TransactionGroup[][]> {
+  return api.get<TransactionGroup[][]>('/bills/get-suggestions')
 }
 
 export function addBill(bill: Omit<Bill, 'id' | 'category' | 'nextDueDate' | 'isAutoDetected'>): Promise<void> {
