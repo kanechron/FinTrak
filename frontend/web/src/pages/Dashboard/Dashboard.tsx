@@ -18,24 +18,24 @@ const [accounts, setAccounts] = useState<Account[]>([])
 const [budgets, setBudgets] = useState<Budget[]>([])
 const [goals, setGoals] = useState<Goal[]>([])
 const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
-
-
+const [error, setError] = useState<string | null>(null)
 
 async function fetchData() {
-  const [transactions, accounts, budgets, goals] = await Promise.all([
-    getTransactions(),
-    getAccounts(),
-    getBudgets(),
-    getGoals(),
-  ])
-  setTransactions(transactions)
-  setAccounts(accounts)
-  setBudgets(budgets)
-  setGoals(goals)
-
-  const allocated = allocateGoalAmounts(goals, accounts)
-  setAllocatedGoals(allocated)
-  
+  try {
+    const [transactions, accounts, budgets, goals] = await Promise.all([
+      getTransactions(),
+      getAccounts(),
+      getBudgets(),
+      getGoals(),
+    ])
+    setTransactions(transactions)
+    setAccounts(accounts)
+    setBudgets(budgets)
+    setGoals(goals)
+    setAllocatedGoals(allocateGoalAmounts(goals, accounts))
+  } catch {
+    setError('Failed to load dashboard data.')
+  }
 }
 useEffect(() => {
   fetchData()
@@ -56,6 +56,7 @@ async function fetchBudgets() {
 
   
 const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
+  if (error) return <main className="max-w-5xl mx-auto px-3 py-8"><p className="text-red-500 text-sm">{error}</p></main>
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-8">
 

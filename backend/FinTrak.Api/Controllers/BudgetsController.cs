@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
-using System.IO.Compression;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
 
 namespace FinTrak.Api.Controllers
@@ -39,7 +38,6 @@ namespace FinTrak.Api.Controllers
                     var spent = _db.Transactions
                         .Where(t =>
                             t.DeletedAt == null &&
-                            t.IsPending &&
                             t.Amount > 0 &&
                             t.Date >= periodStart &&
                             (b.CategoryId == null || t.CategoryId == b.CategoryId))

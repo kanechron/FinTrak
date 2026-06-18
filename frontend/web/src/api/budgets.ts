@@ -14,6 +14,8 @@ export interface Budget {
   recurringDate: string | null
 }
 
+
+
 export function getBudgets(): Promise<Budget[]> {
   return api.get<Budget[]>('/budgets/get-budgets')
 }
