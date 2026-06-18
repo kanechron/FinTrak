@@ -5,6 +5,9 @@ using System.Security.Claims;
 using Going.Plaid;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
+using FinTrak.Infrastructure.Migrations;
+using System.Text.RegularExpressions;
+using FinTrak.Core.Utilities;
 
 
 namespace FinTrak.Api.Controllers
@@ -182,48 +185,55 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
             // Handle added transactions
             foreach (var t in response.Added)
             {
-                var exists = await _db.Transactions
-                    .AnyAsync(x => x.PlaidTransactionId == t.TransactionId);
-
-                if (exists) continue;
+                var existing = await _db.Transactions
+                    .FirstOrDefaultAsync(x => x.PlaidTransactionId == t.TransactionId);
 
                 var account = await _db.Accounts
                     .FirstOrDefaultAsync(a => a.PlaidAccountId == t.AccountId);
 
-                        
-                        var categoryName = t.PersonalFinanceCategory?.Primary ?? string.Empty;
-                        var detailedCategoryName = t.PersonalFinanceCategory?.Detailed ?? string.Empty;
+                var categoryName = t.Name?.ToLower().Contains("deposit") == true
+                    ? "INCOME"
+                    : t.PersonalFinanceCategory?.Primary ?? string.Empty;
+                var detailedCategoryName = t.PersonalFinanceCategory?.Detailed ?? string.Empty;
 
-                        var category = await _db.Categories
-                            .FirstOrDefaultAsync(c => c.Name == categoryName);
-                        var categoryDetailed = detailedCategoryName;
+                var category = await _db.Categories
+                    .FirstOrDefaultAsync(c => c.Name == categoryName);
 
-                        if (category == null && !string.IsNullOrEmpty(categoryName))
-                        {
-                            category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
-                            _db.Categories.Add(category);
-                        }
+                if (category == null && !string.IsNullOrEmpty(categoryName))
+                {
+                    category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
+                    _db.Categories.Add(category);
+                }
 
-                        
-
-
-                        _ = _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = userId,
-                            AccountId = account?.Id ?? Guid.Empty,
-                            PlaidTransactionId = t.TransactionId,
-                            Amount = t.Amount,
-                            MerchantNameRaw = t.MerchantName ?? string.Empty,
-                            MerchantName = t.MerchantName ?? string.Empty,
-                            Date = t.AuthorizedDate ?? t.Date,
-                            IsPending = t.Pending!.Value,
-                            IsManual = false,
-                            DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
-                            CreatedAt = DateTime.UtcNow,
-                            CategoryId = category?.Id,
-                            CategoryDetailed = categoryDetailed
-                        });
+                if (existing != null)
+                {
+                    existing.MerchantNameRaw = t.Name ?? string.Empty;
+                    existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                    existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
+                    existing.CategoryId = category?.Id;
+                }
+                else
+                {
+                    _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        AccountId = account?.Id ?? Guid.Empty,
+                        PlaidTransactionId = t.TransactionId,
+                        Amount = t.Amount,
+                        MerchantNameNormalized = t.Name.NormalizeName(),
+                        MerchantNameRaw = t.Name ?? string.Empty,
+                        MerchantName = t.MerchantName ?? t.Name ?? string.Empty,
+                        Date = t.AuthorizedDate ?? t.Date,
+                        IsPending = t.Pending!.Value,
+                        IsManual = false,
+                        DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
+                        CreatedAt = DateTime.UtcNow,
+                        CategoryId = category?.Id,
+                        CategoryDetailed = t.Name?.ToLower().Contains("deposit") == true ? string.Empty : detailedCategoryName
+ 
+                    });
+                }
             }
 
             
@@ -238,8 +248,9 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 if (existing == null) continue;
 
                 existing.Amount = t.Amount;
-                existing.IsPending = t.Pending.Value;
-                existing.MerchantName = t.MerchantName ?? string.Empty;
+                existing.IsPending = t.Pending!.Value;
+                existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
             }
 
             // Handle removed transactions
@@ -321,8 +332,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
     return Ok();
 }
 
-
     }
-
+    
     
 }

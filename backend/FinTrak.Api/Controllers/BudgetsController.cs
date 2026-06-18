@@ -38,7 +38,6 @@ namespace FinTrak.Api.Controllers
                     var spent = _db.Transactions
                         .Where(t =>
                             t.DeletedAt == null &&
-                            t.IsPending &&
                             t.Amount > 0 &&
                             t.Date >= periodStart &&
                             (b.CategoryId == null || t.CategoryId == b.CategoryId))

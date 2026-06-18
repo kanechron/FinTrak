@@ -20,8 +20,10 @@ namespace FinTrak.Core.Entities
         /// <summary>Transaction amount. Positive = debit (money out), negative = credit (money in).</summary>
         public decimal? Amount { get; set; } = 0m;
 
+        public string? MerchantNameNormalized {get; set;} = string.Empty;
+
         /// <summary>Raw merchant name as provided by Plaid, before normalization.</summary>
-        public string MerchantNameRaw { get; set; } = string.Empty;
+        public string? MerchantNameRaw { get; set; } = string.Empty;
 
         /// <summary>Normalized merchant name after the dedup pipeline has run.</summary>
         public string MerchantName { get; set; } = string.Empty;

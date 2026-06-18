@@ -3,6 +3,7 @@ import { getBills, getSuggestions, addBill, deleteBill, type Bill, type Transact
 import { formatAmount } from '../../utils/format'
 import AddBillModal from '../../components/modals/AddBillModal'
 import EditBillModal from '../../components/modals/EditBillModal'
+import { getTransactionsByCategory, type Transaction } from '../../api/transactions'
 
 function dueDateLabel(bill: Bill): string {
   if (!bill.nextDueDate) return '—'
@@ -53,6 +54,7 @@ export default function Bills() {
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [historyCache, setHistoryCache] = useState<Record<string, Transaction[]>>({})
 
   const fetchBills = () => getBills().then(setBills)
 
@@ -114,7 +116,15 @@ export default function Bills() {
               <span className={`text-xs px-2 py-0.5 rounded-full ${dueDateBadge(diff)}`}>{label}</span>
               <span className="text-gray-100 font-bold text-base">{formatAmount(-bill.amount)}</span>
               <button
-                onClick={e => { e.stopPropagation(); setExpandedId(isExpanded ? null : bill.id) }}
+                onClick={async e => {
+                  e.stopPropagation()
+                  if (isExpanded) { setExpandedId(null); return }
+                  setExpandedId(bill.id)
+                  if (bill.categoryId && !historyCache[bill.id]) {
+                    const txns = await getTransactionsByCategory(bill.categoryId)
+                    setHistoryCache(prev => ({ ...prev, [bill.id]: txns }))
+                  }
+                }}
                 className="text-gray-600 hover:text-gray-300 transition-colors"
               >
                 {isExpanded ? '▲' : '▼'}
@@ -129,8 +139,35 @@ export default function Bills() {
           </div>
         </div>
         {isExpanded && (
-          <div className="px-6 pb-4 text-xs text-gray-500 bg-gray-900/30">
-            Transaction history coming soon.
+          <div className="bg-gray-900/30 border-t border-gray-800/50">
+            {!bill.categoryId ? (
+              <p className="px-6 py-3 text-xs text-gray-600">No category assigned — can't load history.</p>
+            ) : !historyCache[bill.id] ? (
+              <p className="px-6 py-3 text-xs text-gray-600">Loading...</p>
+            ) : historyCache[bill.id].length === 0 ? (
+              <p className="px-6 py-3 text-xs text-gray-600">No transactions found for this category.</p>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-gray-600 border-b border-gray-800/50">
+                    <th className="text-left px-6 py-2 font-normal">Merchant</th>
+                    <th className="text-left px-6 py-2 font-normal">Date</th>
+                    <th className="text-right px-6 py-2 font-normal">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyCache[bill.id].map(t => (
+                    <tr key={t.id} className="border-b border-gray-800/30 last:border-0 text-gray-400">
+                      <td className="px-6 py-2">{t.merchant}</td>
+                      <td className="px-6 py-2 text-gray-500">{t.date}</td>
+                      <td className={`px-6 py-2 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {formatAmount(-t.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </div>
@@ -210,7 +247,7 @@ export default function Bills() {
                     <span className="text-gray-100 font-bold text-base">{amount != null ? formatAmount(-amount) : '—'}</span>
                     <button
                       onClick={async () => {
-                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: null })
+                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: s.categoryId })
                         fetchBills()
                         setSuggestions(prev => prev.filter((_, idx) => idx !== i))
                       }}

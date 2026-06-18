@@ -32,21 +32,31 @@ export default function Reports() {
   const [monthlySpending, setMonthlySpending] = useState<MonthlySpending[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [cashFlow, setCashFlow] = useState<CashFlow[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const { from, to } = periodToDates(period)
-    getCategorySpending(from, to).then(setCategorySpending)
-    getMonthlySpending(from, to).then(setMonthlySpending)
-    getCashFlow(from, to).then(setCashFlow)
+    Promise.all([
+      getCategorySpending(from, to),
+      getMonthlySpending(from, to),
+      getCashFlow(from, to),
+    ])
+      .then(([cat, monthly, cash]) => {
+        setCategorySpending(cat)
+        setMonthlySpending(monthly)
+        setCashFlow(cash)
+      })
+      .catch(() => setError('Failed to load report data.'))
   }, [period])
 
   useEffect(() => {
-    getBudgets().then(setBudgets)
+    getBudgets().then(setBudgets).catch(() => {})
   }, [])
 
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-6">
       <h1 className="text-xl font-semibold">Reports</h1>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {/* Filter bar */}
       <div className="flex items-center gap-3 border border-gray-800 rounded-xl px-5 py-3">

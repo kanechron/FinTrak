@@ -23,6 +23,8 @@ builder.Services.AddHostedService<DbDeleteService>();
 builder.Services.AddHostedService<RecurringDateService>();  // custom service to permanently delete soft-deleted records after a retention period
 builder.Services.AddScoped<BillDetectionService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
+builder.Services.AddScoped<TransactionNameMatchService>();
+
 
 
 
@@ -40,7 +42,9 @@ var connectionString =
     $"Password={Env("POSTGRES_PASSWORD")}";
 
 
-builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString));
+builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString)
+// .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+);
 
 // -------------------------------------------------------------------------
 // Plaid
