@@ -21,6 +21,7 @@ export interface TransactionGroup {
   amounts: (number | null)[]
   dates: (string | null)[]
   category: string | null
+  categoryId: string | null
 }
 
 export function getBills(): Promise<Bill[]> {

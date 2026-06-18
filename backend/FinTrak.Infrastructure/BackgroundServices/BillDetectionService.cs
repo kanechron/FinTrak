@@ -25,8 +25,18 @@ namespace FinTrak.Infrastructure.BackgroundServices
         {
             try
             {
+                var existingBills = await _db.Bills
+                .Where(b => b.DeletedAt == null)
+                .Select(b => b.Name)
+                .ToListAsync(cancellationToken);
+
+
                 var flat = await _db.Transactions
-                    .Where(t => t.DeletedAt == null && !t.IsPending && t.CategoryId != null && t.MerchantName != null)
+                    .Where(t => t.DeletedAt == null 
+                    && !t.IsPending 
+                    && t.CategoryId != null 
+                    && t.MerchantName != null
+                    && !existingBills.Contains(t.MerchantName))
                     .OrderBy(t => t.Date)
                     .GroupBy(t => t.MerchantName)
                     .Where(g => g.Count() >= 3)
@@ -36,7 +46,8 @@ namespace FinTrak.Infrastructure.BackgroundServices
                         Count = g.Count(),
                         Amounts = g.Select(t => t.Amount).ToList(),
                         Dates = g.Select(t => t.Date).OrderBy(d => d).ToList(),
-                        Category = g.Select(t => t.CategoryDetailed).FirstOrDefault()
+                        Category = g.Select(t => t.CategoryDetailed).FirstOrDefault(),
+                        CategoryId = g.Select(t => t.CategoryId).FirstOrDefault()
                     })
                     .ToListAsync(cancellationToken);
 
@@ -99,6 +110,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
             public List<decimal?> Amounts { get; set; } = new();
             public List<DateOnly?> Dates { get; set; } = new();
             public string? Category { get; set; }
+            public Guid? CategoryId { get; set; }
         }
     }
 
