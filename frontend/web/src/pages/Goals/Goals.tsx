@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { getGoals, deleteGoal, updateGoal, type Goal } from '../../api/goals'
 import { getAccounts, type Account } from '../../api/accounts'
 import { formatAmount } from '../../utils/format'
-import ProgressBar from '../../components/common/ProgressBar'
 import AddGoalModal from '../../components/modals/AddGoalModal'
 import EditGoalModal from '../../components/modals/EditGoalModal'
 import allocateGoalAmounts from '../../utils/AllocateGoalAmounts'
@@ -22,7 +21,6 @@ import {
 import SortableGoal from '../../components/dashboard/SortableGoal'
 
 export default function Goals() {
-  const [goals, setGoals] = useState<Goal[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
   const [addModalOpen, setAddModalOpen] = useState(false)
@@ -30,7 +28,6 @@ export default function Goals() {
 
   const fetchGoals = async () => {
     const [g, a] = await Promise.all([getGoals(), getAccounts()])
-    setGoals(g)
     setAccounts(a)
     setAllocatedGoals(allocateGoalAmounts(g, a))
   }
