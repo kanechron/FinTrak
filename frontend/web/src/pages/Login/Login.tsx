@@ -2,7 +2,7 @@ export default function Login() {
   // Redirects the browser to the backend login endpoint which kicks off Google OAuth.
   // The backend handles the full PKCE flow and redirects back to the frontend on success.
   function handleLogin() {
-    window.location.href = 'https://localhost:7146/auth/login'
+    window.location.href = '/api/auth/login'
   }
 
   return (

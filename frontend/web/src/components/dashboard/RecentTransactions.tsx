@@ -6,7 +6,7 @@ interface Transaction {
   date: string
   merchant: string
   amount: number
-  category: string
+  category: string | null
   pending: boolean
 }
 
