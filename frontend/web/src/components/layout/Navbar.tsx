@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { usePlaidLink } from 'react-plaid-link'
 import { getAccounts } from '../../api/accounts'
+import { logout } from '../../api/auth'
 import ReloadPage from '../../utils/ReloadPage'
 
 const leftTabs = [
@@ -48,6 +49,26 @@ async function runSync(): Promise<void> {
 export default function Navbar() {
   const [status, setStatus] = useState<Status>('idle')
   const [linkToken, setLinkToken] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node))
+        setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  async function handleLogout() {
+    try {
+      await logout()
+    } finally {
+      window.location.href = '/login'
+    }
+  }
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
@@ -134,8 +155,30 @@ export default function Navbar() {
         ))}
       </nav>
 
-      <div className="flex items-center px-6">
-        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm">J</div>
+      <div className="flex items-center px-6 relative" ref={menuRef}>
+        <button
+          onClick={() => setMenuOpen(prev => !prev)}
+          className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-sm transition-colors"
+        >
+          J
+        </button>
+        {menuOpen && (
+          <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden z-50">
+            <button
+              onClick={() => { setMenuOpen(false); navigate('/settings') }}
+              className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
+            >
+              Settings
+            </button>
+            <div className="border-t border-gray-800" />
+            <button
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-800 transition-colors"
+            >
+              Log out
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )

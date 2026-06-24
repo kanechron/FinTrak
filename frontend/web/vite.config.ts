@@ -14,9 +14,10 @@ export default defineConfig({
     include: ['recharts'],
   },
   server: {
+    host: true,
     proxy: {
       '/api': {
-        target: 'https://localhost:7146',
+        target: 'https://192.168.12.187:7146',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),

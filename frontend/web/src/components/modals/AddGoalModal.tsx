@@ -90,7 +90,7 @@ export default function AddGoalModal({ isOpen, onClose, onSuccess, accounts }: P
                 {error && <div className="text-red-500 text-sm">{error}</div>}
                 
                 <br/>
-                <button className="mt-4 bg-blue-500 hover:bg-blue-400 text-white py-2 px-4 rounded" onClick={handleSubmit}>Submit</button>
+                <button disabled={isSubmitting} className="mt-4 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white py-2 px-4 rounded" onClick={handleSubmit}>{isSubmitting ? 'Saving...' : 'Submit'}</button>
             </div>
         </div>
     );

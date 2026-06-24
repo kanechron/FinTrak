@@ -1,0 +1,7 @@
+tunnel: c58ede48-13dc-4cc9-b62d-bc0008165709
+credentials-file: /etc/cloudflared/c58ede48-13dc-4cc9-b62d-bc0008165709.json
+
+ingress:
+  - hostname: fintrak.org
+    service: http://frontend:80
+  - service: http_status:404

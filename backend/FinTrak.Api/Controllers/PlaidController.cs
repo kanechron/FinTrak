@@ -52,6 +52,7 @@ public async Task<IActionResult> CreateLinkToken([FromServices] PlaidClient plai
         Products = [Going.Plaid.Entity.Products.Transactions],
         Language = Going.Plaid.Entity.Language.English,
         CountryCodes = [Going.Plaid.Entity.CountryCode.Us]
+        
     });
 
     if (response.Error != null)
@@ -146,7 +147,7 @@ public async Task<IActionResult> ExchangeToken(
     public record ExchangeTokenRequest(string PublicToken);
     
     
-    /// <summary>
+/// <summary>
 /// Syncs transactions for all of the user's linked Plaid items.
 /// Uses Plaid's cursor-based sync — only fetches changes since the last sync.
 /// </summary>
@@ -169,7 +170,8 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 new Going.Plaid.Transactions.TransactionsSyncRequest
                 {
                     AccessToken = item.AccessToken,
-                    Cursor = cursor
+                    Cursor = cursor,
+                    // DaysRequested = cursor == null ? 730 : null
                 });
 
             if (response.Error != null)
