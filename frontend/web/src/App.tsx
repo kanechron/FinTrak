@@ -6,17 +6,10 @@ import Budgets from './pages/Budgets/Budgets'
 import Goals from './pages/Goals/Goals'
 import Bills from './pages/Bills/Bills'
 import Reports from './pages/Reports/Reports'
+import Settings from './pages/Settings/Settings'
 import Login from './pages/Login/Login'
 import Navbar from './components/layout/Navbar'
 import ReminderBar from './components/common/ReminderBar'
-
-function ComingSoon({ page }: { page: string }) {
-  return (
-    <main className="max-w-5xl mx-auto px-3 py-8">
-      <p className="text-gray-500 text-sm">{page} — coming soon.</p>
-    </main>
-  )
-}
 
 // Checks if the user is authenticated by calling a protected endpoint.
 // Returns true if the server responds with 200, false if 401.
@@ -25,8 +18,9 @@ async function checkAuth(): Promise<boolean> {
     const res = await fetch('/api/plaid/link-token', {
       method: 'POST',
       credentials: 'include',
+      redirect: 'manual',
     })
-    return res.status !== 401
+    return res.status === 200
   } catch {
     return false
   }
@@ -65,6 +59,7 @@ function App() {
                   <Route path="/goals" element={<Goals />} />
                   <Route path="/bills" element={<Bills />} />
                   <Route path="/reports" element={<Reports />} />
+                  <Route path="/settings" element={<Settings />} />
                 </Routes>
               </div>
             ) : (

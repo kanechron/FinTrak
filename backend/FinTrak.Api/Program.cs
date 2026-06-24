@@ -6,6 +6,7 @@ using FinTrak.Api.Middleware;
 using Going.Plaid;
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.BackgroundServices;
+using Microsoft.AspNetCore.HttpOverrides;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -43,7 +44,7 @@ var connectionString =
 
 
 builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString)
-// .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+    
 );
 
 // -------------------------------------------------------------------------
@@ -84,7 +85,17 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromHours(1);
-    options.SlidingExpiration = true;   // resets the 1-hour window on each request
+    options.SlidingExpiration = true;
+    options.Events.OnRedirectToLogin = ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = ctx =>
+    {
+        ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return Task.CompletedTask;
+    };
 });
 
 // -------------------------------------------------------------------------
@@ -131,6 +142,13 @@ builder.Services.AddControllers()
     });
 builder.Services.AddOpenApi();
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 var app = builder.Build();
 
 // -------------------------------------------------------------------------
@@ -141,7 +159,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
-app.UseHttpsRedirection();
+app.UseForwardedHeaders();
+
+if (app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 
 // Serve static files from wwwroot (e.g. test-plaid.html).
 app.UseStaticFiles();
@@ -198,7 +219,8 @@ static void LoadEnv()
                         ? rawValue[..rawValue.IndexOf('#')].TrimEnd()
                         : rawValue;
 
-                System.Environment.SetEnvironmentVariable(key, value);
+                if (System.Environment.GetEnvironmentVariable(key) == null)
+                    System.Environment.SetEnvironmentVariable(key, value);
             }
             return;
         }
