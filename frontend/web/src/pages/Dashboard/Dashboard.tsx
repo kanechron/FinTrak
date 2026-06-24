@@ -9,14 +9,12 @@ import { getAccounts, type Account } from '../../api/accounts'
 import { getBudgets, type Budget } from '../../api/budgets'
 import { getGoals, type Goal } from '../../api/goals'
 import allocateGoalAmounts from '../../utils/AllocateGoalAmounts'
-import ReloadPage from '../../utils/ReloadPage'
 
 export default function Dashboard() {
 
 const [transactions, setTransactions] = useState<Transaction[]>([])
 const [accounts, setAccounts] = useState<Account[]>([])
 const [budgets, setBudgets] = useState<Budget[]>([])
-const [goals, setGoals] = useState<Goal[]>([])
 const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
 const [error, setError] = useState<string | null>(null)
 
@@ -31,7 +29,6 @@ async function fetchData() {
     setTransactions(transactions)
     setAccounts(accounts)
     setBudgets(budgets)
-    setGoals(goals)
     setAllocatedGoals(allocateGoalAmounts(goals, accounts))
   } catch {
     setError('Failed to load dashboard data.')
@@ -44,9 +41,8 @@ useEffect(() => {
 
 
 async function fetchGoals() {
-  const goals = await getGoals()
-  setGoals(goals)
-  setAllocatedGoals(allocateGoalAmounts(goals, accounts))
+  const [goals, accs] = await Promise.all([getGoals(), getAccounts()])
+  setAllocatedGoals(allocateGoalAmounts(goals, accs))
 }
 
 async function fetchBudgets() {

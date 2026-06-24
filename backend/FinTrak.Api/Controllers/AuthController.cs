@@ -63,7 +63,7 @@ namespace FinTrak.Api.Controllers
                 ["code_challenge"] = codeChallenge,
                 ["code_challenge_method"] = "S256",
                 ["access_type"] = "offline",    // tells Google to return a refresh token
-                ["prompt"] = "select_account"           // always show account picker, prevents auto-sign-in with wrong account
+                ["prompt"] = "select_account consent"   // consent forces Google to return a refresh token on every login
             });
 
             return Redirect("https://accounts.google.com/o/oauth2/v2/auth" + query);
