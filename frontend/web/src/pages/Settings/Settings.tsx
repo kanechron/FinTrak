@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createInvite } from '../../api/invites'
 
 type Section = 'general' | 'account' | 'display' | 'transactions' | 'budgets' | 'goals' | 'bills' | 'reports'
 
@@ -65,10 +66,65 @@ export default function Settings() {
 }
 
 function GeneralSection() {
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleGenerateInvite() {
+    setLoading(true)
+    setError(null)
+    try {
+      const link = await createInvite()
+      setInviteLink(link)
+      setCopied(false)
+    } catch {
+      setError('Failed to generate invite link.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleCopy() {
+    if (!inviteLink) return
+    await navigator.clipboard.writeText(inviteLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="font-medium">General</h2>
-      <p className="text-sm text-gray-500">Coming soon.</p>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium">Invite a user</h3>
+        <p className="text-sm text-gray-500">Generate a single-use invite link. Links expire after 48 hours.</p>
+        <button
+          onClick={handleGenerateInvite}
+          disabled={loading}
+          className="mt-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-sm rounded-lg transition-colors"
+        >
+          {loading ? 'Generating...' : 'Generate invite link'}
+        </button>
+
+        {error && <p className="text-sm text-red-400">{error}</p>}
+
+        {inviteLink && (
+          <div className="flex items-center gap-2 mt-3">
+            <input
+              readOnly
+              value={inviteLink}
+              className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 font-mono"
+            />
+            <button
+              onClick={handleCopy}
+              className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded-lg transition-colors shrink-0"
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

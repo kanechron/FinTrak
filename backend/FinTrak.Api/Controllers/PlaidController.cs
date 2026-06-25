@@ -91,6 +91,13 @@ public async Task<IActionResult> ExchangeToken(
 
     var institutionName = itemResponse.Item.InstitutionId ?? "Unknown Institution";
 
+    // If this PlaidItem already exists, don't create a duplicate
+    var existingItem = await _db.PlaidItems
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(p => p.PlaidItemId == exchangeResponse.ItemId);
+    if (existingItem != null)
+        return Ok(new { message = "Bank already connected." });
+
     // Create the PlaidItem record
     var plaidItem = new FinTrak.Core.Entities.PlaidItem
     {
@@ -115,6 +122,11 @@ public async Task<IActionResult> ExchangeToken(
 
     foreach (var a in accountsResponse.Accounts)
     {
+        var existingAccount = await _db.Accounts
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(acc => acc.PlaidAccountId == a.AccountId);
+        if (existingAccount != null) continue;
+
         _db.Accounts.Add(new FinTrak.Core.Entities.Account
         {
             Id = Guid.NewGuid(),

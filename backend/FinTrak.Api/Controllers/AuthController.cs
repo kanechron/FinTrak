@@ -111,15 +111,15 @@ namespace FinTrak.Api.Controllers
             // GoogleJsonWebSignature.ValidateAsync handles all cryptographic verification.
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken);
 
-            // Enforce the email allowlist before any DB writes.
-            // Rejects anyone who isn't the authorised user without creating a record for them.
+            var inviteToken = HttpContext.Session.GetString("invite_token");
             var allowedEmail = Environment.GetEnvironmentVariable("ALLOWED_EMAIL");
-            if (payload.Email != allowedEmail)
-                return StatusCode(403, "Access denied: unauthorized user.");
-
-            // Look up the user by their Google subject ID (stable, even if the email changes).
-            // Create a new User record on first login.
+            var isOwner = !string.IsNullOrEmpty(allowedEmail) && payload.Email == allowedEmail;
             var user = await _db.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Subject);
+
+            if (user == null && inviteToken == null && !isOwner)
+                return StatusCode(403, "Access denied: no invite.");
+
+            // Create user first so we have an Id to assign to the invite
             if (user == null)
             {
                 user = new User
@@ -137,6 +137,19 @@ namespace FinTrak.Api.Controllers
             {
                 user.LastSeenAt = DateTime.UtcNow;
             }
+
+            if (inviteToken != null && Guid.TryParse(inviteToken, out var parsedToken))
+            {
+                var invite = await _db.Invites.FirstOrDefaultAsync(i => i.Token == parsedToken);
+                if (invite != null)
+                {
+                    invite.UsedAt = DateTime.UtcNow;
+                    invite.UsedByUserId = user.Id;
+                }
+            }
+
+            HttpContext.Session.Remove("invite_token");
+
 
             // Persist the refresh token server-side. Used later to silently renew the auth cookie
             // when the access token expires, without requiring the user to log in again.
