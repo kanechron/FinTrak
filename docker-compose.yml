@@ -51,6 +51,7 @@ services:
       PLAID_SECRET: ${PLAID_SECRET}
       PLAID_ENVIRONMENT: ${PLAID_ENVIRONMENT}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ALLOWED_EMAIL: ${ALLOWED_EMAIL}
     depends_on:
       - postgres
     networks:

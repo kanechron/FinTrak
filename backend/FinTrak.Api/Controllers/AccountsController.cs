@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
+using System.Security.Claims;
 
 namespace FinTrak.Api.Controllers
 {
@@ -22,8 +23,9 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var accounts = await _db.Accounts
-                    .Where(a => a.DeletedAt == null)
+                    .Where(a => a.DeletedAt == null && a.UserId == userId)
                     .OrderBy(a => a.Name)
                     .Select(a => new
                     {

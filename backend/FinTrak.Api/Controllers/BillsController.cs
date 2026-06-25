@@ -1,5 +1,6 @@
 
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
@@ -27,8 +28,9 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var bills = await _db.Bills
-                    .Where(b => b.DeletedAt == null)
+                    .Where(b => b.DeletedAt == null && b.UserId == userId)
                     .Include(b => b.Category)
                     .ToListAsync();
 
@@ -67,8 +69,10 @@ namespace FinTrak.Api.Controllers
                     return BadRequest("Invalid bill data. Name and positive amount are required.");
                 }
 
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var newBill = new Bill
                 {
+                    UserId = userId,
                     Name = bill.Name,
                     Amount = bill.Amount,
                     CategoryId = bill.CategoryId,
