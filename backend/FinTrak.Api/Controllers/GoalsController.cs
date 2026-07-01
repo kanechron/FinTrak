@@ -3,6 +3,7 @@ using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace FinTrak.Api.Controllers
 {
@@ -23,8 +24,9 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var goals = await _db.Goals
-                    .Where(g => g.DeletedAt == null)
+                    .Where(g => g.DeletedAt == null && g.UserId == userId)
                     .Include(g => g.LinkedAccounts) // Include linked accounts to calculate current amount
                     .OrderBy(g => g.Priority) // Order by user-defined priority
                     .ToListAsync();
@@ -80,7 +82,7 @@ namespace FinTrak.Api.Controllers
                 var newGoal = new Goal
                 {
                     Id = Guid.NewGuid(),
-                    UserId = Guid.Parse(User.FindFirst("sub")?.Value ?? Guid.Empty.ToString()),
+                    UserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
                     Name = goal.Name,
                     TargetAmount = goal.TargetAmount,
                     CurrentAmount = 0m,

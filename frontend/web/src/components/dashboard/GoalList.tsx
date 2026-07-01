@@ -96,15 +96,19 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
           accounts={accounts}
         />
       )}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={displayGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-4">
-            {displayGoals.map((g) => (
-              <SortableGoal key={g.id} goal={g} onDelete={handleDelete} onClick={() => setSelectedGoal(g)} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {displayGoals.length === 0 ? (
+        <p className="text-sm text-gray-500 text-center py-4">No goals yet — add one to get started.</p>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={displayGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-4">
+              {displayGoals.map((g) => (
+                <SortableGoal key={g.id} goal={g} onDelete={handleDelete} onClick={() => setSelectedGoal(g)} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </section>
   )
 }

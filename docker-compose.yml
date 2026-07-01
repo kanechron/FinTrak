@@ -46,11 +46,12 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: https://fintrak.org/api/auth/callback
       FRONTEND_URL: https://fintrak.org
-      ALLOWED_EMAIL: ${ALLOWED_EMAIL}
+      # ALLOWED_EMAIL: ${ALLOWED_EMAIL}
       PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
       PLAID_SECRET: ${PLAID_SECRET}
       PLAID_ENVIRONMENT: ${PLAID_ENVIRONMENT}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ALLOWED_EMAIL: ${ALLOWED_EMAIL}
     depends_on:
       - postgres
     networks:

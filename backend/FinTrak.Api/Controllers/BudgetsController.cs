@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
@@ -25,8 +26,9 @@ namespace FinTrak.Api.Controllers
             try
             {
                 var now = DateOnly.FromDateTime(DateTime.UtcNow);
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var budgets = await _db.Budgets
-                    .Where(b => b.DeletedAt == null && b.IsActive)
+                    .Where(b => b.DeletedAt == null && b.IsActive && b.UserId == userId)
                     .Include(b => b.Category)
                     .ToListAsync();
 
@@ -81,9 +83,11 @@ namespace FinTrak.Api.Controllers
                 }
 
 
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var newBudget = new Budget
                 {
                     Id = Guid.NewGuid(),
+                    UserId = userId,
                     Name = budget.Name,
                     Amount = budget.Amount,
                     Period = budget.Period,

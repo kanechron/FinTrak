@@ -20,8 +20,10 @@ namespace FinTrak.Infrastructure.Persistance
         public DbSet<Budget> Budgets => Set<Budget>();
         public DbSet<Goal> Goals => Set<Goal>();
         public DbSet<Bill> Bills => Set<Bill>();
+        public DbSet<Invite> Invites => Set<Invite>();
         public DbSet<MerchantAlias> MerchantAliases => Set<MerchantAlias>();
         public DbSet<SyncQueue> SyncQueue => Set<SyncQueue>();
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,6 +40,7 @@ namespace FinTrak.Infrastructure.Persistance
             .WithMany(a => a.LinkedGoals)
             .UsingEntity(j => j.ToTable("GoalAccounts"));
             modelBuilder.Entity<Bill>().HasQueryFilter(b => b.DeletedAt == null);
+            modelBuilder.Entity<Invite>().HasQueryFilter(i => i.UsedAt == null);
 
             // Unique indexes
             modelBuilder.Entity<User>().HasIndex(u => u.GoogleId).IsUnique();
@@ -47,6 +50,8 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<Transaction>().HasIndex(t => t.PlaidTransactionId);
             modelBuilder.Entity<Transaction>().HasIndex(t => t.DedupHash);
             modelBuilder.Entity<MerchantAlias>().HasIndex(m => m.RawName).IsUnique();
+            modelBuilder.Entity<Invite>().HasIndex(i => i.Token);
+            modelBuilder.Entity<Category>().HasIndex(i => i.DetailId);
 
             // Enum storage — store as string for readability in the database
             modelBuilder.Entity<Transaction>()

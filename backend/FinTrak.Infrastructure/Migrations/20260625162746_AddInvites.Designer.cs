@@ -3,6 +3,7 @@ using System;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinTrak.Infrastructure.Migrations
 {
     [DbContext(typeof(FinTrakDbContext))]
-    partial class FinTrakDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260625162746_AddInvites")]
+    partial class AddInvites
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -210,9 +213,6 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("DetailId")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -224,8 +224,6 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DetailId");
 
                     b.ToTable("Categories");
                 });
@@ -458,8 +456,8 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<decimal?>("Amount")
                         .HasColumnType("numeric");
 
-                    b.Property<Guid?>("CategoryDetailedId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("CategoryDetailed")
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uuid");
@@ -508,8 +506,6 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryDetailedId");
 
                     b.HasIndex("CategoryId");
 
@@ -599,15 +595,6 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("FinTrak.Core.Entities.Category", b =>
-                {
-                    b.HasOne("FinTrak.Core.Entities.Category", "Detail")
-                        .WithMany()
-                        .HasForeignKey("DetailId");
-
-                    b.Navigation("Detail");
-                });
-
             modelBuilder.Entity("FinTrak.Core.Entities.SyncQueue", b =>
                 {
                     b.HasOne("FinTrak.Core.Entities.PlaidItem", "PlaidItem")
@@ -621,17 +608,11 @@ namespace FinTrak.Infrastructure.Migrations
 
             modelBuilder.Entity("FinTrak.Core.Entities.Transaction", b =>
                 {
-                    b.HasOne("FinTrak.Core.Entities.Category", "CategoryDetailed")
-                        .WithMany()
-                        .HasForeignKey("CategoryDetailedId");
-
                     b.HasOne("FinTrak.Core.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
                     b.Navigation("Category");
-
-                    b.Navigation("CategoryDetailed");
                 });
 #pragma warning restore 612, 618
         }
