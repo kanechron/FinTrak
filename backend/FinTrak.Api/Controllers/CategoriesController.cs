@@ -27,10 +27,7 @@ namespace FinTrak.Api.Controllers
                     {
                         id = c.Id,
                         name = c.Name,
-                        // isActive = c.IsActive,
-                        // createdAt = c.CreatedAt,
-                        // deletedAt = c.DeletedAt,
-                        // isSystem = c.IsSystem
+                        detailId = c.DetailId,
                     })
                     .ToList();
 

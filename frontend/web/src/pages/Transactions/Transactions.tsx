@@ -4,21 +4,51 @@ import { formatAmount } from '../../utils/format'
 import AddTransactionModal from '../../components/modals/AddTransactionModal'
 import EditTransactionModal from '../../components/modals/EditTransactionModal'
 
+const LIMIT = 30
+
 export default function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchTransactions = () => getTransactions().then(setTransactions).catch(() => setError('Failed to load transactions.'))
+  const fetchTransactions = () => getTransactions(0, LIMIT).then(t => {
+    setTransactions(t)
+    setOffset(LIMIT)
+    setHasMore(t.length === LIMIT)
+  }).catch(() => setError('Failed to load transactions.'))
 
   useEffect(() => {
-    getTransactions()
-      .then(setTransactions)
+    getTransactions(0, LIMIT)
+      .then(t => {
+        setTransactions(t)
+        setOffset(LIMIT)
+        setHasMore(t.length === LIMIT)
+      })
       .catch(() => setError('Failed to load transactions.'))
       .finally(() => setLoading(false))
   }, [])
+
+  async function loadMore() {
+    setLoadingMore(true)
+    try {
+      const more = await getTransactions(offset, LIMIT)
+      setTransactions(prev => {
+        const existingIds = new Set(prev.map(t => t.id))
+        return [...prev, ...more.filter(t => !existingIds.has(t.id))]
+      })
+      setOffset(prev => prev + LIMIT)
+      setHasMore(more.length === LIMIT)
+    } catch {
+      setError('Failed to load more transactions.')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   async function handleDelete(id: string) {
     await deleteTransaction(id)
@@ -95,6 +125,18 @@ export default function Transactions() {
           </tbody>
         </table>
       </div>
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="text-sm text-gray-400 hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loadingMore ? 'Loading...' : 'Load 30 more'}
+          </button>
+        </div>
+      )}
     </main>
   )
 }

@@ -7,6 +7,9 @@ using Going.Plaid;
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.BackgroundServices;
 using Microsoft.AspNetCore.HttpOverrides;
+using Anthropic;
+using Anthropic.SDK;
+
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -66,6 +69,17 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 builder.Services.AddPlaid(builder.Configuration);
 
 
+// ------------------------------------------------------------------------
+// Claude API
+// ------------------------------------------------------------------------
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    ["Anthropic:ApiKey"] = Env("ANTHROPIC_API_KEY"),
+    // ["Anthropic:AuthToken"] = Env("ANTHROPIC_AUTH_TOKEN"),
+    ["Anthropic:BaseUrl"] = Env("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+});
+
+builder.Services.AddSingleton(new AnthropicClient(builder.Configuration["Anthropic:ApiKey"]!));
 
 
 // -------------------------------------------------------------------------
