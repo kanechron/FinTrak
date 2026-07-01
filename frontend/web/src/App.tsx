@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { Timer } from './hooks/InactivityLogoutHook'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Transactions from './pages/Transactions/Transactions'
 import Budgets from './pages/Budgets/Budgets'
@@ -50,6 +51,9 @@ function App() {
           element={
             authed ? (
               <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
+                <Timer timer={1800} /> {/* 1800 = 30 minutes in seconds 
+                REMINDER: Add configurable timeout to settings
+                */}
                 <Navbar />
                 <ReminderBar />
                 <Routes>

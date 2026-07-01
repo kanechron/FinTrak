@@ -101,13 +101,17 @@ export default function Goals() {
           </button>
         </div>
         <div className="p-5 space-y-4">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={allocatedGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
-              {allocatedGoals.map(g => (
-                <SortableGoal key={g.id} goal={g} onDelete={handleDelete} onClick={() => setSelectedGoal(g)} />
-              ))}
-            </SortableContext>
-          </DndContext>
+          {allocatedGoals.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-8">No goals yet — add one to get started.</p>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={allocatedGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
+                {allocatedGoals.map(g => (
+                  <SortableGoal key={g.id} goal={g} onDelete={handleDelete} onClick={() => setSelectedGoal(g)} />
+                ))}
+              </SortableContext>
+            </DndContext>
+          )}
         </div>
       </section>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { updateTransaction, applyCategoryByMerchant, type Transaction } from '../../api/transactions'
 import { getCategories, type Category } from '../../api/categories'
 
@@ -10,12 +10,14 @@ interface Props {
 }
 
 const inputClass = "w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+const formatName = (name: string) => name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase())
 
 export default function EditTransactionModal({ transaction, isOpen, onClose, onSuccess }: Props) {
   const [merchant, setMerchant] = useState(transaction.merchant)
   const [amount, setAmount] = useState<number | null>(transaction.amount)
   const [date, setDate] = useState(transaction.date)
-  const [categoryId, setCategoryId] = useState<string | null>(transaction.categoryId)
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(transaction.categoryId)
+  const [categoryDetailedId, setCategoryDetailedId] = useState<string | null>(transaction.categoryDetailedId)
   const [applyToAll, setApplyToAll] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -29,10 +31,38 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
     setMerchant(transaction.merchant)
     setAmount(transaction.amount)
     setDate(transaction.date)
-    setCategoryId(transaction.categoryId)
+    setParentCategoryId(transaction.categoryId)
+    setCategoryDetailedId(transaction.categoryDetailedId)
     setApplyToAll(false)
     setError(null)
   }, [transaction])
+
+  const parentCategories = useMemo(
+    () => categories.filter(c => c.detailId === null).sort((a, b) => a.name.localeCompare(b.name)),
+    [categories]
+  )
+
+  const childCategories = useMemo(
+    () => parentCategoryId
+      ? categories.filter(c => c.detailId === parentCategoryId).sort((a, b) => a.name.localeCompare(b.name))
+      : [],
+    [categories, parentCategoryId]
+  )
+
+  const selectedParentName = useMemo(
+    () => parentCategories.find(c => c.id === parentCategoryId)?.name ?? '',
+    [parentCategories, parentCategoryId]
+  )
+
+  function stripParentPrefix(name: string) {
+    const prefix = selectedParentName + '_'
+    return name.startsWith(prefix) ? name.slice(prefix.length) : name
+  }
+
+  function handleParentChange(id: string | null) {
+    setParentCategoryId(id)
+    setCategoryDetailedId(null)
+  }
 
   if (!isOpen) return null
 
@@ -48,8 +78,8 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
     setIsSubmitting(true)
     setError(null)
     try {
-      await updateTransaction(transaction.id, { merchantName: merchant, amount, date, categoryId })
-      if (applyToAll) await applyCategoryByMerchant(merchant, categoryId)
+      await updateTransaction(transaction.id, { merchantName: merchant, amount, date, categoryId: parentCategoryId, categoryDetailedId })
+      if (applyToAll) await applyCategoryByMerchant(merchant, parentCategoryId)
       onSuccess()
       onClose()
     } catch {
@@ -95,19 +125,35 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
           />
         </div>
 
-        <select
-          size={5}
-          value={categoryId ?? ''}
-          onChange={e => setCategoryId(e.target.value || null)}
-          className={`${inputClass} max-h-36 overflow-y-auto`}
-        >
-          <option value="">No Category</option>
-          {categories.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase())}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs text-gray-500">Category</label>
+          <select
+            value={parentCategoryId ?? ''}
+            onChange={e => handleParentChange(e.target.value || null)}
+            className={inputClass}
+          >
+            <option value="">No Category</option>
+            {parentCategories.map(c => (
+              <option key={c.id} value={c.id}>{formatName(c.name)}</option>
+            ))}
+          </select>
+
+          {childCategories.length > 0 && (
+            <>
+              <label className="text-xs text-gray-500">Subcategory</label>
+              <select
+                value={categoryDetailedId ?? ''}
+                onChange={e => setCategoryDetailedId(e.target.value || null)}
+                className={inputClass}
+              >
+                <option value="">No Subcategory</option>
+                {childCategories.map(c => (
+                  <option key={c.id} value={c.id}>{formatName(stripParentPrefix(c.name))}</option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
 
         <label className="flex items-center gap-3 text-sm text-gray-400 cursor-pointer">
           <input

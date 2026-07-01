@@ -71,6 +71,9 @@ export default function Budgets() {
           </button>
         </div>
         <div className="divide-y divide-gray-900">
+          {budgets.length === 0 && (
+            <p className="text-sm text-gray-500 text-center py-12">No budgets yet — add one to get started.</p>
+          )}
           {budgets.map(b => (
             <div
               key={b.id}

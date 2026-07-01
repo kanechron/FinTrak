@@ -1,7 +1,7 @@
 // DEV REMINDERS — remove before shipping to production
 
 const reminders = [
-  'Merchant name inference: for TRANSFER_OUT transactions with no MerchantName, infer name from Amount + CategoryId (e.g. recurring fixed-amount transfers → match against known bills like rent)',
+  ''
 ]
 
 export default function ReminderBar() {

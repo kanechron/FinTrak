@@ -91,6 +91,13 @@ public async Task<IActionResult> ExchangeToken(
 
     var institutionName = itemResponse.Item.InstitutionId ?? "Unknown Institution";
 
+    // If this PlaidItem already exists, don't create a duplicate
+    var existingItem = await _db.PlaidItems
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(p => p.PlaidItemId == exchangeResponse.ItemId);
+    if (existingItem != null)
+        return Ok(new { message = "Bank already connected." });
+
     // Create the PlaidItem record
     var plaidItem = new FinTrak.Core.Entities.PlaidItem
     {
@@ -115,6 +122,11 @@ public async Task<IActionResult> ExchangeToken(
 
     foreach (var a in accountsResponse.Accounts)
     {
+        var existingAccount = await _db.Accounts
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(acc => acc.PlaidAccountId == a.AccountId);
+        if (existingAccount != null) continue;
+
         _db.Accounts.Add(new FinTrak.Core.Entities.Account
         {
             Id = Guid.NewGuid(),
@@ -160,6 +172,9 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
         .Where(p => p.UserId == userId)
         .ToListAsync();
 
+    var categoryCache = (await _db.Categories.ToListAsync())
+        .ToDictionary(c => c.Name, c => c);
+
     foreach (var item in items)
     {
         var cursor = item.TransactionCursor;
@@ -196,15 +211,30 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 var categoryName = t.Name?.ToLower().Contains("deposit") == true
                     ? "INCOME"
                     : t.PersonalFinanceCategory?.Primary ?? string.Empty;
-                var detailedCategoryName = t.PersonalFinanceCategory?.Detailed ?? string.Empty;
+                var detailedCategoryName = t.Name?.ToLower().Contains("deposit") == true
+                    ? string.Empty
+                    : t.PersonalFinanceCategory?.Detailed ?? string.Empty;
 
-                var category = await _db.Categories
-                    .FirstOrDefaultAsync(c => c.Name == categoryName);
-
-                if (category == null && !string.IsNullOrEmpty(categoryName))
+                Category? category = null;
+                if (!string.IsNullOrEmpty(categoryName))
                 {
-                    category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
-                    _db.Categories.Add(category);
+                    if (!categoryCache.TryGetValue(categoryName, out category))
+                    {
+                        category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
+                        _db.Categories.Add(category);
+                        categoryCache[categoryName] = category;
+                    }
+                }
+
+                Category? categoryDetailed = null;
+                if (!string.IsNullOrEmpty(detailedCategoryName))
+                {
+                    if (!categoryCache.TryGetValue(detailedCategoryName, out categoryDetailed))
+                    {
+                        categoryDetailed = new Category { Id = Guid.NewGuid(), Name = detailedCategoryName, DetailId = category?.Id, IsSystem = true };
+                        _db.Categories.Add(categoryDetailed);
+                        categoryCache[detailedCategoryName] = categoryDetailed;
+                    }
                 }
 
                 if (existing != null)
@@ -213,6 +243,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                     existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
                     existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
                     existing.CategoryId = category?.Id;
+                    existing.CategoryDetailedId = categoryDetailed?.Id;
                 }
                 else
                 {
@@ -232,8 +263,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                         DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
                         CreatedAt = DateTime.UtcNow,
                         CategoryId = category?.Id,
-                        CategoryDetailed = t.Name?.ToLower().Contains("deposit") == true ? string.Empty : detailedCategoryName
- 
+                        CategoryDetailedId = categoryDetailed?.Id
                     });
                 }
             }
@@ -264,6 +294,8 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 if (existing != null)
                     existing.DeletedAt = DateTime.UtcNow;
             }
+
+            await _db.SaveChangesAsync();
 
             cursor = response.NextCursor;
             hasMore = response.HasMore;
