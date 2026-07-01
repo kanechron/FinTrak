@@ -23,6 +23,7 @@ namespace FinTrak.Infrastructure.Persistance
         public DbSet<Invite> Invites => Set<Invite>();
         public DbSet<MerchantAlias> MerchantAliases => Set<MerchantAlias>();
         public DbSet<SyncQueue> SyncQueue => Set<SyncQueue>();
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,6 +51,7 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<Transaction>().HasIndex(t => t.DedupHash);
             modelBuilder.Entity<MerchantAlias>().HasIndex(m => m.RawName).IsUnique();
             modelBuilder.Entity<Invite>().HasIndex(i => i.Token);
+            modelBuilder.Entity<Category>().HasIndex(i => i.DetailId);
 
             // Enum storage — store as string for readability in the database
             modelBuilder.Entity<Transaction>()

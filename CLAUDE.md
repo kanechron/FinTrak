@@ -2,24 +2,24 @@
 
 ## Project Overview
 
-FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active full-stack development** — backend endpoints live, React dashboard wired to real data, Plaid production connection working with NFCU.
+FinTrak is a personal finance tracker built for James's own use and as a portfolio project. The goal is something genuinely useful day-to-day that also demonstrates strong engineering skills. Currently in **active full-stack development** — backend endpoints live, React dashboard wired to real data, Plaid production connection working with NFCU. Deployed to production at **fintrak.org** via Docker + Cloudflare Tunnel.
 
 ## Tech Stack
 
-- **Frontend:** React (web) + React Native (mobile)
+- **Frontend:** React (web) + React Native (mobile, not yet started)
 - **Backend:** C# with ASP.NET Core
-- **Database:** PostgreSQL (cloud) + SQLite (local offline)
+- **Database:** PostgreSQL (Docker, both local dev and production)
 - **Bank integration:** Plaid API — handles all bank connectivity, transaction pulls, pending transactions, and balances
 - **AI/ML:** Rule-based normalization + FuzzySharp for merchant name matching, Claude Haiku API as fallback for low-confidence cases
+- **Charting:** Recharts (must stay on v3+; v2 breaks with React 19)
 
 ## What's Been Set Up
 
-- `docker-compose.yml` — PostgreSQL (port 5432) + pgAdmin (port 5050) running locally
+- `docker-compose.yml` — PostgreSQL + pgAdmin + backend + frontend + cloudflared, all on an internal bridge network
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
-- Both Docker containers confirmed running
 - Git repo with `main`, `dev`, `feature/frontend-web`, and `feature/backend` branches
 - ASP.NET Core backend scaffolded: `FinTrak.Api`, `FinTrak.Core`, `FinTrak.Infrastructure`
-- NuGet packages installed: Npgsql EF Core, SQLite, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog, dotenv.net
+- NuGet packages installed: Npgsql EF Core, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog, dotenv.net
 
 ## Entity Classes
 
@@ -37,93 +37,132 @@ Located in `backend/FinTrak.Core/Entities/` — all complete:
 - `Bill.cs` — recurring bills with BillFrequency enum (supports Custom date)
 - `MerchantAlias.cs` — raw → normalized merchant name mappings for dedup pipeline
 - `SyncQueue.cs` — Plaid sync job tracking
+- `Invite.cs` — token-based user invites with expiry and used-by tracking
 
 ## Database
 
 - `FinTrakDbContext.cs` in `FinTrak.Infrastructure/Persistance/`
 - `FinTrakDbContextFactory.cs` — design-time factory for EF migrations, reads `.env`
-- `InitialSchema` migration applied and verified in pgAdmin
+- `InitialSchema` migration applied; `Invites` table added in subsequent migration
 - Soft delete filters, unique indexes, and enum-as-string storage configured
+- `Invites` table has soft-delete filter on `UsedAt == null` and index on `Token`
 
 ## Auth — Complete
 
 Google OAuth 2.0 implemented in `FinTrak.Api/Controllers/AuthController.cs`:
 
 - PKCE flow — `GET /auth/login` builds the Google auth URL, `GET /auth/callback` exchanges the code
+- `prompt=select_account consent` forces Google to always return a refresh token
 - Refresh + access token pair from Google; refresh tokens stored in PostgreSQL
 - Auth cookie is HTTP-only, Secure, SameSite=Lax (never exposed to JS)
-- Email allowlist via `ALLOWED_EMAIL` env var — rejects unauthorized users before any DB writes
+- `ALLOWED_EMAIL` env var — if set, that email bypasses the invite requirement on first login (owner bootstrap)
+- Invite token flow — invite token stored in session before OAuth, consumed on callback to allow new user creation
 - Silent refresh via `SilentRefreshMiddleware` — transparently renews expired auth cookies using stored refresh tokens
-- `fintrak_uid` long-lived cookie stores the user GUID to identify sessions after cookie expiry
+- `fintrak_uid` long-lived cookie stores the user GUID
 - `POST /auth/logout` revokes all refresh tokens and clears both cookies
+- All controllers extract `UserId` from `ClaimTypes.NameIdentifier` claim — never from request body
+
+## Invite System
+
+Implemented in `FinTrak.Api/Controllers/InviteController.cs`:
+
+- `POST /invites/create` [Authorize] — creates an Invite record, returns `{ link }` pointing to the validate endpoint
+- `GET /invites/{token}` [AllowAnonymous] — validates token (exists, unused, not expired), stores token in session, redirects to `/api/auth/login`
+- After OAuth callback: if session has `invite_token`, new user is created and invite is marked used
+- If no invite token and user doesn't exist (and not ALLOWED_EMAIL): 403 "Access denied: no invite"
+- Invite links generated from Settings page; 2-day expiry by default
 
 ## API Setup
 
 `Program.cs` wires up:
+- ForwardedHeaders middleware (required for HTTPS detection behind nginx/Cloudflare proxy)
 - DbContext with Npgsql connection string from `.env`
 - Cookie authentication (1-hour expiry, sliding)
-- Session (15-minute idle timeout, used only for PKCE code_verifier)
-- Middleware order: HTTPS → Session → Authentication → SilentRefresh → Authorization → Controllers
+- Session (15-minute idle timeout, used for PKCE `code_verifier` and `invite_token`)
+- `UseHttpsRedirection` only in Development (production is behind nginx which handles TLS)
+- `LoadEnv` skips keys already set in the environment (so Docker env vars take precedence over `.env`)
+- Middleware order: ForwardedHeaders → HTTPS (dev only) → Session → Authentication → SilentRefresh → Authorization → Controllers
 
-## Core Features (priority order)
+## Data API Endpoints — Complete
 
-1. **Expense tracking** — automatic bank sync via Plaid, manual entry as fallback for cash
-2. **Budget planning** — category budgets, visual progress bars, alerts at 80%
-3. **Savings goals** — named goals, contribution tracking, milestone celebrations
-4. **Bill reminders** — recurring bills, due-date notifications, payment history
+All endpoints require auth cookie (`[Authorize]`) and filter by the authenticated user's ID:
 
-## Transaction Logger Design
+- `GET /accounts/get-accounts` — active accounts with balance, type, last4
+- `GET /transactions/get-transactions` — all non-deleted transactions ordered by date descending
+- `GET /budgets/get-budgets` — active budgets with `spent` computed for current period from transactions
+- `GET /bills/get-bills` — active recurring bills
+- `GET /goals/get-goals` — savings goals with progress
+- `GET /categories/get-categories` — all categories
+- `GET /reports/*` — spending reports and chart data
 
-- Primary flow: Plaid pulls transactions automatically (including pending)
-- Manual sync can be triggered at any time
-- Manual entry exists as a fallback for cash or pre-settlement logging
-- Deduplication pipeline: rule-based normalization → FuzzySharp → Claude Haiku fallback → hash check → insert or discard
+Write endpoints (`POST /budgets/add-budget`, `POST /bills/add-bill`, etc.) also set `UserId` from claims.
 
 ## Plaid Integration — Complete
 
 Implemented in `FinTrak.Api/Controllers/PlaidController.cs`:
 
 - `POST /plaid/link-token` — creates a Plaid link token for the frontend Link widget
-- `POST /plaid/exchange-token` — exchanges public token, creates PlaidItem + Accounts records
-- `POST /plaid/sync` — cursor-based transaction sync (added/modified/removed)
+- `POST /plaid/exchange-token` — idempotent: checks for existing PlaidItem/Account by Plaid ID before inserting
+- `POST /plaid/sync` — cursor-based transaction sync (added/modified/removed), refreshes account balances
 - Running in **production** environment — NFCU OAuth approved and working
 
-## Data API Endpoints — Complete
-
-All endpoints require auth cookie (`[Authorize]`), routes use `[controller]/get-[controller]` pattern:
-
-- `GET /accounts/get-accounts` — active accounts with balance, type, last4
-- `GET /transactions/get-transactions` — all non-deleted transactions ordered by date descending
-- `GET /budgets/get-budgets` — active budgets with `spent` computed for current period from transactions
-
-## Frontend — Dashboard Wired to Real Data
+## Frontend — Full Dashboard
 
 React web app at `frontend/web/` using Vite + TypeScript + Tailwind CSS:
 
-- `src/App.tsx` — auth-gated routing via React Router; checks auth on mount, redirects to `/login` if unauthenticated
-- `src/pages/Login/Login.tsx` — Google OAuth redirect
-- `src/pages/Dashboard/Dashboard.tsx` — fetches accounts, transactions, budgets in parallel via `Promise.all` on mount; passes real data to components
-- `src/components/Navbar.tsx` — Sync button with Plaid Link flow: checks if accounts exist → if not, opens Plaid Link widget to connect bank → exchanges token → syncs; states: idle/connecting/syncing/done/error
-- `src/components/BalanceCard.tsx` — total balance + per-account breakdown
-- `src/components/ProgressWidget.tsx` — reusable progress bar widget (Spent This Month, Savings Goal, Joint Account)
-- `src/components/RecentTransactions.tsx` — shows 10 most recent, expandable to all; Plaid sign convention flipped for display (positive = debit = red, negative = credit = green)
-- `src/components/BudgetList.tsx` — per-category budget progress bars
-- `src/components/ProgressBar.tsx` — color-coded bar (green <70%, yellow <90%, red ≥90%)
-- `src/api/client.ts` — base fetch wrapper with cookie credentials
-- `src/api/accounts.ts`, `transactions.ts`, `budgets.ts` — typed fetch functions with interfaces matching API response shape
-- Vite proxy: `/api/*` → `https://localhost:7146`
+**Pages:**
+- `src/pages/Login/Login.tsx` — Google OAuth redirect via `/api/auth/login`
+- `src/pages/Dashboard/Dashboard.tsx` — accounts, transactions, budgets fetched in parallel on mount
+- `src/pages/Transactions/Transactions.tsx` — full transaction list with manual entry
+- `src/pages/Budgets/Budgets.tsx` — budget management
+- `src/pages/Goals/Goals.tsx` — savings goals with drag-and-drop ordering
+- `src/pages/Bills/Bills.tsx` — recurring bills management
+- `src/pages/Reports/Reports.tsx` — spending charts (Recharts)
+- `src/pages/Settings/Settings.tsx` — invite link generator (Generate + Copy)
+
+**Key components:**
+- `src/components/layout/Navbar.tsx` — Sync button with Plaid Link flow; states: idle/connecting/syncing/done/error
+- `src/hooks/InactivityLogoutHook.tsx` — `<Timer timer={seconds} />` component; mounted in App.tsx with 1800s (30 min); uses `useRef` to avoid re-renders
+- `src/api/client.ts` — base fetch wrapper with cookie credentials and `/api` prefix
+- `src/api/invites.ts` — `createInvite()` → POST `/invites/create` → returns link string
+
+**Infrastructure:**
+- `src/App.tsx` — auth-gated routing; `<Timer timer={1800} />` mounted inside authenticated routes
+- Vite proxy: `/api/*` → `https://localhost:7146` (local dev only)
+- Plaid sign convention flipped for display: positive amount = debit = red, negative = credit = green
+
+## Production Deployment
+
+- Docker Compose: postgres + pgadmin + backend + frontend + cloudflared on internal bridge network
+- nginx inside the `frontend` container serves the React build and reverse-proxies `/api/*` → `http://backend:8080/` (strips `/api` prefix)
+- Cloudflare Tunnel (cloudflared container) exposes the frontend at fintrak.org — no open ports on the host
+- `GOOGLE_REDIRECT_URI` is hardcoded to `https://fintrak.org/api/auth/callback` in docker-compose.yml
+- `FRONTEND_URL` is hardcoded to `https://fintrak.org` in docker-compose.yml
+- pgAdmin accessible at `localhost:5050` (port bound to host for local DB management)
+- postgres accessible at `localhost:5432` for EF migrations during local dev
+
+## Local Dev
+
+- Run backend: `dotnet run --project backend/FinTrak.Api --launch-profile https` from repo root
+- Run frontend: `npm run dev` from `frontend/web/`
+- Local Windows PostgreSQL 18 service conflicts with Docker on port 5432 — disable with `Stop-Service postgresql-x64-18 -Force` if needed
+- Run just the DB: `docker compose up postgres pgadmin -d`
+- For EF migrations: DB must be running; run from `backend/FinTrak.Infrastructure/`
 
 ## Known Issues / Environment
 
-- Local Windows PostgreSQL 18 service conflicts with Docker on port 5432 — disable it with `Stop-Service postgresql-x64-18 -Force` if it starts up again
-- Run backend: `dotnet run --project backend/FinTrak.Api --launch-profile https` from repo root
-- Run frontend: `npm run dev` from `frontend/web/`
+- `ALLOWED_EMAIL` is set in `.env` and passed through docker-compose.yml — acts as owner bypass if DB is wiped and no users exist
+- docker-compose.yml has a commented-out duplicate `# ALLOWED_EMAIL:` line above the active one — ignore it
+- Debug logging (Console.WriteLine + .LogTo) still present in Program.cs — should be removed before next clean deploy
 
 ## Next Steps
 
+- Split login page into "Sign In" (existing users) and "Create Account" (invite flow) — active discussion
 - Build transaction deduplication pipeline
-- Wire ProgressWidgets to real data (currently hardcoded values)
+- Wire ProgressWidgets on Dashboard to real data (currently hardcoded)
 - Add dashboard refresh after sync completes
+- Remove debug logging from Program.cs
+- Make inactivity timeout configurable in Settings
 - Mobile app (React Native)
 
 ## Key Constraints

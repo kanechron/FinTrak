@@ -46,7 +46,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
                         Count = g.Count(),
                         Amounts = g.Select(t => t.Amount).ToList(),
                         Dates = g.Select(t => t.Date).OrderBy(d => d).ToList(),
-                        Category = g.Select(t => t.CategoryDetailed).FirstOrDefault(),
+                        Category = g.Select(t => t.CategoryDetailed != null ? t.CategoryDetailed.Name : null).FirstOrDefault(),
                         CategoryId = g.Select(t => t.CategoryId).FirstOrDefault()
                     })
                     .ToListAsync(cancellationToken);

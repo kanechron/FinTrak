@@ -3,6 +3,7 @@ import BalanceCard from '../../components/dashboard/BalanceCard'
 import RecentTransactions from '../../components/dashboard/RecentTransactions'
 import BudgetList from '../../components/dashboard/BudgetList'
 import GoalList from '../../components/dashboard/GoalList'
+import Welcome from '../Welcome/Welcome'
 import { useEffect, useState } from 'react'
 import { getTransactions, type Transaction } from '../../api/transactions'
 import { getAccounts, type Account } from '../../api/accounts'
@@ -17,6 +18,7 @@ const [accounts, setAccounts] = useState<Account[]>([])
 const [budgets, setBudgets] = useState<Budget[]>([])
 const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
 const [error, setError] = useState<string | null>(null)
+const [loaded, setLoaded] = useState(false)
 
 async function fetchData() {
   try {
@@ -32,11 +34,22 @@ async function fetchData() {
     setAllocatedGoals(allocateGoalAmounts(goals, accounts))
   } catch {
     setError('Failed to load dashboard data.')
+  } finally {
+    setLoaded(true)
   }
 }
 useEffect(() => {
   fetchData()
 }, [])
+
+useEffect(() => {
+  if (!loaded) return
+  if (accounts.length > 0 && transactions.length === 0) {
+    fetch('/api/plaid/sync', { method: 'POST', credentials: 'include' })
+      .then(() => fetchData())
+      .catch(() => {})
+  }
+}, [loaded])
 
 
 
@@ -53,6 +66,7 @@ async function fetchBudgets() {
   
 const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
   if (error) return <main className="max-w-5xl mx-auto px-3 py-8"><p className="text-red-500 text-sm">{error}</p></main>
+  if (loaded && accounts.length === 0) return <Welcome />
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-8">
 

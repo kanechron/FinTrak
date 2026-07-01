@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { createInvite } from '../../api/invites'
+import General from './Tabs/General'
+import Account from './Tabs/Account'
+import Display from './Tabs/Display'
+import Transactions from './Tabs/Transactions'
+import Budgets from './Tabs/Budgets'
+import Goals from './Tabs/Goals'
+import Bills from './Tabs/Bills'
+import Reports from './Tabs/Reports'
 
 type Section = 'general' | 'account' | 'display' | 'transactions' | 'budgets' | 'goals' | 'bills' | 'reports'
 
@@ -51,107 +58,16 @@ export default function Settings() {
         </nav>
 
         <div className="flex-1 border border-gray-800 rounded-xl p-6 min-h-96">
-          {active === 'general' && <GeneralSection />}
-          {active === 'account' && <AccountSection />}
-          {active === 'display' && <DisplaySection />}
-          {active === 'transactions' && <FeatureSection name="Transactions" />}
-          {active === 'budgets' && <FeatureSection name="Budgets" />}
-          {active === 'goals' && <FeatureSection name="Goals" />}
-          {active === 'bills' && <FeatureSection name="Bills" />}
-          {active === 'reports' && <FeatureSection name="Reports" />}
+          {active === 'general' && <General />}
+          {active === 'account' && <Account />}
+          {active === 'display' && <Display />}
+          {active === 'transactions' && <Transactions />}
+          {active === 'budgets' && <Budgets />}
+          {active === 'goals' && <Goals />}
+          {active === 'bills' && <Bills />}
+          {active === 'reports' && <Reports />}
         </div>
       </div>
     </main>
-  )
-}
-
-function GeneralSection() {
-  const [inviteLink, setInviteLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handleGenerateInvite() {
-    setLoading(true)
-    setError(null)
-    try {
-      const link = await createInvite()
-      setInviteLink(link)
-      setCopied(false)
-    } catch {
-      setError('Failed to generate invite link.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleCopy() {
-    if (!inviteLink) return
-    await navigator.clipboard.writeText(inviteLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <div className="space-y-6">
-      <h2 className="font-medium">General</h2>
-
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">Invite a user</h3>
-        <p className="text-sm text-gray-500">Generate a single-use invite link. Links expire after 48 hours.</p>
-        <button
-          onClick={handleGenerateInvite}
-          disabled={loading}
-          className="mt-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-sm rounded-lg transition-colors"
-        >
-          {loading ? 'Generating...' : 'Generate invite link'}
-        </button>
-
-        {error && <p className="text-sm text-red-400">{error}</p>}
-
-        {inviteLink && (
-          <div className="flex items-center gap-2 mt-3">
-            <input
-              readOnly
-              value={inviteLink}
-              className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 font-mono"
-            />
-            <button
-              onClick={handleCopy}
-              className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded-lg transition-colors shrink-0"
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function AccountSection() {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-medium">Account</h2>
-      <p className="text-sm text-gray-500">Coming soon.</p>
-    </div>
-  )
-}
-
-function DisplaySection() {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-medium">Display</h2>
-      <p className="text-sm text-gray-500">Coming soon.</p>
-    </div>
-  )
-}
-
-function FeatureSection({ name }: { name: string }) {
-  return (
-    <div className="space-y-6">
-      <h2 className="font-medium">{name}</h2>
-      <p className="text-sm text-gray-500">Coming soon.</p>
-    </div>
   )
 }
