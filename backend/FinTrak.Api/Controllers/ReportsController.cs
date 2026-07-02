@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using FinTrak.Api.DTOs;
 
 namespace Fintrak.Api.Controllers
 {
@@ -45,8 +46,8 @@ namespace Fintrak.Api.Controllers
                 .Join(_db.Categories, t => t.CategoryId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id })
                 .Where(x => !x.Name.StartsWith("TRANSFER_"))
                 .GroupBy(x => new { x.Name, x.Id })
-                .Select(g => new { id = g.Key.Id, name = g.Key.Name, amount = g.Sum(x => x.Amount) })
-                .OrderByDescending(g => g.amount)
+                .Select(g => new CategorySpendingDto { Id = g.Key.Id, Name = g.Key.Name, Amount = g.Sum(x => x.Amount) })
+                .OrderByDescending(g => g.Amount)
                 .ToListAsync();
 
             return Ok(spending);
@@ -72,8 +73,8 @@ namespace Fintrak.Api.Controllers
                     && t.CategoryDetailedId != null)
                 .Join(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, c) => new { t.Amount, c.Name })
                 .GroupBy(x => x.Name)
-                .Select(g => new { name = g.Key, amount = g.Sum(x => x.Amount) })
-                .OrderByDescending(g => g.amount)
+                .Select(g => new CategoryDetailSpendingDto { Name = g.Key, Amount = g.Sum(x => x.Amount) })
+                .OrderByDescending(g => g.Amount)
                 .ToListAsync();
 
             return Ok(spending);
@@ -98,9 +99,9 @@ namespace Fintrak.Api.Controllers
                 .Join(_db.Categories, t => t.CategoryId, c => c.Id, (t, c) => new { t.Date, t.Amount, c.Name })
                 .Where(x => !x.Name.StartsWith("TRANSFER_"))
                 .GroupBy(x => new { x.Date!.Value.Year, x.Date!.Value.Month })
-                .Select(g => new { year = g.Key.Year, month = g.Key.Month, amount = g.Sum(x => x.Amount) })
-                .OrderBy(g => g.year)
-                .ThenBy(g => g.month)
+                .Select(g => new MonthlySpendingDto { Year = g.Key.Year, Month = g.Key.Month, Amount = g.Sum(x => x.Amount) })
+                .OrderBy(g => g.Year)
+                .ThenBy(g => g.Month)
                 .ToListAsync();
 
             return Ok(spending);
@@ -122,15 +123,16 @@ namespace Fintrak.Api.Controllers
                     && t.Date <= toDate 
                     && t.UserId == userId)
                 .GroupBy(t => new { t.Date!.Value.Year, t.Date!.Value.Month })
-                .Select(g => new {
-                    year = g.Key.Year,
-                    month = g.Key.Month,
-                    income = -g.Where(t => t.Amount < 0).Sum(t => t.Amount),
-                    expenses = g.Where(t => t.Amount > 0).Sum(t => t.Amount),
-                    net = -g.Where(t => t.Amount < 0).Sum(t => t.Amount) - g.Where(t => t.Amount > 0).Sum(t => t.Amount)
+                .Select(g => new CashFlowDto
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    Income = -(g.Where(t => t.Amount < 0).Sum(t => t.Amount) ?? 0m),
+                    Expenses = g.Where(t => t.Amount > 0).Sum(t => t.Amount) ?? 0m,
+                    Net = -(g.Where(t => t.Amount < 0).Sum(t => t.Amount) ?? 0m) - (g.Where(t => t.Amount > 0).Sum(t => t.Amount) ?? 0m)
                 })
-                .OrderBy(g => g.year)
-                .ThenBy(g => g.month)
+                .OrderBy(g => g.Year)
+                .ThenBy(g => g.Month)
                 .ToListAsync();
 
             return Ok(result);

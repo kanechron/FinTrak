@@ -12,7 +12,8 @@ using Anthropic.SDK.Constants;
 using Anthropic.SDK.Messaging;
 using System.Text.Json;
 using FuzzySharp;
-// using Anthropic.
+using AutoMapper;
+using FinTrak.Api.DTOs;
 
 
 
@@ -26,12 +27,14 @@ namespace FinTrak.Api.Controllers
         private readonly FinTrakDbContext _db;
         private readonly TransactionNameMatchService _tService;
         private readonly AnthropicClient _client;
+        private readonly IMapper _mapper;
 
-        public TransactionsController(FinTrakDbContext db, TransactionNameMatchService tService, AnthropicClient client)
+        public TransactionsController(FinTrakDbContext db, TransactionNameMatchService tService, AnthropicClient client, IMapper mapper)
         {
             _db = db;
             _tService = tService;
             _client = client;
+            _mapper = mapper;
         }
 
 
@@ -43,28 +46,16 @@ namespace FinTrak.Api.Controllers
                 var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
                 var query = _db.Transactions
-                .Where(t => t.DeletedAt == null && t.UserId == userId)
-                .OrderByDescending(t => t.Date)
-                .Select(t => new
-                {
-                    id = t.Id,
-                    accountId = t.AccountId,
-                    date = t.Date!.Value.ToString("yyyy-MM-dd"),
-                    merchant = t.MerchantName ?? t.MerchantNameRaw,
-                    amount = t.Amount,
-                    category = t.Category != null ? t.Category!.Name : "Uncategorized",
-                    categoryDetailed = t.CategoryDetailed != null ? t.CategoryDetailed.Name : null,
-                    categoryId = t.CategoryId,
-                    categoryDetailedId = t.CategoryDetailedId,
-                    pending = t.IsPending,
-                });
+                    .Where(t => t.DeletedAt == null && t.UserId == userId)
+                    .Include(t => t.Category)
+                    .Include(t => t.CategoryDetailed)
+                    .OrderByDescending(t => t.Date);
 
                 var transactions = (limit == null || limit == 0)
                     ? await query.ToListAsync()
                     : await query.Skip(offset ?? 0).Take(limit.Value).ToListAsync();
 
-                return Ok(transactions);
-
+                return Ok(_mapper.Map<List<TransactionDto>>(transactions));
             }
             catch (Exception ex)
             {
@@ -77,27 +68,14 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
-                var trans = await _db.Transactions
-                .Where(t => t.DeletedAt == null && t.CategoryId == id)
-                .OrderByDescending(t => t.Date)
-                .Select(t => new
-                {
-                    id = t.Id,
-                    accountId = t.AccountId,
-                    date = t.Date!.Value.ToString("yyyy-MM-dd"),
-                    merchant = t.MerchantName ?? t.MerchantNameRaw,
-                    amount = t.Amount,
-                    category = t.Category != null ? t.Category!.Name : "Uncategorized",
-                    categoryDetailed = t.CategoryDetailed != null ? t.CategoryDetailed.Name : null,
-                    categoryId = t.CategoryId,
-                    categoryDetailedId = t.CategoryDetailedId,
-                    pending = t.IsPending,
+                var transactions = await _db.Transactions
+                    .Where(t => t.DeletedAt == null && t.CategoryId == id)
+                    .Include(t => t.Category)
+                    .Include(t => t.CategoryDetailed)
+                    .OrderByDescending(t => t.Date)
+                    .ToListAsync();
 
-                })
-                .ToListAsync();
-
-                return Ok(trans);
-
+                return Ok(_mapper.Map<List<TransactionDto>>(transactions));
             }
             catch (Exception ex)
             {

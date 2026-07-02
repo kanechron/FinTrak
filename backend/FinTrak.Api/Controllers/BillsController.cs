@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
 using FinTrak.Infrastructure.BackgroundServices;
+using AutoMapper;
+using FinTrak.Api.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
@@ -16,11 +18,13 @@ namespace FinTrak.Api.Controllers
     {
         private readonly FinTrakDbContext _db;
         private readonly BillDetectionService _billDetectionService;
+        private readonly IMapper _mapper;
 
-        public BillsController(FinTrakDbContext db, BillDetectionService billDetectionService)
+        public BillsController(FinTrakDbContext db, BillDetectionService billDetectionService, IMapper mapper)
         {
             _db = db;
             _billDetectionService = billDetectionService;
+            _mapper = mapper;
         }
 
         [HttpGet("get-bills")]
@@ -34,27 +38,10 @@ namespace FinTrak.Api.Controllers
                     .Include(b => b.Category)
                     .ToListAsync();
 
-                var result = bills.Select(b => new
-                {
-                    id = b.Id,
-                    name = b.Name,
-                    amount = b.Amount,
-                    categoryId = b.CategoryId,
-                    category = b.Category?.Name,
-                    frequency = b.Frequency.ToString(),
-                    dueDay = b.DueDay,
-                    customDate = b.CustomDate,
-                    lastPaidDate = b.LastPaidDate,
-                    nextDueDate = ComputeNextDueDate(b),
-                    isAutoPay = b.IsAutoPay,
-                    isAutoDetected = false
-                });
-
-                return Ok(result);
+                return Ok(_mapper.Map<List<BillDto>>(bills));
             }
             catch (Exception ex)
             {
-                // Log the exception (not implemented here)
                 return StatusCode(500, "An error occurred while retrieving bills: " + ex.Message);
             }
         }
@@ -64,10 +51,8 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
-                if(bill == null || string.IsNullOrEmpty(bill.Name) || bill.Amount <= 0)
-                {
+                if (bill == null || string.IsNullOrEmpty(bill.Name) || bill.Amount <= 0)
                     return BadRequest("Invalid bill data. Name and positive amount are required.");
-                }
 
                 var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                 var newBill = new Bill
@@ -89,7 +74,6 @@ namespace FinTrak.Api.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception (not implemented here)
                 return StatusCode(500, "An error occurred while adding the bill: " + ex.Message);
             }
         }
@@ -101,9 +85,7 @@ namespace FinTrak.Api.Controllers
             {
                 var existingBill = await _db.Bills.FirstOrDefaultAsync(b => b.Id == id);
                 if (existingBill == null || existingBill.DeletedAt != null)
-                {
                     return NotFound("Bill not found.");
-                }
 
                 existingBill.Name = updatedBill.Name ?? existingBill.Name;
                 existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
@@ -119,7 +101,6 @@ namespace FinTrak.Api.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception (not implemented here)
                 return StatusCode(500, "An error occurred while updating the bill: " + ex.Message);
             }
         }
@@ -131,9 +112,7 @@ namespace FinTrak.Api.Controllers
             {
                 var existingBill = await _db.Bills.FirstOrDefaultAsync(b => b.Id == id);
                 if (existingBill == null || existingBill.DeletedAt != null)
-                {
                     return NotFound("Bill not found.");
-                }
 
                 existingBill.DeletedAt = DateTime.UtcNow;
                 await _db.SaveChangesAsync();
@@ -141,7 +120,6 @@ namespace FinTrak.Api.Controllers
             }
             catch (Exception ex)
             {
-                // Log the exception (not implemented here)
                 return StatusCode(500, "An error occurred while deleting the bill: " + ex.Message);
             }
         }
@@ -151,40 +129,6 @@ namespace FinTrak.Api.Controllers
         {
             var suggestions = await _billDetectionService.DetectAsync(CancellationToken.None);
             return Ok(suggestions);
-        }
-
-        private static DateOnly? ComputeNextDueDate(Bill b)
-        {
-            
-            
-
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            return b.Frequency switch
-            {
-                BillFrequency.Custom => b.CustomDate,
-                BillFrequency.Monthly when b.DueDay.HasValue => NextOccurrence(today, b.DueDay.Value, 1),
-                BillFrequency.Quarterly when b.DueDay.HasValue => NextOccurrence(today, b.DueDay.Value, 3),
-                BillFrequency.Yearly when b.DueDay.HasValue => NextOccurrence(today, b.DueDay.Value, 12),
-                BillFrequency.Weekly => b.LastPaidDate?.AddDays(7) ?? today,
-                BillFrequency.BiWeekly => b.LastPaidDate?.AddDays(14) ?? today,
-                _ => null
-            };
-        }
-
-
-        
-
-
-
-        private static DateOnly NextOccurrence(DateOnly today, int dueDay, int monthInterval)
-        {
-            var candidate = new DateOnly(today.Year, today.Month, Math.Min(dueDay, DateTime.DaysInMonth(today.Year, today.Month)));
-            if (candidate < today)
-            {
-                var next = today.AddMonths(monthInterval);
-                candidate = new DateOnly(next.Year, next.Month, Math.Min(dueDay, DateTime.DaysInMonth(next.Year, next.Month)));
-            }
-            return candidate;
         }
     }
 }

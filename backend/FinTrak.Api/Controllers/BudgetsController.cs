@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
+using FinTrak.Api.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
@@ -32,36 +33,26 @@ namespace FinTrak.Api.Controllers
                     .Include(b => b.Category)
                     .ToListAsync();
 
-                var result = budgets.Select(b =>
+                // Batch-compute spending per category to avoid N+1
+                var categoryIds = budgets.Where(b => b.CategoryId.HasValue).Select(b => b.CategoryId!.Value).Distinct().ToList();
+                var spendingByCategory = await _db.Transactions
+                    .Where(t => t.DeletedAt == null && t.Amount > 0 && t.UserId == userId && categoryIds.Contains(t.CategoryId!.Value))
+                    .GroupBy(t => t.CategoryId!.Value)
+                    .Select(g => new { CategoryId = g.Key, Total = g.Sum(t => (decimal?)t.Amount) ?? 0m })
+                    .ToDictionaryAsync(x => x.CategoryId, x => x.Total);
+
+                var result = budgets.Select(b => new BudgetDto
                 {
-                    var periodStart = GetPeriodStart(b, now);
-                    
-
-                    var spent = _db.Transactions
-                        .Where(t =>
-                            t.DeletedAt == null &&
-                            t.Amount > 0 &&
-                            t.Date >= periodStart &&
-                            (b.CategoryId == null || t.CategoryId == b.CategoryId))
-                        .Sum(t => (decimal?)t.Amount) ?? 0m;
-
-                    // Plaid amounts are negative for debits — flip to positive for display
-                    var spentAbs = spent;
-
-
-                    return new
-                    {
-                        id = b.Id,
-                        name = b.Name,
-                        category = b.Category?.Name ?? b.Name,
-                        spent = spentAbs,
-                        amount = b.Amount,
-                        startDate = b.StartDate,
-                        endDate = b.EndDate,
-                        isRecurring = b.IsRecurring,
-                        period = b.Period?.ToString() ?? "Monthly",
-                        recurringDate = b.RecurringDate
-                    };
+                    Id = b.Id,
+                    Name = b.Name,
+                    Category = b.Category?.Name ?? b.Name,
+                    Spent = b.CategoryId.HasValue && spendingByCategory.TryGetValue(b.CategoryId.Value, out var s) ? s : 0m,
+                    Amount = b.Amount,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    IsRecurring = b.IsRecurring,
+                    Period = b.Period?.ToString() ?? "Monthly",
+                    RecurringDate = b.RecurringDate
                 });
 
                 return Ok(result);
@@ -180,12 +171,5 @@ namespace FinTrak.Api.Controllers
         }
 
 
-        private static DateOnly GetPeriodStart(Budget budget, DateOnly now) => budget.Period switch
-        {
-            BudgetPeriod.Weekly => now.AddDays(-(int)now.DayOfWeek),
-            BudgetPeriod.Yearly => new DateOnly(now.Year, 1, 1),
-            BudgetPeriod.Custom => budget.StartDate,
-            _ => budget.StartDate // Monthly default
-        };
     }
 }
