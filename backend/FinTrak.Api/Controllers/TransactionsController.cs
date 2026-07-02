@@ -22,25 +22,26 @@ namespace FinTrak.Api.Controllers
         private readonly TransactionValidator _tValidator = tValidator;
 
         [HttpGet("get-transactions")]
-        public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit)
+        public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
         {
-            var transactions = await _repo.GetByUserIdAsync(GetUserId(), offset, limit);
+            var transactions = await _repo.GetByUserIdAsync(GetUserId(), offset, limit, cancellationToken);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
         [HttpGet("get-transactions-by-category/{id}")]
-        public async Task<IActionResult> GetTransactionsByCategory(Guid id)
+        public async Task<IActionResult> GetTransactionsByCategory(Guid id, CancellationToken cancellationToken)
         {
-            var transactions = await _repo.GetByCategoryIdAsync(id);
+            var transactions = await _repo.GetByCategoryIdAsync(id, cancellationToken);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
         [HttpPost("add-transaction")]
-        public async Task<IActionResult> AddTransaction([FromBody] Transaction transaction)
+        public async Task<IActionResult> AddTransaction([FromBody] Transaction transaction, CancellationToken cancellationToken)
         {
-            if (transaction == null || transaction.Amount <= 0)
-                return BadRequest(new { error = "Invalid Transaction data" });
-            
+            var validationResult = await _tValidator.ValidateAsync(transaction, cancellationToken);
+            if (!validationResult.IsValid)
+                return BadRequest(new { errors = validationResult.Errors.Select(e => e.ErrorMessage) });
+
             var newTrans = new Transaction
             {
                 Id = Guid.NewGuid(),
@@ -61,18 +62,14 @@ namespace FinTrak.Api.Controllers
                 Date = transaction.Date
             };
 
-            var validationResult = await _tValidator.ValidateAsync(newTrans);
-            if (!validationResult.IsValid)
-                return BadRequest(new { errors = validationResult.Errors });
-
-            await _repo.AddAsync(newTrans);
+            await _repo.AddAsync(newTrans, cancellationToken);
             return Ok(new { message = "Transaction added successfully.", id = newTrans.Id });
         }
 
         [HttpPatch("update-transaction/{id}")]
-        public async Task<IActionResult> UpdateTransaction(Guid id, [FromBody] Transaction update)
+        public async Task<IActionResult> UpdateTransaction(Guid id, [FromBody] Transaction update, CancellationToken cancellationToken)
         {
-            var existing = await _repo.GetByIdAsync(id);
+            var existing = await _repo.GetByIdAsync(id, cancellationToken);
             if (existing == null) return NotFound(new { error = "Transaction not found" });
 
             if (!string.IsNullOrWhiteSpace(update.MerchantName))
@@ -92,38 +89,44 @@ namespace FinTrak.Api.Controllers
             if (update.Date.HasValue)
                 existing.Date = update.Date;
 
-            await _repo.SaveAsync();
+            await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Transaction updated successfully." });
         }
 
         [HttpPatch("apply-category-by-merchant")]
-        public async Task<IActionResult> ApplyCategoryByMerchant([FromBody] ApplyCategoryRequest request)
+        public async Task<IActionResult> ApplyCategoryByMerchant([FromBody] ApplyCategoryRequest request, CancellationToken cancellationToken)
         {
-            var result = await _tService.MatchByName(request);
+            var result = await _tService.MatchByName(request, cancellationToken);
             return Ok(new { result });
         }
 
         [HttpDelete("delete-transaction/{id}")]
-        public async Task<IActionResult> DeleteTransaction(Guid id)
+        public async Task<IActionResult> DeleteTransaction(Guid id, CancellationToken cancellationToken)
         {
-            var existing = await _repo.GetByIdAsync(id);
+            var existing = await _repo.GetByIdAsync(id, cancellationToken);
             if (existing == null) return NotFound(new { error = "Could not find transaction {id}" });
 
             existing.DeletedAt = DateTime.UtcNow;
-            await _repo.SaveAsync();
+            await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Transaction deleted successfully" });
         }
 
         [HttpPost("import-pdf")]
-        public async Task<IActionResult> ParsePDF([FromForm] IFormFile pdf)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ParsePDF([FromForm] PdfUploadRequest request, CancellationToken cancellationToken)
         {
-            if (pdf == null || pdf.Length == 0) return BadRequest(new { error = "No PDF file provided." });
+            if (request.pdf == null || request.pdf.Length == 0) return BadRequest(new { error = "No PDF file provided." });
 
-            var count = await _pdfImportService.ImportAsync(pdf.OpenReadStream(), GetUserId());
+            var count = await _pdfImportService.ImportAsync(request.pdf.OpenReadStream(), GetUserId(), cancellationToken);
             return Ok(new { imported = count });
         }
 
         private Guid GetUserId() =>
             Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    }
+
+    public class PdfUploadRequest
+    {
+        public IFormFile pdf { get; set; } = null!;
     }
 }

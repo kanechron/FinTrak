@@ -21,7 +21,7 @@ public class TransactionNameMatchService : ITransactionNameMatchService
 
             var updated = await _db.Transactions
                 .Where(t => t.DeletedAt == null && EF.Functions.TrigramsSimilarity(t.MerchantNameNormalized!, normalized) > threshold)
-                .ExecuteUpdateAsync(t => t.SetProperty(x => x.CategoryId, request.CategoryId));
+                .ExecuteUpdateAsync(t => t.SetProperty(x => x.CategoryId, request.CategoryId), cancellationToken);
             return updated;  
         }
         // public record ApplyCategoryRequest(string MerchantName, Guid? CategoryId);

@@ -16,9 +16,9 @@ namespace FinTrak.Api.Controllers
         private readonly IMapper _mapper = mapper;
 
         [HttpGet("get-accounts")]
-        public async Task<IActionResult> GetAccounts()
+        public async Task<IActionResult> GetAccounts(CancellationToken cancellationToken)
         {
-            var accounts = await _repo.GetByUserIdAsync(GetUserId());
+            var accounts = await _repo.GetByUserIdAsync(GetUserId(), cancellationToken);
             return Ok(_mapper.Map<List<AccountDto>>(accounts));
         }
 

@@ -19,7 +19,7 @@ FinTrak is a personal finance tracker built for James's own use and as a portfol
 - `.env` / `.env.example` — credentials managed via environment variables, `.env` is gitignored
 - Git repo with `main`, `dev`, `feature/frontend-web`, and `feature/backend` branches
 - ASP.NET Core backend scaffolded: `FinTrak.Api`, `FinTrak.Core`, `FinTrak.Infrastructure`
-- NuGet packages installed: Npgsql EF Core, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog, dotenv.net
+- NuGet packages installed: Npgsql EF Core, Google.Apis.Auth, Going.Plaid, FuzzySharp, Anthropic.SDK, Serilog.AspNetCore, dotenv.net, AutoMapper, FluentValidation.DependencyInjectionExtensions, Swashbuckle.AspNetCore
 
 ## Entity Classes
 
@@ -72,13 +72,59 @@ Implemented in `FinTrak.Api/Controllers/InviteController.cs`:
 - If no invite token and user doesn't exist (and not ALLOWED_EMAIL): 403 "Access denied: no invite"
 - Invite links generated from Settings page; 2-day expiry by default
 
+## Backend Architecture
+
+The backend follows a strict layered architecture. Controllers must never reference `FinTrakDbContext` directly.
+
+**Layers:**
+- `FinTrak.Core` — entities, interfaces, DTOs, utilities. No EF or infrastructure dependencies.
+- `FinTrak.Infrastructure` — EF implementations: repositories (`Repositories/`), services (`Services/`), background services (`BackgroundServices/`), migrations, DbContext.
+- `FinTrak.Api` — controllers, validators, mappings, DTOs, `Program.cs`.
+
+**Interfaces** (all in `FinTrak.Core/Interfaces/`):
+- `ITransactionRepository`, `IBudgetRepository`, `IBillRepository`, `IGoalRepository`, `IAccountRepository`, `ICategoryRepository` — all repository interfaces; implementations in `FinTrak.Infrastructure/Repositories/`
+- `IPdfImportService` — PDF bank statement import via Claude Haiku
+- `ITransactionNameMatchService` — trigram-based bulk category assignment by merchant name; `ApplyCategoryRequest` record defined alongside the interface
+- `IBillDetectionService` — recurring bill pattern detection; `TransactionGroup` class defined alongside the interface (it's part of the return type contract)
+
+**Validators** (all in `FinTrak.Api/Validation/`):
+- `TransactionValidator`, `BillValidator`, `BudgetValidator`, `GoalValidator` — `AbstractValidator<T>` per entity
+- Registered via `AddValidatorsFromAssemblyContaining<Program>()` — no per-validator registration needed
+- Injected as concrete types into controllers (e.g. `TransactionValidator tValidator`), not as `IValidator<T>`
+- Called with `await _validator.ValidateAsync(entity, cancellationToken)` before any DB writes
+
+**Mappings** (all in `FinTrak.Api/Mappings/`):
+- `AutoMapperProfile.cs` — Transaction, Budget, Bill, Goal, Category entity → DTO mappings
+- `AccountProfile.cs` — Account entity → AccountDto (OfficialName fallback, Subtype as Type, Mask as Last4, AvailableBalance fallback)
+
+**Logging:**
+- Serilog registered as host logging provider via `builder.Host.UseSerilog(...)`
+- Config in `appsettings.json` under `"Serilog"` key — Console sink, Information default, Warning for Microsoft/System namespaces
+- All `ILogger<T>` injections route through Serilog automatically
+
+**Swagger:**
+- Swashbuckle registered via `AddSwaggerGen()` / `UseSwagger()` / `UseSwaggerUI()` in Development
+- `Microsoft.AspNetCore.OpenApi` is NOT installed — it conflicts with Swashbuckle due to `Microsoft.OpenApi` version mismatch (2.x vs 1.x)
+- `IFormFile` endpoints must use a wrapper model class with `[Consumes("multipart/form-data")]`; direct `IFormFile` parameters cause `SwaggerGeneratorException`
+
+**CancellationToken:**
+- All repository interface methods declare `CancellationToken cancellationToken = default`
+- All controller actions declare `CancellationToken cancellationToken` — ASP.NET Core binds it from the request lifetime automatically
+- Passed through to all EF `async` calls
+
 ## API Setup
 
 `Program.cs` wires up:
 - ForwardedHeaders middleware (required for HTTPS detection behind nginx/Cloudflare proxy)
 - DbContext with Npgsql connection string from `.env`
+- Serilog as host logging provider
 - Cookie authentication (1-hour expiry, sliding)
 - Session (15-minute idle timeout, used for PKCE `code_verifier` and `invite_token`)
+- FluentValidation via `AddValidatorsFromAssemblyContaining<Program>()`
+- All 6 repositories registered as `AddScoped<IInterface, Implementation>()`
+- All services: `IPdfImportService`, `ITransactionNameMatchService`, `IBillDetectionService`
+- AutoMapper with `AccountProfile` + `AutoMapperProfile`
+- Swagger in Development only
 - `UseHttpsRedirection` only in Development (production is behind nginx which handles TLS)
 - `LoadEnv` skips keys already set in the environment (so Docker env vars take precedence over `.env`)
 - Middleware order: ForwardedHeaders → HTTPS (dev only) → Session → Authentication → SilentRefresh → Authorization → Controllers
@@ -153,15 +199,16 @@ React web app at `frontend/web/` using Vite + TypeScript + Tailwind CSS:
 
 - `ALLOWED_EMAIL` is set in `.env` and passed through docker-compose.yml — acts as owner bypass if DB is wiped and no users exist
 - docker-compose.yml has a commented-out duplicate `# ALLOWED_EMAIL:` line above the active one — ignore it
-- Debug logging (Console.WriteLine + .LogTo) still present in Program.cs — should be removed before next clean deploy
+- Debug logging (`Console.WriteLine` + `.LogTo`) still present in `Program.cs` — should be removed; Serilog now handles all structured logging
 
 ## Next Steps
 
-- Split login page into "Sign In" (existing users) and "Create Account" (invite flow) — active discussion
+- Remove debug logging (`Console.WriteLine` + `.LogTo`) from `Program.cs` — Serilog is now in place
 - Build transaction deduplication pipeline
 - Wire ProgressWidgets on Dashboard to real data (currently hardcoded)
 - Add dashboard refresh after sync completes
-- Remove debug logging from Program.cs
+- Add integration tests — xUnit + `WebApplicationFactory`; cover PDF import dedup and Plaid sync at minimum
+- Add CI pipeline — GitHub Actions on push to `main`
 - Make inactivity timeout configurable in Settings
 - Mobile app (React Native)
 
