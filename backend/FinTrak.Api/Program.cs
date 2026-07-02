@@ -37,6 +37,7 @@ builder.Services.AddScoped<TransactionNameMatchService>();
 // -------------------------------------------------------------------------
 
 builder.Services.AddScoped<IPdfImportService, PdfImportService>();
+builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
 
 
 

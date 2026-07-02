@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Utilities;
-using FinTrak.Infrastructure.BackgroundServices;
-using static FinTrak.Infrastructure.BackgroundServices.TransactionNameMatchService;
 using AutoMapper;
 using FinTrak.Api.DTOs;
 using FinTrak.Core.Interfaces;
@@ -16,12 +14,12 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class TransactionsController(FinTrakDbContext db, TransactionNameMatchService tService, IMapper mapper, IPdfImportService pdfImportService) : ControllerBase
+    public class TransactionsController(FinTrakDbContext db, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService) : ControllerBase
     {
         private readonly FinTrakDbContext _db = db;
-        private readonly TransactionNameMatchService _tService = tService;
         private readonly IMapper _mapper = mapper;
         private readonly IPdfImportService _pdfImportService = pdfImportService;
+        private readonly ITransactionNameMatchService _tService = tService;
 
         [HttpGet("get-transactions")]
         public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit)
@@ -117,7 +115,7 @@ namespace FinTrak.Api.Controllers
         [HttpPatch("apply-category-by-merchant")]
         public async Task<IActionResult> ApplyCategoryByMerchant([FromBody] ApplyCategoryRequest request)
         {
-            var result = await _tService.TransactionMatchByName(request);
+            var result = await _tService.MatchByName(request);
             return Ok(new { result });
         }
 
