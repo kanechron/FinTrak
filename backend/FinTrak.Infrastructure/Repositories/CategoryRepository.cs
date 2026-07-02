@@ -9,6 +9,6 @@ public class CategoryRepository(FinTrakDbContext db) : ICategoryRepository
 {
     private readonly FinTrakDbContext _db = db;
 
-    public async Task<List<Category>> GetAllAsync() =>
-        await _db.Categories.ToListAsync();
+    public async Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        await _db.Categories.ToListAsync(cancellationToken);
 }

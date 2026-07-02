@@ -9,20 +9,21 @@ public class BillRepository(FinTrakDbContext db) : IBillRepository
 {
     private readonly FinTrakDbContext _db = db;
 
-    public async Task<List<Bill>> GetByUserIdAsync(Guid userId) =>
+    public async Task<List<Bill>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) =>
         await _db.Bills
             .Where(b => b.DeletedAt == null && b.UserId == userId)
             .Include(b => b.Category)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-    public async Task<Bill?> GetByIdAsync(Guid id) =>
-        await _db.Bills.FirstOrDefaultAsync(b => b.Id == id && b.DeletedAt == null);
+    public async Task<Bill?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        await _db.Bills.FirstOrDefaultAsync(b => b.Id == id && b.DeletedAt == null, cancellationToken);
 
-    public async Task AddAsync(Bill bill)
+    public async Task AddAsync(Bill bill, CancellationToken cancellationToken = default)
     {
         _db.Bills.Add(bill);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SaveAsync() => await _db.SaveChangesAsync();
+    public async Task SaveAsync(CancellationToken cancellationToken = default) =>
+        await _db.SaveChangesAsync(cancellationToken);
 }

@@ -196,7 +196,10 @@ builder.Services.AddControllers()
             return new BadRequestObjectResult(result);
         };
     });
-builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "FinTrak API", Version = "v1" });
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -213,7 +216,10 @@ var app = builder.Build();
 // Order matters here — each middleware runs in the order it is registered.
 
 if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FinTrak API v1"));
+}
 
 app.UseForwardedHeaders();
 

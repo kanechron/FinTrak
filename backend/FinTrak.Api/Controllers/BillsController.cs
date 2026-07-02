@@ -20,16 +20,16 @@ namespace FinTrak.Api.Controllers
         private readonly BillValidator _validator = validator;
 
         [HttpGet("get-bills")]
-        public async Task<IActionResult> GetBills()
+        public async Task<IActionResult> GetBills(CancellationToken cancellationToken)
         {
-            var bills = await _repo.GetByUserIdAsync(GetUserId());
+            var bills = await _repo.GetByUserIdAsync(GetUserId(), cancellationToken);
             return Ok(_mapper.Map<List<BillDto>>(bills));
         }
 
         [HttpPost("add-bill")]
-        public async Task<IActionResult> AddBill([FromBody] Bill bill)
+        public async Task<IActionResult> AddBill([FromBody] Bill bill, CancellationToken cancellationToken)
         {
-            var validation = await _validator.ValidateAsync(bill);
+            var validation = await _validator.ValidateAsync(bill, cancellationToken);
             if (!validation.IsValid)
                 return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
 
@@ -46,14 +46,14 @@ namespace FinTrak.Api.Controllers
                 IsAutoPay = bill.IsAutoPay
             };
 
-            await _repo.AddAsync(newBill);
+            await _repo.AddAsync(newBill, cancellationToken);
             return Ok(new { message = "Bill added successfully.", billId = newBill.Id });
         }
 
         [HttpPatch("update-bill/{id}")]
-        public async Task<IActionResult> UpdateBill(Guid id, [FromBody] Bill updatedBill)
+        public async Task<IActionResult> UpdateBill(Guid id, [FromBody] Bill updatedBill, CancellationToken cancellationToken)
         {
-            var existingBill = await _repo.GetByIdAsync(id);
+            var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBill == null) return NotFound("Bill not found.");
 
             existingBill.Name = updatedBill.Name ?? existingBill.Name;
@@ -65,25 +65,25 @@ namespace FinTrak.Api.Controllers
             existingBill.LastPaidDate = updatedBill.LastPaidDate ?? existingBill.LastPaidDate;
             existingBill.IsAutoPay = updatedBill.IsAutoPay;
 
-            await _repo.SaveAsync();
+            await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Bill updated successfully." });
         }
 
         [HttpDelete("delete-bill/{id}")]
-        public async Task<IActionResult> DeleteBill(Guid id)
+        public async Task<IActionResult> DeleteBill(Guid id, CancellationToken cancellationToken)
         {
-            var existingBill = await _repo.GetByIdAsync(id);
+            var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBill == null) return NotFound("Bill not found.");
 
             existingBill.DeletedAt = DateTime.UtcNow;
-            await _repo.SaveAsync();
+            await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Bill deleted successfully." });
         }
 
         [HttpGet("get-suggestions")]
-        public async Task<IActionResult> GetSuggestions()
+        public async Task<IActionResult> GetSuggestions(CancellationToken cancellationToken)
         {
-            var suggestions = await _billDetectionService.DetectAsync(CancellationToken.None);
+            var suggestions = await _billDetectionService.DetectAsync(cancellationToken);
             return Ok(suggestions);
         }
 

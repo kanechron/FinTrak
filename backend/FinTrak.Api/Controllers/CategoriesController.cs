@@ -15,9 +15,9 @@ namespace FinTrak.Api.Controllers
         private readonly IMapper _mapper = mapper;
 
         [HttpGet("get-categories")]
-        public async Task<IActionResult> GetCategories()
+        public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
         {
-            var categories = await _repo.GetAllAsync();
+            var categories = await _repo.GetAllAsync(cancellationToken);
             return Ok(_mapper.Map<List<CategoryDto>>(categories));
         }
     }

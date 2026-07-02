@@ -4,9 +4,9 @@ namespace FinTrak.Core.Interfaces;
 
 public interface IGoalRepository
 {
-    Task<List<Goal>> GetByUserIdAsync(Guid userId);
-    Task<Goal?> GetByIdAsync(Guid id);
-    Task<int> GetMaxPriorityAsync();
-    Task AddAsync(Goal goal);
-    Task SaveAsync();
+    Task<List<Goal>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Goal?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<int> GetMaxPriorityAsync(CancellationToken cancellationToken = default);
+    Task AddAsync(Goal goal, CancellationToken cancellationToken = default);
+    Task SaveAsync(CancellationToken cancellationToken = default);
 }

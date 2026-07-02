@@ -9,29 +9,30 @@ public class GoalRepository(FinTrakDbContext db) : IGoalRepository
 {
     private readonly FinTrakDbContext _db = db;
 
-    public async Task<List<Goal>> GetByUserIdAsync(Guid userId) =>
+    public async Task<List<Goal>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) =>
         await _db.Goals
             .Where(g => g.DeletedAt == null && g.UserId == userId)
             .Include(g => g.LinkedAccounts)
             .OrderBy(g => g.Priority)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-    public async Task<Goal?> GetByIdAsync(Guid id) =>
+    public async Task<Goal?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _db.Goals
             .Include(g => g.LinkedAccounts)
-            .FirstOrDefaultAsync(g => g.Id == id && g.DeletedAt == null);
+            .FirstOrDefaultAsync(g => g.Id == id && g.DeletedAt == null, cancellationToken);
 
-    public async Task<int> GetMaxPriorityAsync() =>
+    public async Task<int> GetMaxPriorityAsync(CancellationToken cancellationToken = default) =>
         await _db.Goals
             .Where(g => g.DeletedAt == null)
             .Select(g => (int?)g.Priority)
-            .MaxAsync() ?? -1;
+            .MaxAsync(cancellationToken) ?? -1;
 
-    public async Task AddAsync(Goal goal)
+    public async Task AddAsync(Goal goal, CancellationToken cancellationToken = default)
     {
         _db.Goals.Add(goal);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SaveAsync() => await _db.SaveChangesAsync();
+    public async Task SaveAsync(CancellationToken cancellationToken = default) =>
+        await _db.SaveChangesAsync(cancellationToken);
 }

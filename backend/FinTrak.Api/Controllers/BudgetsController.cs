@@ -18,13 +18,13 @@ namespace FinTrak.Api.Controllers
         private readonly BudgetValidator _validator = validator;
 
         [HttpGet("get-budgets")]
-        public async Task<IActionResult> GetBudgets()
+        public async Task<IActionResult> GetBudgets(CancellationToken cancellationToken)
         {
             var userId = GetUserId();
-            var budgets = await _repo.GetActiveByUserIdAsync(userId);
+            var budgets = await _repo.GetActiveByUserIdAsync(userId, cancellationToken);
 
             var categoryIds = budgets.Where(b => b.CategoryId.HasValue).Select(b => b.CategoryId!.Value).Distinct().ToList();
-            var spendingByCategory = await _repo.GetSpendingByCategoryAsync(userId, categoryIds);
+            var spendingByCategory = await _repo.GetSpendingByCategoryAsync(userId, categoryIds, cancellationToken);
 
             var result = budgets.Select(b => new BudgetDto
             {
@@ -44,9 +44,9 @@ namespace FinTrak.Api.Controllers
         }
 
         [HttpPost("add-budget")]
-        public async Task<IActionResult> AddBudget([FromBody] Budget budget)
+        public async Task<IActionResult> AddBudget([FromBody] Budget budget, CancellationToken cancellationToken)
         {
-            var validation = await _validator.ValidateAsync(budget);
+            var validation = await _validator.ValidateAsync(budget, cancellationToken);
             if (!validation.IsValid)
                 return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
 
@@ -72,14 +72,14 @@ namespace FinTrak.Api.Controllers
                 },
             };
 
-            await _repo.AddAsync(newBudget);
+            await _repo.AddAsync(newBudget, cancellationToken);
             return Ok(new { message = "Budget added successfully.", id = newBudget.Id });
         }
 
         [HttpPatch("update-budget/{id}")]
-        public async Task<IActionResult> UpdateBudget(Guid id, [FromBody] Budget budget)
+        public async Task<IActionResult> UpdateBudget(Guid id, [FromBody] Budget budget, CancellationToken cancellationToken)
         {
-            var existingBudget = await _repo.GetByIdAsync(id);
+            var existingBudget = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBudget == null) return NotFound(new { error = "Budget not found." });
 
             existingBudget.Name = budget.Name ?? existingBudget.Name;
@@ -97,19 +97,19 @@ namespace FinTrak.Api.Controllers
             existingBudget.IsRecurring = budget.IsRecurring;
             existingBudget.RecurringDate = budget.RecurringDate ?? existingBudget.RecurringDate;
 
-            await _repo.SaveAsync();
+            await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Budget updated successfully." });
         }
 
         [HttpDelete("delete-budget/{id}")]
-        public async Task<IActionResult> DeleteBudget(Guid id)
+        public async Task<IActionResult> DeleteBudget(Guid id, CancellationToken cancellationToken)
         {
-            var existingBudget = await _repo.GetByIdAsync(id);
+            var existingBudget = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBudget == null) return NotFound(new { error = "Budget not found." });
 
             existingBudget.DeletedAt = DateTime.UtcNow;
             existingBudget.IsActive = false;
-            await _repo.SaveAsync();
+            await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Budget deleted successfully." });
         }
 
