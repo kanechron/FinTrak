@@ -6,18 +6,20 @@ using FinTrak.Core.Utilities;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Api.DTOs;
+using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService) : ControllerBase
+    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService, TransactionValidator tValidator) : ControllerBase
     {
         private readonly ITransactionRepository _repo = repo;
         private readonly IMapper _mapper = mapper;
         private readonly IPdfImportService _pdfImportService = pdfImportService;
         private readonly ITransactionNameMatchService _tService = tService;
+        private readonly TransactionValidator _tValidator = tValidator;
 
         [HttpGet("get-transactions")]
         public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit)
@@ -38,7 +40,7 @@ namespace FinTrak.Api.Controllers
         {
             if (transaction == null || transaction.Amount <= 0)
                 return BadRequest(new { error = "Invalid Transaction data" });
-
+            
             var newTrans = new Transaction
             {
                 Id = Guid.NewGuid(),
@@ -58,6 +60,10 @@ namespace FinTrak.Api.Controllers
                 CreatedAt = transaction.CreatedAt,
                 Date = transaction.Date
             };
+
+            var validationResult = await _tValidator.ValidateAsync(newTrans);
+            if (!validationResult.IsValid)
+                return BadRequest(new { errors = validationResult.Errors });
 
             await _repo.AddAsync(newTrans);
             return Ok(new { message = "Transaction added successfully.", id = newTrans.Id });

@@ -19,9 +19,11 @@
 ## Architecture
 - [x] **DTOs & mappers** — stop returning EF entities directly from controllers; add DTO layer with `From()` mappers per entity
 - [x] **Service layer** — extract business logic out of controllers into injectable services (start with PDF import, rules engine)
+- [x] **Repository pattern** — all DB queries extracted from controllers into typed repositories; controllers depend only on interfaces; FinTrakDbContext isolated to Infrastructure
+- [x] **Interface layer** — IPdfImportService, ITransactionNameMatchService, IBillDetectionService, and all 6 repository interfaces defined in Core
 - [ ] **Input validation** — validate request bodies on DTOs before they reach business logic (FluentValidation or DataAnnotations)
 - [x] **Global error handling** — `UseExceptionHandler` middleware that maps exceptions to RFC 7807 Problem Details; no raw 500s with stack traces
-- [ ] **Structured logging** — replace Console.WriteLines with Serilog `_logger.LogInformation(...)` with structured properties; sink to file or seq
+- [x] **Structured logging** — Serilog registered as host logging provider; Console sink configured; all services/background services pick up ILogger<T> automatically
 - [ ] **Swagger / OpenAPI** — `AddSwaggerGen()` for auto-generated, self-documenting API docs
 - [ ] **Cancellation tokens** — pass `CancellationToken` through controller actions down to EF queries
 

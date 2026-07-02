@@ -5,17 +5,19 @@ using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Api.DTOs;
+using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class GoalsController(IGoalRepository repo, IAccountRepository accountRepo, IMapper mapper) : ControllerBase
+    public class GoalsController(IGoalRepository repo, IAccountRepository accountRepo, IMapper mapper, GoalValidator validator) : ControllerBase
     {
         private readonly IGoalRepository _repo = repo;
         private readonly IAccountRepository _accountRepo = accountRepo;
         private readonly IMapper _mapper = mapper;
+        private readonly GoalValidator _validator = validator;
 
         [HttpGet("get-goals")]
         public async Task<IActionResult> GetGoals()
@@ -27,8 +29,9 @@ namespace FinTrak.Api.Controllers
         [HttpPost("add-goal")]
         public async Task<IActionResult> AddGoal([FromBody] Goal goal)
         {
-            if (goal == null || string.IsNullOrWhiteSpace(goal.Name) || goal.TargetAmount <= 0)
-                return BadRequest(new { message = "Invalid goal data. Name and TargetAmount are required." });
+            var validation = await _validator.ValidateAsync(goal);
+            if (!validation.IsValid)
+                return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
 
             var accountIds = goal.LinkedAccounts?.Select(a => a.Id).ToList() ?? [];
             var allAccounts = await _accountRepo.GetByUserIdAsync(GetUserId());

@@ -1,5 +1,6 @@
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Infrastructure.BackgroundServices;
+using Serilog;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Api.Middleware;
@@ -13,6 +14,7 @@ using System.Transactions;
 using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
 using FinTrak.Core.Interfaces;
+using FluentValidation;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -20,6 +22,8 @@ using FinTrak.Core.Interfaces;
 LoadEnv();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configuration));
 
 
 // -------------------------------------------------------------------------
@@ -34,6 +38,8 @@ builder.Services.AddHostedService<BillsAutoDetectService>();
 // -------------------------------------------------------------------------
 // Services
 // -------------------------------------------------------------------------
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
