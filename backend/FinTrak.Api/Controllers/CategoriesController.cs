@@ -1,6 +1,8 @@
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
+using FinTrak.Api.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
@@ -10,10 +12,12 @@ namespace FinTrak.Api.Controllers
     public class CategoriesController : ControllerBase
     {
         private readonly FinTrakDbContext _db;
+        private readonly IMapper _mapper;
 
-        public CategoriesController(FinTrakDbContext db)
+        public CategoriesController(FinTrakDbContext db, IMapper mapper)
         {
             _db = db;
+            _mapper = mapper;
         }
 
         [HttpGet("get-categories")]
@@ -21,23 +25,13 @@ namespace FinTrak.Api.Controllers
         {
             try
             {
-                var categories = _db.Categories
-                    // .Where(c => c.DeletedAt == null)
-                    .Select(c => new
-                    {
-                        id = c.Id,
-                        name = c.Name,
-                        detailId = c.DetailId,
-                    })
-                    .ToList();
-
-                return Ok(categories);
+                var categories = _db.Categories.ToList();
+                return Ok(_mapper.Map<List<CategoryDto>>(categories));
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = "Failed to retrieve categories.", detail = ex.Message });
             }
         }
-
     }
 }

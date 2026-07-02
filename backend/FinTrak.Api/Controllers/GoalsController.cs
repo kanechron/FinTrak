@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using AutoMapper;
+using FinTrak.Api.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
@@ -13,10 +15,12 @@ namespace FinTrak.Api.Controllers
     public class GoalsController : ControllerBase
     {
         private readonly FinTrakDbContext _db;
+        private readonly IMapper _mapper;
 
-        public GoalsController(FinTrakDbContext db)
+        public GoalsController(FinTrakDbContext db, IMapper mapper)
         {
             _db = db;
+            _mapper = mapper;
         }
 
         [HttpGet("get-goals")]
@@ -31,25 +35,7 @@ namespace FinTrak.Api.Controllers
                     .OrderBy(g => g.Priority) // Order by user-defined priority
                     .ToListAsync();
 
-                var result = goals.Select(g => new
-                {
-                    id = g.Id,
-                    name = g.Name,
-                    targetAmount = g.TargetAmount,
-                    targetDate = g.TargetDate,
-                    isCompleted = g.CompletedAt != null,
-                    isActive = g.IsActive,
-                    currentAmount = 0, // Sum of available balances from linked accounts
-                    priority = g.Priority,
-                    linkedAccounts = g.LinkedAccounts.Select(a => new
-                    {
-                        id = a.Id,
-                        name = a.OfficialName ?? a.Name,
-                        mask = a.Mask
-                    }).ToList()
-                });
-
-                return Ok(result);
+                return Ok(_mapper.Map<List<GoalDto>>(goals));
             }
             catch (Exception ex)
             {

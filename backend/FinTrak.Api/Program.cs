@@ -9,6 +9,7 @@ using FinTrak.Core.BackgroundServices;
 using Microsoft.AspNetCore.HttpOverrides;
 using Anthropic;
 using Anthropic.SDK;
+using System.Transactions;
 
 
 // Load environment variables from .env before anything else.
@@ -80,6 +81,20 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 });
 
 builder.Services.AddSingleton(new AnthropicClient(builder.Configuration["Anthropic:ApiKey"]!));
+
+
+
+// -------------------------------------------------------------------------
+// AutoMapper
+// -------------------------------------------------------------------------
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<FinTrak.Api.Mappings.TransactionProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.BillProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.GoalProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.CategoryProfile>();
+});
+
 
 
 // -------------------------------------------------------------------------
