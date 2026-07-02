@@ -10,7 +10,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Anthropic;
 using Anthropic.SDK;
 using System.Transactions;
-
+using FinTrak.Infrastructure.Services;
+using FinTrak.Core.Interfaces;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -29,6 +30,14 @@ builder.Services.AddHostedService<RecurringDateService>();  // custom service to
 builder.Services.AddScoped<BillDetectionService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
 builder.Services.AddScoped<TransactionNameMatchService>();
+
+
+// -------------------------------------------------------------------------
+// Services
+// -------------------------------------------------------------------------
+
+builder.Services.AddScoped<IPdfImportService, PdfImportService>();
+
 
 
 

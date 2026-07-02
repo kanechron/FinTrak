@@ -23,15 +23,8 @@ namespace FinTrak.Api.Controllers
         [HttpGet("get-categories")]
         public IActionResult GetCategories()
         {
-            try
-            {
-                var categories = _db.Categories.ToList();
-                return Ok(_mapper.Map<List<CategoryDto>>(categories));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to retrieve categories.", detail = ex.Message });
-            }
+            var categories = _db.Categories.ToList();
+            return Ok(_mapper.Map<List<CategoryDto>>(categories));
         }
     }
 }
