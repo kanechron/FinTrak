@@ -5,15 +5,17 @@ using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
 using FinTrak.Api.DTOs;
+using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class BudgetsController(IBudgetRepository repo) : ControllerBase
+    public class BudgetsController(IBudgetRepository repo, BudgetValidator validator) : ControllerBase
     {
         private readonly IBudgetRepository _repo = repo;
+        private readonly BudgetValidator _validator = validator;
 
         [HttpGet("get-budgets")]
         public async Task<IActionResult> GetBudgets()
@@ -44,8 +46,9 @@ namespace FinTrak.Api.Controllers
         [HttpPost("add-budget")]
         public async Task<IActionResult> AddBudget([FromBody] Budget budget)
         {
-            if (budget == null || budget.Amount <= 0)
-                return BadRequest(new { error = "Invalid budget data." });
+            var validation = await _validator.ValidateAsync(budget);
+            if (!validation.IsValid)
+                return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
 
             var newBudget = new Budget
             {

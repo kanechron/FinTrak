@@ -5,17 +5,19 @@ using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Api.DTOs;
+using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Authorize]
     [Route("[controller]")]
-    public class BillsController(IBillRepository repo, IBillDetectionService billDetectionService, IMapper mapper) : ControllerBase
+    public class BillsController(IBillRepository repo, IBillDetectionService billDetectionService, IMapper mapper, BillValidator validator) : ControllerBase
     {
         private readonly IBillRepository _repo = repo;
         private readonly IBillDetectionService _billDetectionService = billDetectionService;
         private readonly IMapper _mapper = mapper;
+        private readonly BillValidator _validator = validator;
 
         [HttpGet("get-bills")]
         public async Task<IActionResult> GetBills()
@@ -27,8 +29,9 @@ namespace FinTrak.Api.Controllers
         [HttpPost("add-bill")]
         public async Task<IActionResult> AddBill([FromBody] Bill bill)
         {
-            if (bill == null || string.IsNullOrEmpty(bill.Name) || bill.Amount <= 0)
-                return BadRequest("Invalid bill data. Name and positive amount are required.");
+            var validation = await _validator.ValidateAsync(bill);
+            if (!validation.IsValid)
+                return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
 
             var newBill = new Bill
             {
