@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using FinTrak.Core.Interfaces;
 
 namespace FinTrak.Core.BackgroundServices
 {
@@ -17,7 +18,7 @@ namespace FinTrak.Core.BackgroundServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 using var scope = _scopeFactory.CreateScope();
-                var detectionService = scope.ServiceProvider.GetRequiredService<FinTrak.Infrastructure.BackgroundServices.BillDetectionService>();
+                var detectionService = scope.ServiceProvider.GetRequiredService<IBillDetectionService>();
                 await detectionService.DetectAsync(stoppingToken);
 
                 await Task.Delay(TimeSpan.FromDays(7), stoppingToken);

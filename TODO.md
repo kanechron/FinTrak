@@ -17,10 +17,10 @@
 - [ ] **Transaction page size** — configurable limit for how many transactions load at once
 
 ## Architecture
-- [ ] **DTOs & mappers** — stop returning EF entities directly from controllers; add DTO layer with `From()` mappers per entity
-- [ ] **Service layer** — extract business logic out of controllers into injectable services (start with PDF import, rules engine)
+- [x] **DTOs & mappers** — stop returning EF entities directly from controllers; add DTO layer with `From()` mappers per entity
+- [x] **Service layer** — extract business logic out of controllers into injectable services (start with PDF import, rules engine)
 - [ ] **Input validation** — validate request bodies on DTOs before they reach business logic (FluentValidation or DataAnnotations)
-- [ ] **Global error handling** — `UseExceptionHandler` middleware that maps exceptions to RFC 7807 Problem Details; no raw 500s with stack traces
+- [x] **Global error handling** — `UseExceptionHandler` middleware that maps exceptions to RFC 7807 Problem Details; no raw 500s with stack traces
 - [ ] **Structured logging** — replace Console.WriteLines with Serilog `_logger.LogInformation(...)` with structured properties; sink to file or seq
 - [ ] **Swagger / OpenAPI** — `AddSwaggerGen()` for auto-generated, self-documenting API docs
 - [ ] **Cancellation tokens** — pass `CancellationToken` through controller actions down to EF queries

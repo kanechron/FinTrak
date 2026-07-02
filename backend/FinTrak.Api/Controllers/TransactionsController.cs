@@ -1,22 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Utilities;
+using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Api.DTOs;
-using FinTrak.Core.Interfaces;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class TransactionsController(FinTrakDbContext db, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService) : ControllerBase
+    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService) : ControllerBase
     {
-        private readonly FinTrakDbContext _db = db;
+        private readonly ITransactionRepository _repo = repo;
         private readonly IMapper _mapper = mapper;
         private readonly IPdfImportService _pdfImportService = pdfImportService;
         private readonly ITransactionNameMatchService _tService = tService;
@@ -24,31 +22,14 @@ namespace FinTrak.Api.Controllers
         [HttpGet("get-transactions")]
         public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit)
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            var query = _db.Transactions
-                .Where(t => t.DeletedAt == null && t.UserId == userId)
-                .Include(t => t.Category)
-                .Include(t => t.CategoryDetailed)
-                .OrderByDescending(t => t.Date);
-
-            var transactions = (limit == null || limit == 0)
-                ? await query.ToListAsync()
-                : await query.Skip(offset ?? 0).Take(limit.Value).ToListAsync();
-
+            var transactions = await _repo.GetByUserIdAsync(GetUserId(), offset, limit);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
         [HttpGet("get-transactions-by-category/{id}")]
         public async Task<IActionResult> GetTransactionsByCategory(Guid id)
         {
-            var transactions = await _db.Transactions
-                .Where(t => t.DeletedAt == null && t.CategoryId == id)
-                .Include(t => t.Category)
-                .Include(t => t.CategoryDetailed)
-                .OrderByDescending(t => t.Date)
-                .ToListAsync();
-
+            var transactions = await _repo.GetByCategoryIdAsync(id);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
@@ -58,12 +39,10 @@ namespace FinTrak.Api.Controllers
             if (transaction == null || transaction.Amount <= 0)
                 return BadRequest(new { error = "Invalid Transaction data" });
 
-            var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? Guid.Empty.ToString());
-
             var newTrans = new Transaction
             {
                 Id = Guid.NewGuid(),
-                UserId = userId,
+                UserId = GetUserId(),
                 PlaidTransactionId = null,
                 Amount = transaction.Amount,
                 MerchantNameNormalized = transaction.MerchantName.NormalizeName(),
@@ -80,15 +59,14 @@ namespace FinTrak.Api.Controllers
                 Date = transaction.Date
             };
 
-            _db.Transactions.Add(newTrans);
-            await _db.SaveChangesAsync();
+            await _repo.AddAsync(newTrans);
             return Ok(new { message = "Transaction added successfully.", id = newTrans.Id });
         }
 
         [HttpPatch("update-transaction/{id}")]
         public async Task<IActionResult> UpdateTransaction(Guid id, [FromBody] Transaction update)
         {
-            var existing = await _db.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.DeletedAt == null);
+            var existing = await _repo.GetByIdAsync(id);
             if (existing == null) return NotFound(new { error = "Transaction not found" });
 
             if (!string.IsNullOrWhiteSpace(update.MerchantName))
@@ -108,7 +86,7 @@ namespace FinTrak.Api.Controllers
             if (update.Date.HasValue)
                 existing.Date = update.Date;
 
-            await _db.SaveChangesAsync();
+            await _repo.SaveAsync();
             return Ok(new { message = "Transaction updated successfully." });
         }
 
@@ -122,11 +100,11 @@ namespace FinTrak.Api.Controllers
         [HttpDelete("delete-transaction/{id}")]
         public async Task<IActionResult> DeleteTransaction(Guid id)
         {
-            var existing = await _db.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.DeletedAt == null);
+            var existing = await _repo.GetByIdAsync(id);
             if (existing == null) return NotFound(new { error = "Could not find transaction {id}" });
 
             existing.DeletedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
+            await _repo.SaveAsync();
             return Ok(new { message = "Transaction deleted successfully" });
         }
 
@@ -141,8 +119,5 @@ namespace FinTrak.Api.Controllers
 
         private Guid GetUserId() =>
             Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
     }
-
-    
 }

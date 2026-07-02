@@ -1,6 +1,6 @@
-using FinTrak.Infrastructure.Persistance;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Api.DTOs;
 
@@ -9,21 +9,15 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController(ICategoryRepository repo, IMapper mapper) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-        private readonly IMapper _mapper;
-
-        public CategoriesController(FinTrakDbContext db, IMapper mapper)
-        {
-            _db = db;
-            _mapper = mapper;
-        }
+        private readonly ICategoryRepository _repo = repo;
+        private readonly IMapper _mapper = mapper;
 
         [HttpGet("get-categories")]
-        public IActionResult GetCategories()
+        public async Task<IActionResult> GetCategories()
         {
-            var categories = _db.Categories.ToList();
+            var categories = await _repo.GetAllAsync();
             return Ok(_mapper.Map<List<CategoryDto>>(categories));
         }
     }

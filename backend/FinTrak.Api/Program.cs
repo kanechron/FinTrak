@@ -11,6 +11,7 @@ using Anthropic;
 using Anthropic.SDK;
 using System.Transactions;
 using FinTrak.Infrastructure.Services;
+using FinTrak.Infrastructure.Repositories;
 using FinTrak.Core.Interfaces;
 
 // Load environment variables from .env before anything else.
@@ -25,11 +26,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Background services
 //--------------------------------------------------------------------------
 // Hosted services run in the background alongside the main web server. They are ideal for tasks that need to run periodically or continuously, such as cleaning up old records from the database.
-builder.Services.AddHostedService<DbDeleteService>();
-builder.Services.AddHostedService<RecurringDateService>();  // custom service to permanently delete soft-deleted records after a retention period
-builder.Services.AddScoped<BillDetectionService>();
+builder.Services.AddHostedService<DbDeleteService>();  // custom service to permanently delete soft-deleted records after a retention period
+builder.Services.AddHostedService<RecurringDateService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
-builder.Services.AddScoped<TransactionNameMatchService>();
 
 
 // -------------------------------------------------------------------------
@@ -38,6 +37,17 @@ builder.Services.AddScoped<TransactionNameMatchService>();
 
 builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
+builder.Services.AddScoped<IBillDetectionService, BillDetectionService>();
+
+// -------------------------------------------------------------------------
+// Repositories
+// -------------------------------------------------------------------------
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<IBillRepository, BillRepository>();
+builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
+builder.Services.AddScoped<IGoalRepository, GoalRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
 
 
@@ -103,6 +113,7 @@ builder.Services.AddAutoMapper(cfg =>
     cfg.AddProfile<FinTrak.Api.Mappings.BillProfile>();
     cfg.AddProfile<FinTrak.Api.Mappings.GoalProfile>();
     cfg.AddProfile<FinTrak.Api.Mappings.CategoryProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.AccountProfile>();
 });
 
 

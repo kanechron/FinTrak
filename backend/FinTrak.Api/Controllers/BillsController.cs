@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
-using FinTrak.Infrastructure.BackgroundServices;
+using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Api.DTOs;
 
@@ -13,28 +11,16 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Authorize]
     [Route("[controller]")]
-    public class BillsController : ControllerBase
+    public class BillsController(IBillRepository repo, IBillDetectionService billDetectionService, IMapper mapper) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-        private readonly BillDetectionService _billDetectionService;
-        private readonly IMapper _mapper;
-
-        public BillsController(FinTrakDbContext db, BillDetectionService billDetectionService, IMapper mapper)
-        {
-            _db = db;
-            _billDetectionService = billDetectionService;
-            _mapper = mapper;
-        }
+        private readonly IBillRepository _repo = repo;
+        private readonly IBillDetectionService _billDetectionService = billDetectionService;
+        private readonly IMapper _mapper = mapper;
 
         [HttpGet("get-bills")]
         public async Task<IActionResult> GetBills()
         {
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var bills = await _db.Bills
-                .Where(b => b.DeletedAt == null && b.UserId == userId)
-                .Include(b => b.Category)
-                .ToListAsync();
-
+            var bills = await _repo.GetByUserIdAsync(GetUserId());
             return Ok(_mapper.Map<List<BillDto>>(bills));
         }
 
@@ -44,10 +30,9 @@ namespace FinTrak.Api.Controllers
             if (bill == null || string.IsNullOrEmpty(bill.Name) || bill.Amount <= 0)
                 return BadRequest("Invalid bill data. Name and positive amount are required.");
 
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var newBill = new Bill
             {
-                UserId = userId,
+                UserId = GetUserId(),
                 Name = bill.Name,
                 Amount = bill.Amount,
                 CategoryId = bill.CategoryId,
@@ -58,17 +43,15 @@ namespace FinTrak.Api.Controllers
                 IsAutoPay = bill.IsAutoPay
             };
 
-            _db.Bills.Add(newBill);
-            await _db.SaveChangesAsync();
+            await _repo.AddAsync(newBill);
             return Ok(new { message = "Bill added successfully.", billId = newBill.Id });
         }
 
         [HttpPatch("update-bill/{id}")]
         public async Task<IActionResult> UpdateBill(Guid id, [FromBody] Bill updatedBill)
         {
-            var existingBill = await _db.Bills.FirstOrDefaultAsync(b => b.Id == id);
-            if (existingBill == null || existingBill.DeletedAt != null)
-                return NotFound("Bill not found.");
+            var existingBill = await _repo.GetByIdAsync(id);
+            if (existingBill == null) return NotFound("Bill not found.");
 
             existingBill.Name = updatedBill.Name ?? existingBill.Name;
             existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
@@ -79,19 +62,18 @@ namespace FinTrak.Api.Controllers
             existingBill.LastPaidDate = updatedBill.LastPaidDate ?? existingBill.LastPaidDate;
             existingBill.IsAutoPay = updatedBill.IsAutoPay;
 
-            await _db.SaveChangesAsync();
+            await _repo.SaveAsync();
             return Ok(new { message = "Bill updated successfully." });
         }
 
         [HttpDelete("delete-bill/{id}")]
         public async Task<IActionResult> DeleteBill(Guid id)
         {
-            var existingBill = await _db.Bills.FirstOrDefaultAsync(b => b.Id == id);
-            if (existingBill == null || existingBill.DeletedAt != null)
-                return NotFound("Bill not found.");
+            var existingBill = await _repo.GetByIdAsync(id);
+            if (existingBill == null) return NotFound("Bill not found.");
 
             existingBill.DeletedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
+            await _repo.SaveAsync();
             return Ok(new { message = "Bill deleted successfully." });
         }
 
@@ -101,5 +83,8 @@ namespace FinTrak.Api.Controllers
             var suggestions = await _billDetectionService.DetectAsync(CancellationToken.None);
             return Ok(suggestions);
         }
+
+        private Guid GetUserId() =>
+            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }
