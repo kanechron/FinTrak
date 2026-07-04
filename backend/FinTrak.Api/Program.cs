@@ -8,9 +8,7 @@ using Going.Plaid;
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.BackgroundServices;
 using Microsoft.AspNetCore.HttpOverrides;
-using Anthropic;
 using Anthropic.SDK;
-using System.Transactions;
 using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
 using FinTrak.Core.Interfaces;
@@ -44,6 +42,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
 builder.Services.AddScoped<IBillDetectionService, BillDetectionService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 
 // -------------------------------------------------------------------------
 // Repositories

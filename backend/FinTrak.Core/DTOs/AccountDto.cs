@@ -1,4 +1,4 @@
-namespace FinTrak.Api.DTOs
+namespace FinTrak.Core.DTOs
 {
     public class AccountDto
     {

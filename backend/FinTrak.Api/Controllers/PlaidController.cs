@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using FinTrak.Infrastructure.Persistance;
 using System.Security.Claims;
@@ -16,9 +16,9 @@ namespace FinTrak.Api.Controllers
     /// Handles Plaid bank integration.
     ///
     /// Flow summary:
-    ///   1. POST /plaid/link-token      — creates a Plaid link token for the frontend Link UI
-    ///   2. POST /plaid/exchange-token  — exchanges the public token from Link for a permanent access token
-    ///   3. POST /plaid/sync            — syncs transactions for all linked items
+    ///   1. POST /plaid/link-token      â€” creates a Plaid link token for the frontend Link UI
+    ///   2. POST /plaid/exchange-token  â€” exchanges the public token from Link for a permanent access token
+    ///   3. POST /plaid/sync            â€” syncs transactions for all linked items
     /// </summary>
     [ApiController]
     [Route("plaid")]
@@ -162,7 +162,7 @@ public async Task<IActionResult> ExchangeToken(
     
 /// <summary>
 /// Syncs transactions for all of the user's linked Plaid items.
-/// Uses Plaid's cursor-based sync — only fetches changes since the last sync.
+/// Uses Plaid's cursor-based sync â€” only fetches changes since the last sync.
 /// </summary>
 [HttpPost("sync")]
 public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)

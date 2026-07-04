@@ -51,12 +51,13 @@ namespace FinTrak.Infrastructure.Services
                             },
                             new TextContent {Text = $"""
                             Extract all transactions from this bank statement and return them as a JSON array.
-                            Each item must have these fields: date (YYYY-MM-DD), merchant (string), amount (decimal, positive for debits), category, categoryDetailed.
+                            Each item must have these fields: date (YYYY-MM-DD), merchant (string), amount (decimal, positive for debits/expenses, negative for credits/income), category, categoryDetailed.
                             For category, use ONLY a value from this list of parent categories: {parentList}
                             For categoryDetailed, use ONLY a value from this list of subcategories: {detailList}
                             The categoryDetailed must be a subcategory that belongs to the chosen category.
                             Clean merchant names — remove store numbers, location codes, and state abbreviations (e.g. "Sheetz 0176 Knoxville MD" → "Sheetz", "McDonald's F2704 Catonsville MD" → "McDonald's").
                             Exclude zero-amount entries.
+                            Any transactions marked as income need to have a negative sign.
                             Return only the raw JSON array, no markdown formatting, no explanation.
                             """}
                         ]
