@@ -3,30 +3,31 @@
 ## Transactions
 - [ ] **Search & filter** — filter by name, category, amount, date, or any metric
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
+- [ ] **Separate categories** - all categories appear in the same dropdown
+- [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 
 ## Bills
 - [ ] **Permanent decline** — automatic bill detection should permanently decline bills that have been historically declined, not re-surface them
 - [ ] **Permanent acceptance** — automatically accept bills that have been historically accepted, not re-prompt each time
 
 ## Reports
-- [ ] **Monthly Spending Trend** — graph doesn't look right, investigate
-- [ ] **Income vs Expenses** — graph doesn't look right, investigate
-- [ ] **Export** — export reports as PDF, Excel, or CSV
+- [x] **Monthly Spending Trend** — graph doesn't look right, investigate
+- [x] **Income vs Expenses** — graph doesn't look right, investigate
+- [x] **Export** — export reports as PDF, Excel, or CSV
+
+## Budgets
+- [x] **Spent Calculation** - spent amount isn't calculating correctly, investigate. Most likely result from restructuring categories
+
+## Auth
+- [ ] **Session state sync** — frontend doesn't detect when the user is logged out server-side; add a polling interval or auth check that redirects to login when the session expires or logout occurs
 
 ## Settings
 - [ ] **Transaction page size** — configurable limit for how many transactions load at once
 
 ## Architecture
-- [x] **DTOs & mappers** — stop returning EF entities directly from controllers; add DTO layer with `From()` mappers per entity
-- [x] **Service layer** — extract business logic out of controllers into injectable services (start with PDF import, rules engine)
-- [x] **Repository pattern** — all DB queries extracted from controllers into typed repositories; controllers depend only on interfaces; FinTrakDbContext isolated to Infrastructure
-- [x] **Interface layer** — IPdfImportService, ITransactionNameMatchService, IBillDetectionService, and all 6 repository interfaces defined in Core
-- [x] **Input validation** — validate request bodies on DTOs before they reach business logic (FluentValidation or DataAnnotations)
-- [x] **Global error handling** — `UseExceptionHandler` middleware that maps exceptions to RFC 7807 Problem Details; no raw 500s with stack traces
-- [x] **Structured logging** — Serilog registered as host logging provider; Console sink configured; all services/background services pick up ILogger<T> automatically
-- [x] **Swagger / OpenAPI** — `AddSwaggerGen()` for auto-generated, self-documenting API docs
-- [x] **Cancellation tokens** — pass `CancellationToken` through controller actions down to EF queries
-
+- [ ] **Rate limiting** — fixed window on auth endpoints (`/auth/login`, `/auth/callback`) and write endpoints; ASP.NET Core built-in middleware
+- [ ] **Health checks** — `AddHealthChecks().AddNpgsql(...)` + `/health` endpoint for Docker container health monitoring
+- [ ] **Remove debug logging** — `Console.WriteLine` + `.LogTo` still in `Program.cs`; Serilog is now in place
 
 ## Testing
 - [ ] **Integration tests** — xUnit + `WebApplicationFactory`; cover PDF import dedup logic and Plaid sync at minimum

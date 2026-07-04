@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Security.Claims;
 using System.Text.Json;
@@ -18,10 +18,10 @@ namespace FinTrak.Api.Controllers
     /// Handles Google OAuth 2.0 authentication using the PKCE flow.
     ///
     /// Flow summary:
-    ///   1. GET /auth/login      — generates PKCE challenge, redirects user to Google consent screen
-    ///   2. GET /auth/callback   — receives auth code from Google, exchanges it for tokens,
+    ///   1. GET /auth/login      â€” generates PKCE challenge, redirects user to Google consent screen
+    ///   2. GET /auth/callback   â€” receives auth code from Google, exchanges it for tokens,
     ///                             validates the user, issues an HTTP-only auth cookie
-    ///   3. POST /auth/logout    — revokes refresh tokens in the DB, clears the auth cookie
+    ///   3. POST /auth/logout    â€” revokes refresh tokens in the DB, clears the auth cookie
     /// </summary>
     [ApiController]
     [Route("auth")]
@@ -74,7 +74,7 @@ namespace FinTrak.Api.Controllers
         {
             // PKCE: generate a random verifier and derive the challenge from it.
             // The verifier is stored in session; the challenge is sent to Google.
-            // On callback, Google verifies that the challenge matches the verifier —
+            // On callback, Google verifies that the challenge matches the verifier â€”
             // this prevents auth code interception attacks.
 
             // Generate a high-entropy random string as the code_verifier. Lives in RAM and is never sent to the client.
@@ -173,7 +173,7 @@ namespace FinTrak.Api.Controllers
             await _db.SaveChangesAsync();
 
             // Issue an HTTP-only auth cookie containing the user's identity claims.
-            // The cookie is the only thing the client ever sees — tokens never leave the server.
+            // The cookie is the only thing the client ever sees â€” tokens never leave the server.
 
             //Creates the claims that will be stored in the auth cookie. These claims can be accessed later to identify the user.
             var claims = new List<Claim>
@@ -201,7 +201,7 @@ namespace FinTrak.Api.Controllers
             });
 
             // Redirect back to the frontend after successful login.
-            // FRONTEND_URL can be overridden in .env — defaults to the React dev server.
+            // FRONTEND_URL can be overridden in .env â€” defaults to the React dev server.
             return Redirect(Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:5173");
         }
 

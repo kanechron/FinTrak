@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
-using FinTrak.Api.DTOs;
+using FinTrak.Core.DTOs;
 
 namespace FinTrak.Api.Controllers
 {

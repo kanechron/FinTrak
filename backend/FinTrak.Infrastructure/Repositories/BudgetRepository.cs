@@ -18,12 +18,23 @@ public class BudgetRepository(FinTrakDbContext db) : IBudgetRepository
     public async Task<Budget?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _db.Budgets.FirstOrDefaultAsync(b => b.Id == id && b.DeletedAt == null, cancellationToken);
 
-    public async Task<Dictionary<Guid, decimal>> GetSpendingByCategoryAsync(Guid userId, List<Guid> categoryIds, CancellationToken cancellationToken = default) =>
-        await _db.Transactions
-            .Where(t => t.DeletedAt == null && t.Amount > 0 && t.UserId == userId && categoryIds.Contains(t.CategoryId!.Value))
-            .GroupBy(t => t.CategoryId!.Value)
-            .Select(g => new { CategoryId = g.Key, Total = g.Sum(t => (decimal?)t.Amount) ?? 0m })
-            .ToDictionaryAsync(x => x.CategoryId, x => x.Total, cancellationToken);
+    public async Task<Dictionary<Guid, decimal>> GetSpendingPerBudgetAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        await _db.Budgets
+            .Where(b => b.UserId == userId && b.DeletedAt == null && b.IsActive && b.CategoryId != null)
+            .Select(b => new
+            {
+                b.Id,
+                Spent = _db.Transactions
+                    .Where(t =>
+                        t.DeletedAt == null &&
+                        t.Amount > 0 &&
+                        t.UserId == userId &&
+                        t.CategoryId == b.CategoryId &&
+                        t.Date >= b.StartDate &&
+                        (b.EndDate == null || t.Date <= b.EndDate))
+                    .Sum(t => (decimal?)t.Amount) ?? 0m
+            })
+            .ToDictionaryAsync(x => x.Id, x => x.Spent, cancellationToken);
 
     public async Task AddAsync(Budget budget, CancellationToken cancellationToken = default)
     {

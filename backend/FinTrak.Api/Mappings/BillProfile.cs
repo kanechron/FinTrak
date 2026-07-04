@@ -1,5 +1,5 @@
-using AutoMapper;
-using FinTrak.Api.DTOs;
+﻿using AutoMapper;
+using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 
 namespace FinTrak.Api.Mappings

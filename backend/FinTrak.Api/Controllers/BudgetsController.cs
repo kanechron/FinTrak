@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
-using FinTrak.Api.DTOs;
+using FinTrak.Core.DTOs;
 using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
@@ -23,15 +23,14 @@ namespace FinTrak.Api.Controllers
             var userId = GetUserId();
             var budgets = await _repo.GetActiveByUserIdAsync(userId, cancellationToken);
 
-            var categoryIds = budgets.Where(b => b.CategoryId.HasValue).Select(b => b.CategoryId!.Value).Distinct().ToList();
-            var spendingByCategory = await _repo.GetSpendingByCategoryAsync(userId, categoryIds, cancellationToken);
+            var spendingPerBudget = await _repo.GetSpendingPerBudgetAsync(userId, cancellationToken);
 
             var result = budgets.Select(b => new BudgetDto
             {
                 Id = b.Id,
                 Name = b.Name,
                 Category = b.Category?.Name ?? b.Name,
-                Spent = b.CategoryId.HasValue && spendingByCategory.TryGetValue(b.CategoryId.Value, out var s) ? s : 0m,
+                Spent = spendingPerBudget.TryGetValue(b.Id, out var s) ? s : 0m,
                 Amount = b.Amount,
                 StartDate = b.StartDate,
                 EndDate = b.EndDate,

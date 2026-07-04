@@ -134,7 +134,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-gray-950 border-b border-gray-800 h-14 flex items-stretch justify-between">
+    <header className="sticky top-0 z-[9999] bg-gray-950 border-b border-gray-800 h-14 flex items-stretch justify-between">
 <nav className="flex-1 flex items-stretch">
         {leftTabs.map(tab => (
           <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className={tabClass}>
