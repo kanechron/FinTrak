@@ -13,6 +13,7 @@ export const Timer: React.FC<TimeProps> = ({ timer }) => {
             await logout();
         } finally {
             window.location.href = '/login';
+            window.location.reload();
         }
     }
 

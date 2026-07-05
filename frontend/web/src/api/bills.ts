@@ -13,6 +13,7 @@ export interface Bill {
     categoryId: string | null
     category: string | null
     isAutoDetected: boolean
+    status: string
 }
 
 export interface TransactionGroup {

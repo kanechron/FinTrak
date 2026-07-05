@@ -24,5 +24,7 @@ namespace FinTrak.Core.BackgroundServices
                 await Task.Delay(TimeSpan.FromDays(7), stoppingToken);
             }
         }
+
+        
     }
 }

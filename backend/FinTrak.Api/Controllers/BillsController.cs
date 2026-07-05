@@ -43,9 +43,10 @@ namespace FinTrak.Api.Controllers
                 DueDay = bill.DueDay,
                 CustomDate = bill.CustomDate,
                 LastPaidDate = bill.LastPaidDate,
-                IsAutoPay = bill.IsAutoPay
+                IsAutoPay = bill.IsAutoPay,
+                Status = bill.Status
             };
-
+            
             await _repo.AddAsync(newBill, cancellationToken);
             return Ok(new { message = "Bill added successfully.", billId = newBill.Id });
         }

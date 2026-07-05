@@ -7,19 +7,11 @@
 - [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 
 ## Bills
-- [ ] **Permanent decline** — automatic bill detection should permanently decline bills that have been historically declined, not re-surface them
-- [ ] **Permanent acceptance** — automatically accept bills that have been historically accepted, not re-prompt each time
-
-## Reports
-- [x] **Monthly Spending Trend** — graph doesn't look right, investigate
-- [x] **Income vs Expenses** — graph doesn't look right, investigate
-- [x] **Export** — export reports as PDF, Excel, or CSV
-
-## Budgets
-- [x] **Spent Calculation** - spent amount isn't calculating correctly, investigate. Most likely result from restructuring categories
+- [x] **Permanent decline** — automatic bill detection should permanently decline bills that have been historically declined, not re-surface them
+- [x] **Permanent acceptance** — automatically accept bills that have been historically accepted, not re-prompt each time
 
 ## Auth
-- [ ] **Session state sync** — frontend doesn't detect when the user is logged out server-side; add a polling interval or auth check that redirects to login when the session expires or logout occurs
+- [x] **Session state sync** — frontend doesn't detect when the user is logged out server-side; add a polling interval or auth check that redirects to login when the session expires or logout occurs
 
 ## Settings
 - [ ] **Transaction page size** — configurable limit for how many transactions load at once

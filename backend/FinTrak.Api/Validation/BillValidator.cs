@@ -19,10 +19,7 @@ public class BillValidator : AbstractValidator<Bill>
             .When(b => b.Frequency == BillFrequency.Custom);
 
         RuleFor(b => b.DueDay)
-            .NotNull().WithMessage("Due day is required for this frequency.")
             .InclusiveBetween(1, 31).WithMessage("Due day must be between 1 and 31.")
-            .When(b => b.Frequency == BillFrequency.Monthly
-                    || b.Frequency == BillFrequency.Quarterly
-                    || b.Frequency == BillFrequency.Yearly);
+            .When(b => b.DueDay.HasValue);
     }
 }

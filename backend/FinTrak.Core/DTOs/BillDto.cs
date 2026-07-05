@@ -10,6 +10,7 @@ namespace FinTrak.Core.DTOs
         public Guid? CategoryId { get; init; }
         public string? Category { get; init; }
         public BillFrequency Frequency { get; init; }
+        public BillStatus Status {get; init;}
         public int? DueDay { get; init; }
         public DateOnly? CustomDate { get; init; }
         public DateOnly? LastPaidDate { get; init; }

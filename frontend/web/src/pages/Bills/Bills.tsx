@@ -247,7 +247,7 @@ export default function Bills() {
                     <span className="text-gray-100 font-bold text-base">{amount != null ? formatAmount(-amount) : '—'}</span>
                     <button
                       onClick={async () => {
-                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: s.categoryId })
+                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: s.categoryId, status: 'Accepted' })
                         fetchBills()
                         setSuggestions(prev => prev.filter((_, idx) => idx !== i))
                       }}
@@ -256,7 +256,11 @@ export default function Bills() {
                       ✓
                     </button>
                     <button
-                      onClick={() => setSuggestions(prev => prev.filter((_, idx) => idx !== i))}
+                      onClick={async () => {
+                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: s.categoryId, status: 'Declined' })
+                        fetchBills()
+                        setSuggestions(prev => prev.filter((_, idx) => idx !== i))
+                      }}
                       className="text-gray-600 hover:text-red-400 transition-colors"
                     >
                       ✕

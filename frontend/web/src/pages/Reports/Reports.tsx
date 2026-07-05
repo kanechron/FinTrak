@@ -213,7 +213,8 @@ export default function Reports() {
                 <button onClick={() => handleExport('csv', 'monthly-spending')} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors">
                   CSV
                 </button>
-                <button onClick={() => handleExport('xlsx', 'monthly-spending')} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors">
+                <button onClick={() => handleExport
+                  ('xlsx', 'monthly-spending')} className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors">
                   Excel
                 </button>
               </div>
