@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Interfaces;
+using FinTrak.Core.Entities;
 
 namespace FinTrak.Infrastructure.Services
 {
@@ -16,7 +17,8 @@ namespace FinTrak.Infrastructure.Services
         public async Task<List<List<TransactionGroup>>> DetectAsync(CancellationToken cancellationToken = default)
         {
             var transactions = await FetchTransactions(cancellationToken);
-            var amountFilter = FilterByAmount(transactions);
+            var filtered = await FilterExistingBills(transactions, cancellationToken);
+            var amountFilter = FilterByAmount(filtered);
             return FilterByCategory(amountFilter);
         }
 
@@ -26,7 +28,8 @@ namespace FinTrak.Infrastructure.Services
                 return [];
 
             var existingBills = await _db.Bills
-                .Where(b => b.DeletedAt == null)
+                .Where(b => 
+                b.DeletedAt == null)
                 .Select(b => b.Name)
                 .ToListAsync(cancellationToken);
 
@@ -56,12 +59,6 @@ namespace FinTrak.Infrastructure.Services
                 .ToList();
         }
 
-        private static List<List<TransactionGroup>> FilterByAmount(List<List<TransactionGroup>> transGroups) =>
-            transGroups.Where(bucket =>
-                bucket.SelectMany(g => g.Amounts)
-                      .Distinct()
-                      .Count() == 1
-            ).ToList();
 
         private static List<List<TransactionGroup>> FilterByCategory(List<List<TransactionGroup>> transGroups) =>
             transGroups.Where(bucket =>
@@ -69,6 +66,34 @@ namespace FinTrak.Infrastructure.Services
                 bucket.All(g => g.Category == bucket.First().Category) &&
                 !BlacklistedCategories.Contains(bucket.First().Category!)
             ).ToList();
+
+        private async Task<List<List<TransactionGroup>>> FilterExistingBills(
+        List<List<TransactionGroup>> groups, CancellationToken cancellationToken)
+        {
+            var existingBills = await _db.Bills
+                .Where(b => b.DeletedAt == null &&
+                    (b.Status == BillStatus.Accepted || b.Status == BillStatus.Declined))
+                .Select(b => new { b.Name, b.Amount })
+                .ToListAsync(cancellationToken);
+
+            return groups.Where(bucket =>
+            {
+                var group = bucket.First();
+                var groupAmount = group.Amounts.FirstOrDefault();
+                return !existingBills.Any(e =>
+                    e.Name == group.MerchantName &&
+                    e.Amount == groupAmount);
+            }).ToList();
+        }
+
+
+        private static List<List<TransactionGroup>> FilterByAmount(List<List<TransactionGroup>> transGroups) =>
+            transGroups.Where(bucket =>
+                bucket.SelectMany(g => g.Amounts)
+                      .Distinct()
+                      .Count() == 1
+            ).ToList();
+
 
         private static readonly HashSet<string> BlacklistedCategories = new(Enum.GetNames(typeof(BlacklistedCategory)));
     }
