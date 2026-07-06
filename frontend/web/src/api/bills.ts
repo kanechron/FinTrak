@@ -33,7 +33,7 @@ export function getSuggestions(): Promise<TransactionGroup[][]> {
   return api.get<TransactionGroup[][]>('/bills/get-suggestions')
 }
 
-export function addBill(bill: Omit<Bill, 'id' | 'category' | 'nextDueDate' | 'isAutoDetected'>): Promise<void> {
+export function addBill(bill: Partial<Omit<Bill, 'id' | 'category' | 'nextDueDate' | 'isAutoDetected'>>): Promise<void> {
     return api.post('/bills/add-bill', bill)
 }
 

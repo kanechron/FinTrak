@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { addGoal, type GoalRequest, type Goal } from "../../api/goals"
+import { addGoal } from "../../api/goals"
 
 
 interface Props {

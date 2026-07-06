@@ -1,5 +1,7 @@
 # FinTrak
 
+**Live:** [fintrak.org](https://fintrak.org)
+
 >**Status & License**  
 ![Status](https://img.shields.io/badge/Status-Alpha-orange?style=for-the-badge)  
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
@@ -16,33 +18,46 @@
 
 ## What is it?
 
-FinTrak is a personal finance tracker built for real day-to-day use. It connects directly to your bank via Plaid, syncs transactions automatically, and gives you a clear picture of your spending, budgets, and savings goals — all in one dashboard.
+With the economy so volatile it's difficult to reliably track money, but it's even more difficult to be honest with your spending. FinTrak was built to help make that easier. It connects directly to your bank via Plaid, syncs transactions automatically, and gives you a clear picture of your spending, budgets, bills, and savings goals all in one place.
+
+It was also built out of a desire to own the stack entirely. Most finance apps send your data to third-party servers without full transparency. With FinTrak, your financial data stays on infrastructure you control. Beyond the personal use case, it's been an exercise in real-world app deployment and backend architecture; designed to be something worth maintaining, not just a demo.
 
 ## Features
 
-- **Automatic bank sync** via Plaid — transactions, balances, and accounts stay current
-- **Transaction tracking** — categorized automatically from Plaid's Personal Finance Category taxonomy
-- **Budget management** — per-category or all-spending budgets with recurring support (weekly, monthly, yearly), live spending progress bars
-- **Savings goals** — named goals linked to specific accounts, priority-based balance allocation, drag-and-drop reordering
-- **Google OAuth** — secure login with HTTP-only cookie auth, silent token refresh, email allowlist
+- **Automatic bank sync** via Plaid — transactions, balances, and accounts stay current with cursor-based incremental sync
+- **Transaction tracking** — auto-categorized from Plaid's Personal Finance Category taxonomy; manual entry supported
+- **Budget management** — per-category budgets with recurring periods (weekly, monthly, yearly), live spending progress, automatic period rollover
+- **Savings goals** — named goals with target amounts, priority-based balance allocation, drag-and-drop reordering
+- **Bills tracking** — recurring bill management with auto-detection from transaction history; permanent accept/decline per suggestion
+- **Spending reports** — category breakdown, monthly trends, and cash flow charts with CSV/Excel export
+- **PDF bank statement import** — upload a PDF and Claude Haiku extracts and imports transactions automatically
+- **Google OAuth** — PKCE flow, HTTP-only cookie auth, silent token refresh
+- **Inactivity logout** — automatic session timeout after 30 minutes of inactivity
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4 |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, Recharts |
 | Backend | C# 13, ASP.NET Core 9, Entity Framework Core |
-| Database | PostgreSQL (cloud), EF migrations |
-| Auth | Google OAuth 2.0 (PKCE flow), cookie-based sessions |
+| Database | PostgreSQL, EF migrations |
+| Auth | Google OAuth 2.0 (PKCE flow), HTTP-only cookie sessions |
 | Bank data | Plaid API (production) |
+| AI/ML | FuzzySharp (merchant name matching), Claude Haiku (PDF import + low-confidence fallback) |
+| Export | MiniExcel (CSV + XLSX) |
+| Logging | Serilog |
 | Drag & drop | @dnd-kit |
 
 ## Architecture Highlights
 
-- **Cursor-based Plaid sync** — only fetches new/changed transactions since last sync, no redundant pulls
-- **Soft deletes** — budgets and goals are flagged inactive rather than hard-deleted, with a background service for cleanup after a 60-day retention window
+- **Layered architecture** — `FinTrak.Core` (entities, interfaces, DTOs), `FinTrak.Infrastructure` (EF repositories, services, background services), `FinTrak.Api` (controllers, validators, mappings); controllers never reference DbContext directly
+- **Cursor-based Plaid sync** — only fetches new/changed transactions since last sync, no redundant API calls
+- **Soft deletes with retention** — records are flagged inactive rather than hard-deleted; a background service permanently removes them after a 60-day retention window
 - **Recurring budget rollover** — a daily background service automatically advances start/end dates on recurring budgets when their period expires
-- **Client-side goal allocation** — available balances are distributed across goals in priority order on the frontend, keeping the backend projection simple
+- **Bill auto-detection** — background service scans transaction history for recurring merchant/amount patterns and surfaces them as suggestions; accepted/declined status persists to suppress re-detection
+- **Per-IP rate limiting** — partitioned fixed-window limiters via ASP.NET Core middleware; global baseline (100 req/min) with tighter named policies on auth (20/5min), expensive operations (10/min), and exports (20/min)
+- **Health checks** — `/health` endpoint backed by a live Npgsql probe; wired to Docker Compose `healthcheck` for container self-healing
+- **Silent refresh middleware** — transparently renews expired auth cookies using stored refresh tokens, no user interaction required
 - **Error handling middleware** — all unhandled exceptions return structured JSON; model binding errors surface field-level detail
 
 ## Running Locally
@@ -52,13 +67,14 @@ FinTrak is a personal finance tracker built for real day-to-day use. It connects
 - Node.js 20+
 - PostgreSQL (or Docker)
 - Plaid developer account
-- Google OAuth credentials (The email allowlist needs to be re-configured for use, reach out to have me create the credentials in GCC)
+- Google OAuth credentials
+- Anthropic API key (for PDF import)
 
 ### Setup
 
 1. Clone the repo
 2. Copy `.env.example` to `.env` and fill in your credentials
-3. Start PostgreSQL (or run `docker-compose up -d`)
+3. Start PostgreSQL (or run `docker compose up postgres -d`)
 4. Apply database migrations:
    ```
    dotnet ef database update --project backend/FinTrak.Infrastructure --startup-project backend/FinTrak.Api
@@ -73,14 +89,29 @@ FinTrak is a personal finance tracker built for real day-to-day use. It connects
    ```
 7. Open `https://localhost:5173`
 
+### Docker (production-style)
+
+```
+docker compose up --build
+```
+
+The full stack (Postgres, backend, frontend, Cloudflare Tunnel) runs on an internal bridge network. The frontend nginx container reverse-proxies `/api/*` to the backend.
+
 ## Project Status
 
-Alpha — core features are functional with real bank data. The following are planned for future development:
+Alpha — core features are functional with real bank data (NFCU production connection active).
 
-- Bill reminders
-- Automatic recurring purchase/subscription detection
-- Manual transaction entry
-- Mobile app (React Native)
-- Reporting and charts
-- Transaction recategorization UI
+The ultimate purpose of FinTrak is on-the-go financial awareness. The next major additions planned are:
 
+- **Mobile web** — responsive layout optimized for phone browsers
+- **iOS app** — React Native port for the App Store
+- **Configurable settings** — per-user preferences (transaction page size, inactivity timeout, etc.)
+- **In-app email** — share reports, graphs, and exports directly from the app
+- **Transaction search & filter** — filter by merchant, category, amount, date range
+- **Rules engine** — automatically categorize transactions by merchant name
+- **Integration tests** — xUnit + WebApplicationFactory
+- **CI pipeline** — GitHub Actions on push to main
+
+---
+
+Built by [kanechron](https://github.com/kanechron)

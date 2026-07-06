@@ -120,11 +120,15 @@ public async Task<IActionResult> ExchangeToken(
             AccessToken = exchangeResponse.AccessToken
         });
 
+    var incomingAccountIds = accountsResponse.Accounts.Select(a => a.AccountId).ToList();
+    var existingAccounts = await _db.Accounts
+    .IgnoreQueryFilters()
+    .Where(acc => incomingAccountIds.Contains(acc.PlaidAccountId))
+    .ToDictionaryAsync(acc => acc.PlaidAccountId);
+
     foreach (var a in accountsResponse.Accounts)
     {
-        var existingAccount = await _db.Accounts
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(acc => acc.PlaidAccountId == a.AccountId);
+        existingAccounts.TryGetValue(a.AccountId, out var existingAccount);
         if (existingAccount != null) continue;
 
         _db.Accounts.Add(new FinTrak.Core.Entities.Account
@@ -199,15 +203,25 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
             }
 
 
+            var incomingTransactionIds = response.Added.Select(t => t.TransactionId).ToList();
+            var existingTransactions = await _db.Transactions
+            .IgnoreQueryFilters()
+            .Where(trans => incomingTransactionIds.Contains(trans.PlaidTransactionId))
+            .ToDictionaryAsync(trans => trans.PlaidTransactionId!);
+
+            var incomingAccountIds = response.Added.Select(t => t.AccountId).ToList();
+            var accounts = await _db.Accounts
+                .Where(a => incomingAccountIds.Contains(a.PlaidAccountId))
+                .ToDictionaryAsync(a => a.PlaidAccountId);
+
 
             // Handle added transactions
             foreach (var t in response.Added)
             {
-                var existing = await _db.Transactions
-                    .FirstOrDefaultAsync(x => x.PlaidTransactionId == t.TransactionId);
+                
+               existingTransactions.TryGetValue(t.TransactionId!, out var existing);
 
-                var account = await _db.Accounts
-                    .FirstOrDefaultAsync(a => a.PlaidAccountId == t.AccountId);
+                accounts.TryGetValue(t.AccountId!, out var account);
 
                 var categoryName = t.Name?.ToLower().Contains("deposit") == true
                     ? "INCOME"
@@ -271,13 +285,16 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
             }
 
             
+            var modifiedIds = response.Modified.Select(t => t.TransactionId).ToList();
+            var existingModified = await _db.Transactions
+                .Where(t => modifiedIds.Contains(t.PlaidTransactionId))
+                .ToDictionaryAsync(t => t.PlaidTransactionId!);
 
 
             // Handle modified transactions
             foreach (var t in response.Modified)
             {
-                var existing = await _db.Transactions
-                    .FirstOrDefaultAsync(x => x.PlaidTransactionId == t.TransactionId);
+                existingModified.TryGetValue(t.TransactionId!, out var existing);
 
                 if (existing == null) continue;
 
@@ -287,11 +304,16 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
             }
 
+
+            var removedIds = response.Removed.Select(t => t.TransactionId).ToList();
+            var existingRemoved = await _db.Transactions
+                .Where(t => removedIds.Contains(t.PlaidTransactionId))
+                .ToDictionaryAsync(t => t.PlaidTransactionId!);
+
             // Handle removed transactions
             foreach (var t in response.Removed)
             {
-                var existing = await _db.Transactions
-                    .FirstOrDefaultAsync(x => x.PlaidTransactionId == t.TransactionId);
+                existingRemoved.TryGetValue(t.TransactionId!, out var existing);
 
                 if (existing != null)
                     existing.DeletedAt = DateTime.UtcNow;
@@ -315,17 +337,18 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
             
         
-
-         // Handle accounts and balances
-
-
-
+        
+        // Handle accounts and balances
         if (balanceResponse.Error == null)
         {
+            var balanceAccountIds = balanceResponse.Accounts.Select(a => a.AccountId).ToList();
+            var existingBalanceAccounts = await _db.Accounts
+                .Where(a => balanceAccountIds.Contains(a.PlaidAccountId))
+                .ToDictionaryAsync(a => a.PlaidAccountId);
+
             foreach (var a in balanceResponse.Accounts)
             {
-                var account = await _db.Accounts
-                    .FirstOrDefaultAsync(x => x.PlaidAccountId == a.AccountId);
+                existingBalanceAccounts.TryGetValue(a.AccountId, out var account);
 
                 if (account == null)
                 {
