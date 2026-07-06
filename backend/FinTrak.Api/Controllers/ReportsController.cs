@@ -5,12 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fintrak.Api.Controllers
 {
     [Authorize]
     [ApiController]
     [Route("[controller]")]
+    [EnableRateLimiting("export")]
     public class ReportsController : ControllerBase
     {
         private readonly FinTrakDbContext _db;

@@ -8,6 +8,7 @@ using FinTrak.Core.Entities;
 using FinTrak.Infrastructure.Migrations;
 using System.Text.RegularExpressions;
 using FinTrak.Core.Utilities;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 namespace FinTrak.Api.Controllers
@@ -165,6 +166,7 @@ public async Task<IActionResult> ExchangeToken(
 /// Uses Plaid's cursor-based sync â€” only fetches changes since the last sync.
 /// </summary>
 [HttpPost("sync")]
+[EnableRateLimiting("expensive")]
 public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 {
     var userId = GetUserId();

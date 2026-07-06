@@ -1,4 +1,6 @@
 services:
+
+  
   postgres:
     image: postgres:16
     container_name: fintrak_db
@@ -29,6 +31,11 @@ services:
       - internal
 
   backend:
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -64,7 +71,8 @@ services:
     container_name: fintrak_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - internal
 

@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Going.Plaid.Entity;
 
 namespace FinTrak.Api.Controllers
@@ -36,6 +37,7 @@ namespace FinTrak.Api.Controllers
 
         [HttpGet("register")]
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         public IActionResult Register()
         {
             // Generate a high-entropy random string as the code_verifier. Lives in RAM and is never sent to the client.
@@ -70,6 +72,7 @@ namespace FinTrak.Api.Controllers
         /// then redirects the user to Google's authorization endpoint.
         /// </summary>
         [HttpGet("login")]
+        [EnableRateLimiting("auth")]
         public IActionResult Login()
         {
             // PKCE: generate a random verifier and derive the challenge from it.
@@ -109,6 +112,7 @@ namespace FinTrak.Api.Controllers
         /// stores the refresh token, and issues an auth cookie.
         /// </summary>
         [HttpGet("callback")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state)
         {
             // Retrieve the code_verifier stored in session during /login.
@@ -210,6 +214,7 @@ namespace FinTrak.Api.Controllers
         /// and clearing the auth cookie.
         /// </summary>
         [HttpPost("logout")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Logout()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

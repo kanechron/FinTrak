@@ -13,6 +13,9 @@ using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
 using FinTrak.Core.Interfaces;
 using FluentValidation;
+using System.Threading.RateLimiting;
+using System.Globalization;
+using Microsoft.AspNetCore.RateLimiting;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -22,6 +25,51 @@ LoadEnv();
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configuration));
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("expensive", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("export", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.RejectionStatusCode = 429;
+});
 
 
 // -------------------------------------------------------------------------
@@ -43,6 +91,10 @@ builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
 builder.Services.AddScoped<IBillDetectionService, BillDetectionService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+
+
+
+
 
 // -------------------------------------------------------------------------
 // Repositories
@@ -71,6 +123,7 @@ var connectionString =
     $"Username={Env("POSTGRES_USER")};" +
     $"Password={Env("POSTGRES_PASSWORD")}";
 
+builder.Services.AddHealthChecks().AddNpgSql(connectionString);
 
 builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString)
     
@@ -214,6 +267,8 @@ var app = builder.Build();
 // -------------------------------------------------------------------------
 // Order matters here — each middleware runs in the order it is registered.
 
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -232,6 +287,8 @@ app.UseStaticFiles();
 // when the auth middleware runs (needed for PKCE code_verifier lookup).
 app.UseSession();
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 
 
@@ -240,6 +297,8 @@ app.UseMiddleware<SilentRefreshMiddleware>();  // custom middleware to transpare
 
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapHealthChecks("/health").AllowAnonymous().DisableRateLimiting();
 
 app.Run();
 
