@@ -5,7 +5,7 @@ node_modules/
 
 # Claude Code local settings
 .claude/settings.local.json
-.CLAUDE.md
+CLAUDE.md
 
 # .NET build output
 bin/
