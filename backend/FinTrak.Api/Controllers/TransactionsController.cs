@@ -7,6 +7,7 @@ using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 using FinTrak.Api.Validation;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FinTrak.Api.Controllers
 {
@@ -113,6 +114,7 @@ namespace FinTrak.Api.Controllers
 
         [HttpPost("import-pdf")]
         [Consumes("multipart/form-data")]
+        [EnableRateLimiting("expensive")]
         public async Task<IActionResult> ParsePDF([FromForm] PdfUploadRequest request, CancellationToken cancellationToken)
         {
             if (request.pdf == null || request.pdf.Length == 0) return BadRequest(new { error = "No PDF file provided." });
