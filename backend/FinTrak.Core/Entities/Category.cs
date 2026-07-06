@@ -8,6 +8,11 @@ namespace FinTrak.Core.Entities
         /// <summary>Internal primary key.</summary>
         public Guid Id { get; set; }
 
+        //Key for each one of Plaid's sub-categories
+        public Guid? DetailId { get; set; }
+
+        public Category? Detail { get; set; }
+
         /// <summary>Display name of the category, e.g. "Groceries" or "Rent".</summary>
         public string Name { get; set; } = string.Empty;
 

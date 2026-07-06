@@ -1,5 +1,6 @@
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Infrastructure.BackgroundServices;
+using Serilog;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Api.Middleware;
@@ -7,6 +8,14 @@ using Going.Plaid;
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.BackgroundServices;
 using Microsoft.AspNetCore.HttpOverrides;
+using Anthropic.SDK;
+using FinTrak.Infrastructure.Services;
+using FinTrak.Infrastructure.Repositories;
+using FinTrak.Core.Interfaces;
+using FluentValidation;
+using System.Threading.RateLimiting;
+using System.Globalization;
+using Microsoft.AspNetCore.RateLimiting;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -15,16 +24,88 @@ LoadEnv();
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.UseSerilog((ctx, cfg) => cfg.ReadFrom.Configuration(ctx.Configuration));
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("expensive", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("export", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    options.RejectionStatusCode = 429;
+});
+
 
 // -------------------------------------------------------------------------
 // Background services
 //--------------------------------------------------------------------------
 // Hosted services run in the background alongside the main web server. They are ideal for tasks that need to run periodically or continuously, such as cleaning up old records from the database.
-builder.Services.AddHostedService<DbDeleteService>();
-builder.Services.AddHostedService<RecurringDateService>();  // custom service to permanently delete soft-deleted records after a retention period
-builder.Services.AddScoped<BillDetectionService>();
+builder.Services.AddHostedService<DbDeleteService>();  // custom service to permanently delete soft-deleted records after a retention period
+builder.Services.AddHostedService<RecurringDateService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
-builder.Services.AddScoped<TransactionNameMatchService>();
+
+
+// -------------------------------------------------------------------------
+// Services
+// -------------------------------------------------------------------------
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+builder.Services.AddScoped<IPdfImportService, PdfImportService>();
+builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
+builder.Services.AddScoped<IBillDetectionService, BillDetectionService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+
+
+
+
+
+// -------------------------------------------------------------------------
+// Repositories
+// -------------------------------------------------------------------------
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<IBillRepository, BillRepository>();
+builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
+builder.Services.AddScoped<IGoalRepository, GoalRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+
 
 
 // -------------------------------------------------------------------------
@@ -40,6 +121,7 @@ var connectionString =
     $"Username={Env("POSTGRES_USER")};" +
     $"Password={Env("POSTGRES_PASSWORD")}";
 
+builder.Services.AddHealthChecks().AddNpgSql(connectionString);
 
 builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString)
     
@@ -63,6 +145,32 @@ builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
 
 builder.Services.AddPlaid(builder.Configuration);
 
+
+// ------------------------------------------------------------------------
+// Claude API
+// ------------------------------------------------------------------------
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+    ["Anthropic:ApiKey"] = Env("ANTHROPIC_API_KEY"),
+    // ["Anthropic:AuthToken"] = Env("ANTHROPIC_AUTH_TOKEN"),
+    ["Anthropic:BaseUrl"] = Env("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+});
+
+builder.Services.AddSingleton(new AnthropicClient(builder.Configuration["Anthropic:ApiKey"]!));
+
+
+
+// -------------------------------------------------------------------------
+// AutoMapper
+// -------------------------------------------------------------------------
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<FinTrak.Api.Mappings.TransactionProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.BillProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.GoalProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.CategoryProfile>();
+    cfg.AddProfile<FinTrak.Api.Mappings.AccountProfile>();
+});
 
 
 
@@ -138,7 +246,10 @@ builder.Services.AddControllers()
             return new BadRequestObjectResult(result);
         };
     });
-builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "FinTrak API", Version = "v1" });
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -154,8 +265,13 @@ var app = builder.Build();
 // -------------------------------------------------------------------------
 // Order matters here — each middleware runs in the order it is registered.
 
+
+
 if (app.Environment.IsDevelopment())
-    app.MapOpenApi();
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "FinTrak API v1"));
+}
 
 app.UseForwardedHeaders();
 
@@ -169,6 +285,8 @@ app.UseStaticFiles();
 // when the auth middleware runs (needed for PKCE code_verifier lookup).
 app.UseSession();
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 
 
@@ -177,6 +295,8 @@ app.UseMiddleware<SilentRefreshMiddleware>();  // custom middleware to transpare
 
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapHealthChecks("/health").AllowAnonymous().DisableRateLimiting();
 
 app.Run();
 

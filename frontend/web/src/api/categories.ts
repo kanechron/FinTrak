@@ -3,7 +3,7 @@ import { api } from "./client";
 export interface Category {
     id: string;
     name: string;
-    isSystem: boolean;
+    detailId: string | null;
 }
 
 export function getCategories() {

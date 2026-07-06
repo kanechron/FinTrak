@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using FinTrak.Infrastructure.Persistance;
 using System.Security.Claims;
@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
 using System.Text.RegularExpressions;
 using FinTrak.Core.Utilities;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 namespace FinTrak.Api.Controllers
@@ -15,9 +16,9 @@ namespace FinTrak.Api.Controllers
     /// Handles Plaid bank integration.
     ///
     /// Flow summary:
-    ///   1. POST /plaid/link-token      — creates a Plaid link token for the frontend Link UI
-    ///   2. POST /plaid/exchange-token  — exchanges the public token from Link for a permanent access token
-    ///   3. POST /plaid/sync            — syncs transactions for all linked items
+    ///   1. POST /plaid/link-token      â€” creates a Plaid link token for the frontend Link UI
+    ///   2. POST /plaid/exchange-token  â€” exchanges the public token from Link for a permanent access token
+    ///   3. POST /plaid/sync            â€” syncs transactions for all linked items
     /// </summary>
     [ApiController]
     [Route("plaid")]
@@ -90,6 +91,13 @@ public async Task<IActionResult> ExchangeToken(
 
     var institutionName = itemResponse.Item.InstitutionId ?? "Unknown Institution";
 
+    // If this PlaidItem already exists, don't create a duplicate
+    var existingItem = await _db.PlaidItems
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(p => p.PlaidItemId == exchangeResponse.ItemId);
+    if (existingItem != null)
+        return Ok(new { message = "Bank already connected." });
+
     // Create the PlaidItem record
     var plaidItem = new FinTrak.Core.Entities.PlaidItem
     {
@@ -114,6 +122,11 @@ public async Task<IActionResult> ExchangeToken(
 
     foreach (var a in accountsResponse.Accounts)
     {
+        var existingAccount = await _db.Accounts
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(acc => acc.PlaidAccountId == a.AccountId);
+        if (existingAccount != null) continue;
+
         _db.Accounts.Add(new FinTrak.Core.Entities.Account
         {
             Id = Guid.NewGuid(),
@@ -149,15 +162,19 @@ public async Task<IActionResult> ExchangeToken(
     
 /// <summary>
 /// Syncs transactions for all of the user's linked Plaid items.
-/// Uses Plaid's cursor-based sync — only fetches changes since the last sync.
+/// Uses Plaid's cursor-based sync â€” only fetches changes since the last sync.
 /// </summary>
 [HttpPost("sync")]
+[EnableRateLimiting("expensive")]
 public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 {
     var userId = GetUserId();
     var items = await _db.PlaidItems
         .Where(p => p.UserId == userId)
         .ToListAsync();
+
+    var categoryCache = (await _db.Categories.ToListAsync())
+        .ToDictionary(c => c.Name, c => c);
 
     foreach (var item in items)
     {
@@ -195,15 +212,30 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 var categoryName = t.Name?.ToLower().Contains("deposit") == true
                     ? "INCOME"
                     : t.PersonalFinanceCategory?.Primary ?? string.Empty;
-                var detailedCategoryName = t.PersonalFinanceCategory?.Detailed ?? string.Empty;
+                var detailedCategoryName = t.Name?.ToLower().Contains("deposit") == true
+                    ? string.Empty
+                    : t.PersonalFinanceCategory?.Detailed ?? string.Empty;
 
-                var category = await _db.Categories
-                    .FirstOrDefaultAsync(c => c.Name == categoryName);
-
-                if (category == null && !string.IsNullOrEmpty(categoryName))
+                Category? category = null;
+                if (!string.IsNullOrEmpty(categoryName))
                 {
-                    category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
-                    _db.Categories.Add(category);
+                    if (!categoryCache.TryGetValue(categoryName, out category))
+                    {
+                        category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
+                        _db.Categories.Add(category);
+                        categoryCache[categoryName] = category;
+                    }
+                }
+
+                Category? categoryDetailed = null;
+                if (!string.IsNullOrEmpty(detailedCategoryName))
+                {
+                    if (!categoryCache.TryGetValue(detailedCategoryName, out categoryDetailed))
+                    {
+                        categoryDetailed = new Category { Id = Guid.NewGuid(), Name = detailedCategoryName, DetailId = category?.Id, IsSystem = true };
+                        _db.Categories.Add(categoryDetailed);
+                        categoryCache[detailedCategoryName] = categoryDetailed;
+                    }
                 }
 
                 if (existing != null)
@@ -212,6 +244,7 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                     existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
                     existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
                     existing.CategoryId = category?.Id;
+                    existing.CategoryDetailedId = categoryDetailed?.Id;
                 }
                 else
                 {
@@ -231,7 +264,8 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                         DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
                         CreatedAt = DateTime.UtcNow,
                         CategoryId = category?.Id,
-                        CategoryDetailed = t.Name?.ToLower().Contains("deposit") == true ? string.Empty : detailedCategoryName
+                        CategoryDetailedId = categoryDetailed?.Id
+ 
                     });
                 }
             }
@@ -262,6 +296,8 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
                 if (existing != null)
                     existing.DeletedAt = DateTime.UtcNow;
             }
+
+            await _db.SaveChangesAsync();
 
             cursor = response.NextCursor;
             hasMore = response.HasMore;

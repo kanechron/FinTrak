@@ -26,6 +26,8 @@ namespace FinTrak.Core.Entities
         /// <summary>How often this bill recurs.</summary>
         public BillFrequency Frequency { get; set; } = BillFrequency.Monthly;
 
+        public BillStatus Status {get; set;}
+
         /// <summary>Day of the month the bill is due. Used when Frequency is Monthly, Quarterly, or Yearly.</summary>
         public int? DueDay { get; set; } = null;
 
@@ -67,5 +69,12 @@ namespace FinTrak.Core.Entities
 
         /// <summary>Due on a specific calendar date. Use CustomDate to specify.</summary>
         Custom = 5
+    }
+
+    public enum BillStatus
+    {
+        Pending = 0,
+        Accepted = 1,
+        Declined = 2
     }
 }

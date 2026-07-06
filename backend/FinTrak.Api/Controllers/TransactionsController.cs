@@ -1,212 +1,134 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using FinTrak.Core.Entities;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
-using System.Text.RegularExpressions;
 using FinTrak.Core.Utilities;
-using FinTrak.Infrastructure.BackgroundServices;
-using static FinTrak.Infrastructure.BackgroundServices.TransactionNameMatchService;
-
+using FinTrak.Core.Interfaces;
+using AutoMapper;
+using FinTrak.Core.DTOs;
+using FinTrak.Api.Validation;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class TransactionsController : ControllerBase
+    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService, TransactionValidator tValidator) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-        private readonly TransactionNameMatchService _tService;
-
-        public TransactionsController(FinTrakDbContext db, TransactionNameMatchService tService)
-        {
-            _db = db;
-            _tService = tService;
-        }
-
+        private readonly ITransactionRepository _repo = repo;
+        private readonly IMapper _mapper = mapper;
+        private readonly IPdfImportService _pdfImportService = pdfImportService;
+        private readonly ITransactionNameMatchService _tService = tService;
+        private readonly TransactionValidator _tValidator = tValidator;
 
         [HttpGet("get-transactions")]
-        public async Task<IActionResult> GetTransactions()
+        public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
         {
-            try
-            {
-                var transactions = await _db.Transactions
-                    .Where(t => t.DeletedAt == null)
-                    .OrderByDescending(t => t.Date)
-                    .Select(t => new
-                        {
-                            id = t.Id,
-                            accountId = t.AccountId,
-                            date = t.Date!.Value.ToString("yyyy-MM-dd"),
-                            merchant = t.MerchantName ?? t.MerchantNameRaw,
-                            amount = t.Amount,
-                            category = t.Category != null ? t.Category!.Name : "Uncategorized",
-                            categoryDetailed = t.CategoryDetailed,
-                            categoryId = t.CategoryId,
-                            pending = t.IsPending,
-                            
-                        })
-                    .ToListAsync();
-
-                return Ok(transactions);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to retrieve transactions.", detail = ex.Message });
-            }
+            var transactions = await _repo.GetByUserIdAsync(GetUserId(), offset, limit, cancellationToken);
+            return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
         [HttpGet("get-transactions-by-category/{id}")]
-        public async Task<IActionResult> GetTransactionsByCategory(Guid id)
+        public async Task<IActionResult> GetTransactionsByCategory(Guid id, CancellationToken cancellationToken)
         {
-            try
-            {
-                var trans = await _db.Transactions
-                .Where(t => t.DeletedAt == null && t.CategoryId == id)
-                .OrderByDescending(t => t.Date)
-                .Select(t => new
-                        {
-                            id = t.Id,
-                            accountId = t.AccountId,
-                            date = t.Date!.Value.ToString("yyyy-MM-dd"),
-                            merchant = t.MerchantName ?? t.MerchantNameRaw,
-                            amount = t.Amount,
-                            category = t.Category != null ? t.Category!.Name : "Uncategorized",
-                            categoryDetailed = t.CategoryDetailed,
-                            categoryId = t.CategoryId,
-                            pending = t.IsPending,
-                            
-                        })
-                .ToListAsync();
-
-                return Ok(trans);
-
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new {error = $"Failed to retrieve transactions with category {id}", detail = ex.Message });
-            }
+            var transactions = await _repo.GetByCategoryIdAsync(id, cancellationToken);
+            return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
         [HttpPost("add-transaction")]
-        public async Task<IActionResult> AddTransaction([FromBody] Transaction transaction)
+        public async Task<IActionResult> AddTransaction([FromBody] Transaction transaction, CancellationToken cancellationToken)
         {
-            try
+            var validationResult = await _tValidator.ValidateAsync(transaction, cancellationToken);
+            if (!validationResult.IsValid)
+                return BadRequest(new { errors = validationResult.Errors.Select(e => e.ErrorMessage) });
+
+            var newTrans = new Transaction
             {
-                if (transaction == null || transaction.Amount <= 0)
-                {
-                    return BadRequest(new { error = "Invalid Transaction data"});
-                }
-                var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? Guid.Empty.ToString());
+                Id = Guid.NewGuid(),
+                UserId = GetUserId(),
+                PlaidTransactionId = null,
+                Amount = transaction.Amount,
+                MerchantNameNormalized = transaction.MerchantName.NormalizeName(),
+                MerchantNameRaw = transaction.MerchantName,
+                MerchantName = transaction.MerchantName,
+                CategoryId = transaction.CategoryId,
+                CategoryDetailedId = transaction.CategoryDetailedId,
+                Description = transaction.Description,
+                IsPending = false,
+                IsManual = true,
+                DedupHash = transaction.DedupHash,
+                DedupStatus = transaction.DedupStatus,
+                CreatedAt = transaction.CreatedAt,
+                Date = transaction.Date
+            };
 
-
-                var newTrans = new Transaction
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    PlaidTransactionId = null,
-                    Amount = transaction.Amount,
-                    MerchantNameNormalized = transaction.MerchantName.NormalizeName(),
-                    MerchantNameRaw = transaction.MerchantName,
-                    MerchantName = transaction.MerchantName,
-                    CategoryId = transaction.CategoryId,
-                    Category = transaction.Category,
-                    CategoryDetailed = transaction.CategoryDetailed!,
-                    Description = transaction.Description,
-                    IsPending = false,
-                    IsManual = true,
-                    DedupHash = transaction.DedupHash,
-                    DedupStatus = transaction.DedupStatus,
-                    CreatedAt = transaction.CreatedAt,
-                    Date = transaction.Date
-                };
-
-                _db.Transactions.Add(newTrans);
-                await _db.SaveChangesAsync();
-                return Ok(new { message = "Transaction added successfully.", id = newTrans.Id });            
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to add transaction: ", detail = ex.Message});
-            }
+            await _repo.AddAsync(newTrans, cancellationToken);
+            return Ok(new { message = "Transaction added successfully.", id = newTrans.Id });
         }
 
         [HttpPatch("update-transaction/{id}")]
-        public async Task<IActionResult> UpdateTransaction(Guid id, [FromBody] Transaction update)
+        public async Task<IActionResult> UpdateTransaction(Guid id, [FromBody] Transaction update, CancellationToken cancellationToken)
         {
-            try
-            {
-                var existing = await _db.Transactions
-                    .FirstOrDefaultAsync(t => t.Id == id && t.DeletedAt == null);
+            var existing = await _repo.GetByIdAsync(id, cancellationToken);
+            if (existing == null) return NotFound(new { error = "Transaction not found" });
 
-                if (existing == null) return NotFound(new { error = "Transaction not found" });
+            if (!string.IsNullOrWhiteSpace(update.MerchantName))
+                existing.MerchantName = update.MerchantName.NormalizeName();
 
-                if (!string.IsNullOrWhiteSpace(update.MerchantName))
-                    existing.MerchantName = update.MerchantName.NormalizeName();
+            if (update.CategoryId.HasValue)
+                existing.CategoryId = update.CategoryId;
 
-                if (update.CategoryId.HasValue)
-                    existing.CategoryId = update.CategoryId;
+            existing.CategoryDetailedId = update.CategoryDetailedId;
 
-                if (!string.IsNullOrWhiteSpace(update.Description))
-                    existing.Description = update.Description;
+            if (!string.IsNullOrWhiteSpace(update.Description))
+                existing.Description = update.Description;
 
-                if (update.Amount.HasValue && update.Amount > 0)
-                    existing.Amount = update.Amount;
+            if (update.Amount.HasValue && update.Amount > 0)
+                existing.Amount = update.Amount;
 
-                if (update.Date.HasValue)
-                    existing.Date = update.Date;
+            if (update.Date.HasValue)
+                existing.Date = update.Date;
 
-                await _db.SaveChangesAsync();
-                return Ok(new { message = "Transaction updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to update transaction.", detail = ex.Message });
-            }
+            await _repo.SaveAsync(cancellationToken);
+            return Ok(new { message = "Transaction updated successfully." });
         }
 
-
         [HttpPatch("apply-category-by-merchant")]
-        public async Task<IActionResult> ApplyCategoryByMerchant([FromBody] ApplyCategoryRequest request)
+        public async Task<IActionResult> ApplyCategoryByMerchant([FromBody] ApplyCategoryRequest request, CancellationToken cancellationToken)
         {
-            try
-            {
-                var result = await _tService.TransactionMatchByName(request);
-
-                
-                return Ok(new {result});
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to apply category.", detail = ex.Message });
-            }
+            var result = await _tService.MatchByName(request, cancellationToken);
+            return Ok(new { result });
         }
 
         [HttpDelete("delete-transaction/{id}")]
-        public async Task<IActionResult> DeleteTransaction(Guid id)
+        public async Task<IActionResult> DeleteTransaction(Guid id, CancellationToken cancellationToken)
         {
-            try
-            {
-            var existing = await _db.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.DeletedAt == null);
-
+            var existing = await _repo.GetByIdAsync(id, cancellationToken);
             if (existing == null) return NotFound(new { error = "Could not find transaction {id}" });
 
             existing.DeletedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
-
-            return Ok(new {message = "Transaction deleted successfully"});
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to delete transaction.", detail = ex.Message });
-            }
-            
+            await _repo.SaveAsync(cancellationToken);
+            return Ok(new { message = "Transaction deleted successfully" });
         }
 
-        
+        [HttpPost("import-pdf")]
+        [Consumes("multipart/form-data")]
+        [EnableRateLimiting("expensive")]
+        public async Task<IActionResult> ParsePDF([FromForm] PdfUploadRequest request, CancellationToken cancellationToken)
+        {
+            if (request.pdf == null || request.pdf.Length == 0) return BadRequest(new { error = "No PDF file provided." });
+
+            var count = await _pdfImportService.ImportAsync(request.pdf.OpenReadStream(), GetUserId(), cancellationToken);
+            return Ok(new { imported = count });
+        }
+
+        private Guid GetUserId() =>
+            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 
-
+    public class PdfUploadRequest
+    {
+        public IFormFile pdf { get; set; } = null!;
+    }
 }

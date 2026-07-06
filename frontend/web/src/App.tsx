@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { Timer } from './hooks/InactivityLogoutHook'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Transactions from './pages/Transactions/Transactions'
 import Budgets from './pages/Budgets/Budgets'
@@ -9,7 +10,6 @@ import Reports from './pages/Reports/Reports'
 import Settings from './pages/Settings/Settings'
 import Login from './pages/Login/Login'
 import Navbar from './components/layout/Navbar'
-import ReminderBar from './components/common/ReminderBar'
 
 // Checks if the user is authenticated by calling a protected endpoint.
 // Returns true if the server responds with 200, false if 401.
@@ -50,8 +50,10 @@ function App() {
           element={
             authed ? (
               <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
+                <Timer timer={1800} /> {/* 1800 = 30 minutes in seconds 
+                REMINDER: Add configurable timeout to settings
+                */}
                 <Navbar />
-                <ReminderBar />
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/transactions" element={<Transactions />} />

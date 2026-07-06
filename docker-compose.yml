@@ -1,4 +1,6 @@
 services:
+
+  
   postgres:
     image: postgres:16
     container_name: fintrak_db
@@ -29,6 +31,11 @@ services:
       - internal
 
   backend:
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -46,11 +53,12 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_REDIRECT_URI: https://fintrak.org/api/auth/callback
       FRONTEND_URL: https://fintrak.org
-      ALLOWED_EMAIL: ${ALLOWED_EMAIL}
+      # ALLOWED_EMAIL: ${ALLOWED_EMAIL}
       PLAID_CLIENT_ID: ${PLAID_CLIENT_ID}
       PLAID_SECRET: ${PLAID_SECRET}
       PLAID_ENVIRONMENT: ${PLAID_ENVIRONMENT}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ALLOWED_EMAIL: ${ALLOWED_EMAIL}
     depends_on:
       - postgres
     networks:
@@ -63,7 +71,8 @@ services:
     container_name: fintrak_frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - internal
 

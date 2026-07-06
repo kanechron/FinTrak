@@ -1,46 +1,24 @@
-using FinTrak.Infrastructure.Persistance;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FinTrak.Core.Interfaces;
+using AutoMapper;
+using FinTrak.Core.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController(ICategoryRepository repo, IMapper mapper) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-
-        public CategoriesController(FinTrakDbContext db)
-        {
-            _db = db;
-        }
+        private readonly ICategoryRepository _repo = repo;
+        private readonly IMapper _mapper = mapper;
 
         [HttpGet("get-categories")]
-        public IActionResult GetCategories()
+        public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
         {
-            try
-            {
-                var categories = _db.Categories
-                    // .Where(c => c.DeletedAt == null)
-                    .Select(c => new
-                    {
-                        id = c.Id,
-                        name = c.Name,
-                        // isActive = c.IsActive,
-                        // createdAt = c.CreatedAt,
-                        // deletedAt = c.DeletedAt,
-                        // isSystem = c.IsSystem
-                    })
-                    .ToList();
-
-                return Ok(categories);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to retrieve categories.", detail = ex.Message });
-            }
+            var categories = await _repo.GetAllAsync(cancellationToken);
+            return Ok(_mapper.Map<List<CategoryDto>>(categories));
         }
-
     }
 }

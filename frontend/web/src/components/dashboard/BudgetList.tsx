@@ -39,11 +39,15 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
           + Add Budget
         </button>
       </div>
-      <div className="space-y-4">
-        {budgets.map((b) => (
-          <BudgetCard key={b.id} budget={b} onDelete={handleDelete} onClick={() => setSelectedBudget(b)} />
-        ))}
-      </div>
+      {budgets.length === 0 ? (
+        <p className="text-sm text-gray-500 text-center py-4">No budgets yet — add one to get started.</p>
+      ) : (
+        <div className="space-y-4">
+          {budgets.map((b) => (
+            <BudgetCard key={b.id} budget={b} onDelete={handleDelete} onClick={() => setSelectedBudget(b)} />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

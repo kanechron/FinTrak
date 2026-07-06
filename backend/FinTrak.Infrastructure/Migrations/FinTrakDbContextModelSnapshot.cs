@@ -134,6 +134,9 @@ namespace FinTrak.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
@@ -210,6 +213,9 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("DetailId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -221,6 +227,8 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DetailId");
 
                     b.ToTable("Categories");
                 });
@@ -265,6 +273,34 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Goals");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.Invite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("Token")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UsedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token");
+
+                    b.ToTable("Invites");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.MerchantAlias", b =>
@@ -425,8 +461,8 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<decimal?>("Amount")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("CategoryDetailed")
-                        .HasColumnType("text");
+                    b.Property<Guid?>("CategoryDetailedId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uuid");
@@ -475,6 +511,8 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryDetailedId");
 
                     b.HasIndex("CategoryId");
 
@@ -564,6 +602,15 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("FinTrak.Core.Entities.Category", b =>
+                {
+                    b.HasOne("FinTrak.Core.Entities.Category", "Detail")
+                        .WithMany()
+                        .HasForeignKey("DetailId");
+
+                    b.Navigation("Detail");
+                });
+
             modelBuilder.Entity("FinTrak.Core.Entities.SyncQueue", b =>
                 {
                     b.HasOne("FinTrak.Core.Entities.PlaidItem", "PlaidItem")
@@ -577,11 +624,17 @@ namespace FinTrak.Infrastructure.Migrations
 
             modelBuilder.Entity("FinTrak.Core.Entities.Transaction", b =>
                 {
+                    b.HasOne("FinTrak.Core.Entities.Category", "CategoryDetailed")
+                        .WithMany()
+                        .HasForeignKey("CategoryDetailedId");
+
                     b.HasOne("FinTrak.Core.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
                     b.Navigation("Category");
+
+                    b.Navigation("CategoryDetailed");
                 });
 #pragma warning restore 612, 618
         }

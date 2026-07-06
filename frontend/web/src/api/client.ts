@@ -7,6 +7,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   })
 
+  if (res.status === 401) {
+    window.location.href = '/login'
+    return undefined as T
+  }
+
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || res.statusText)

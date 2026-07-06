@@ -1,186 +1,94 @@
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Entities;
-using FinTrak.Infrastructure.BackgroundServices;
+using FinTrak.Core.Interfaces;
+using AutoMapper;
+using FinTrak.Core.DTOs;
+using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Authorize]
     [Route("[controller]")]
-    public class BillsController : ControllerBase
+    public class BillsController(IBillRepository repo, IBillDetectionService billDetectionService, IMapper mapper, BillValidator validator) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-        private readonly BillDetectionService _billDetectionService;
-
-        public BillsController(FinTrakDbContext db, BillDetectionService billDetectionService)
-        {
-            _db = db;
-            _billDetectionService = billDetectionService;
-        }
+        private readonly IBillRepository _repo = repo;
+        private readonly IBillDetectionService _billDetectionService = billDetectionService;
+        private readonly IMapper _mapper = mapper;
+        private readonly BillValidator _validator = validator;
 
         [HttpGet("get-bills")]
-        public async Task<IActionResult> GetBills()
+        public async Task<IActionResult> GetBills(CancellationToken cancellationToken)
         {
-            try
-            {
-                var bills = await _db.Bills
-                    .Where(b => b.DeletedAt == null)
-                    .Include(b => b.Category)
-                    .ToListAsync();
-
-                var result = bills.Select(b => new
-                {
-                    id = b.Id,
-                    name = b.Name,
-                    amount = b.Amount,
-                    categoryId = b.CategoryId,
-                    category = b.Category?.Name,
-                    frequency = b.Frequency.ToString(),
-                    dueDay = b.DueDay,
-                    customDate = b.CustomDate,
-                    lastPaidDate = b.LastPaidDate,
-                    nextDueDate = ComputeNextDueDate(b),
-                    isAutoPay = b.IsAutoPay,
-                    isAutoDetected = false
-                });
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception (not implemented here)
-                return StatusCode(500, "An error occurred while retrieving bills: " + ex.Message);
-            }
+            var bills = await _repo.GetByUserIdAsync(GetUserId(), cancellationToken);
+            return Ok(_mapper.Map<List<BillDto>>(bills));
         }
 
         [HttpPost("add-bill")]
-        public async Task<IActionResult> AddBill([FromBody] Bill bill)
+        public async Task<IActionResult> AddBill([FromBody] Bill bill, CancellationToken cancellationToken)
         {
-            try
-            {
-                if(bill == null || string.IsNullOrEmpty(bill.Name) || bill.Amount <= 0)
-                {
-                    return BadRequest("Invalid bill data. Name and positive amount are required.");
-                }
+            var validation = await _validator.ValidateAsync(bill, cancellationToken);
+            if (!validation.IsValid)
+                return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
 
-                var newBill = new Bill
-                {
-                    Name = bill.Name,
-                    Amount = bill.Amount,
-                    CategoryId = bill.CategoryId,
-                    Frequency = bill.Frequency,
-                    DueDay = bill.DueDay,
-                    CustomDate = bill.CustomDate,
-                    LastPaidDate = bill.LastPaidDate,
-                    IsAutoPay = bill.IsAutoPay
-                };
-
-                _db.Bills.Add(newBill);
-                await _db.SaveChangesAsync();
-                return Ok(new { message = "Bill added successfully.", billId = newBill.Id });
-            }
-            catch (Exception ex)
+            var newBill = new Bill
             {
-                // Log the exception (not implemented here)
-                return StatusCode(500, "An error occurred while adding the bill: " + ex.Message);
-            }
+                UserId = GetUserId(),
+                Name = bill.Name,
+                Amount = bill.Amount,
+                CategoryId = bill.CategoryId,
+                Frequency = bill.Frequency,
+                DueDay = bill.DueDay,
+                CustomDate = bill.CustomDate,
+                LastPaidDate = bill.LastPaidDate,
+                IsAutoPay = bill.IsAutoPay,
+                Status = bill.Status
+            };
+            
+            await _repo.AddAsync(newBill, cancellationToken);
+            return Ok(new { message = "Bill added successfully.", billId = newBill.Id });
         }
 
         [HttpPatch("update-bill/{id}")]
-        public async Task<IActionResult> UpdateBill(Guid id, [FromBody] Bill updatedBill)
+        public async Task<IActionResult> UpdateBill(Guid id, [FromBody] Bill updatedBill, CancellationToken cancellationToken)
         {
-            try
-            {
-                var existingBill = await _db.Bills.FirstOrDefaultAsync(b => b.Id == id);
-                if (existingBill == null || existingBill.DeletedAt != null)
-                {
-                    return NotFound("Bill not found.");
-                }
+            var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
+            if (existingBill == null) return NotFound("Bill not found.");
 
-                existingBill.Name = updatedBill.Name ?? existingBill.Name;
-                existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
-                existingBill.CategoryId = updatedBill.CategoryId != Guid.Empty ? updatedBill.CategoryId : existingBill.CategoryId;
-                existingBill.Frequency = updatedBill.Frequency != 0 ? updatedBill.Frequency : existingBill.Frequency;
-                existingBill.DueDay = updatedBill.DueDay ?? existingBill.DueDay;
-                existingBill.CustomDate = updatedBill.CustomDate ?? existingBill.CustomDate;
-                existingBill.LastPaidDate = updatedBill.LastPaidDate ?? existingBill.LastPaidDate;
-                existingBill.IsAutoPay = updatedBill.IsAutoPay;
+            existingBill.Name = updatedBill.Name ?? existingBill.Name;
+            existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
+            existingBill.CategoryId = updatedBill.CategoryId != Guid.Empty ? updatedBill.CategoryId : existingBill.CategoryId;
+            existingBill.Frequency = updatedBill.Frequency != 0 ? updatedBill.Frequency : existingBill.Frequency;
+            existingBill.DueDay = updatedBill.DueDay ?? existingBill.DueDay;
+            existingBill.CustomDate = updatedBill.CustomDate ?? existingBill.CustomDate;
+            existingBill.LastPaidDate = updatedBill.LastPaidDate ?? existingBill.LastPaidDate;
+            existingBill.IsAutoPay = updatedBill.IsAutoPay;
 
-                await _db.SaveChangesAsync();
-                return Ok(new { message = "Bill updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                // Log the exception (not implemented here)
-                return StatusCode(500, "An error occurred while updating the bill: " + ex.Message);
-            }
+            await _repo.SaveAsync(cancellationToken);
+            return Ok(new { message = "Bill updated successfully." });
         }
 
         [HttpDelete("delete-bill/{id}")]
-        public async Task<IActionResult> DeleteBill(Guid id)
+        public async Task<IActionResult> DeleteBill(Guid id, CancellationToken cancellationToken)
         {
-            try
-            {
-                var existingBill = await _db.Bills.FirstOrDefaultAsync(b => b.Id == id);
-                if (existingBill == null || existingBill.DeletedAt != null)
-                {
-                    return NotFound("Bill not found.");
-                }
+            var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
+            if (existingBill == null) return NotFound("Bill not found.");
 
-                existingBill.DeletedAt = DateTime.UtcNow;
-                await _db.SaveChangesAsync();
-                return Ok(new { message = "Bill deleted successfully." });
-            }
-            catch (Exception ex)
-            {
-                // Log the exception (not implemented here)
-                return StatusCode(500, "An error occurred while deleting the bill: " + ex.Message);
-            }
+            existingBill.DeletedAt = DateTime.UtcNow;
+            await _repo.SaveAsync(cancellationToken);
+            return Ok(new { message = "Bill deleted successfully." });
         }
 
         [HttpGet("get-suggestions")]
-        public async Task<IActionResult> GetSuggestions()
+        public async Task<IActionResult> GetSuggestions(CancellationToken cancellationToken)
         {
-            var suggestions = await _billDetectionService.DetectAsync(CancellationToken.None);
+            var suggestions = await _billDetectionService.DetectAsync(cancellationToken);
             return Ok(suggestions);
         }
 
-        private static DateOnly? ComputeNextDueDate(Bill b)
-        {
-            
-            
-
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            return b.Frequency switch
-            {
-                BillFrequency.Custom => b.CustomDate,
-                BillFrequency.Monthly when b.DueDay.HasValue => NextOccurrence(today, b.DueDay.Value, 1),
-                BillFrequency.Quarterly when b.DueDay.HasValue => NextOccurrence(today, b.DueDay.Value, 3),
-                BillFrequency.Yearly when b.DueDay.HasValue => NextOccurrence(today, b.DueDay.Value, 12),
-                BillFrequency.Weekly => b.LastPaidDate?.AddDays(7) ?? today,
-                BillFrequency.BiWeekly => b.LastPaidDate?.AddDays(14) ?? today,
-                _ => null
-            };
-        }
-
-
-        
-
-
-
-        private static DateOnly NextOccurrence(DateOnly today, int dueDay, int monthInterval)
-        {
-            var candidate = new DateOnly(today.Year, today.Month, Math.Min(dueDay, DateTime.DaysInMonth(today.Year, today.Month)));
-            if (candidate < today)
-            {
-                var next = today.AddMonths(monthInterval);
-                candidate = new DateOnly(next.Year, next.Month, Math.Min(dueDay, DateTime.DaysInMonth(next.Year, next.Month)));
-            }
-            return candidate;
-        }
+        private Guid GetUserId() =>
+            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

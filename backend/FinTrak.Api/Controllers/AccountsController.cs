@@ -1,46 +1,28 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
+using System.Security.Claims;
+using FinTrak.Core.Interfaces;
+using AutoMapper;
+using FinTrak.Core.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class AccountsController : ControllerBase
+    public class AccountsController(IAccountRepository repo, IMapper mapper) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-
-        public AccountsController(FinTrakDbContext db)
-        {
-            _db = db;
-        }
+        private readonly IAccountRepository _repo = repo;
+        private readonly IMapper _mapper = mapper;
 
         [HttpGet("get-accounts")]
-        public async Task<IActionResult> GetAccounts()
+        public async Task<IActionResult> GetAccounts(CancellationToken cancellationToken)
         {
-            try
-            {
-                var accounts = await _db.Accounts
-                    .Where(a => a.DeletedAt == null)
-                    .OrderBy(a => a.Name)
-                    .Select(a => new
-                    {
-                        id = a.Id,
-                        name = a.OfficialName ?? a.Name,
-                        type = a.Subtype ?? a.Type.ToString(),
-                        last4 = a.Mask,
-                        balance = a.AvailableBalance ?? 0
-                    })
-                    .ToListAsync();
-
-                return Ok(accounts);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to retrieve accounts.", detail = ex.Message });
-            }
+            var accounts = await _repo.GetByUserIdAsync(GetUserId(), cancellationToken);
+            return Ok(_mapper.Map<List<AccountDto>>(accounts));
         }
+
+        private Guid GetUserId() =>
+            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }
