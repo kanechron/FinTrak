@@ -30,7 +30,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
 
                 var budgetsToUpdate = await db.Budgets
                 .Where(b => b.IsRecurring && b.IsActive && b.DeletedAt == null && b.RecurringDate != null && b.EndDate <= DateOnly.FromDateTime(DateTime.UtcNow))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
                 foreach (var budget in budgetsToUpdate)
                 {

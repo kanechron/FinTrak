@@ -29,7 +29,7 @@ namespace FinTrak.Infrastructure.Services
             var model = AnthropicModels.Claude45Haiku;
             var file = ReadStream(pdf);
 
-            var allCategories = await _db.Categories.ToListAsync();
+            var allCategories = await _db.Categories.ToListAsync(cancellationToken);
             var parentList = string.Join(", ", allCategories.Where(c => c.DetailId == null).Select(c => c.Name));
             var detailList = string.Join(", ", allCategories.Where(c => c.DetailId != null).Select(c => c.Name));
 
@@ -65,7 +65,7 @@ namespace FinTrak.Infrastructure.Services
                 ]
             };
 
-            var response = await _client.Messages.GetClaudeMessageAsync(messageParams);
+            var response = await _client.Messages.GetClaudeMessageAsync(messageParams, cancellationToken);
             var json = response.Content.OfType<TextContent>().First().Text.Trim();
 
             if (json.StartsWith("```"))
@@ -78,7 +78,7 @@ namespace FinTrak.Infrastructure.Services
             if (imported == null || imported.Count == 0)
                 return 0;
 
-            var categoryCache = (await _db.Categories.ToListAsync()).ToDictionary(c => c.Name, c => c);
+            var categoryCache = (await _db.Categories.ToListAsync(cancellationToken)).ToDictionary(c => c.Name, c => c);
 
             foreach (var t in imported)
             {
@@ -112,7 +112,7 @@ namespace FinTrak.Infrastructure.Services
                     x.Amount == t.Amount &&
                     x.Date >= parsedDate.AddDays(-3) &&
                     x.Date <= parsedDate.AddDays(3) &&
-                    x.DeletedAt == null);
+                    x.DeletedAt == null, cancellationToken);
 
                 if (amountMatch) continue;
 
@@ -122,7 +122,7 @@ namespace FinTrak.Infrastructure.Services
                                 x.Date <= parsedDate.AddDays(3) &&
                                 x.DeletedAt == null)
                     .Select(x => x.MerchantName ?? x.MerchantNameNormalized ?? x.MerchantNameRaw)
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
                 var nameDuplicate = false;
                 foreach (var name in nameMatches)
@@ -152,7 +152,7 @@ namespace FinTrak.Infrastructure.Services
                 });
             }
 
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(cancellationToken);
             return imported.Count;
         }
 
