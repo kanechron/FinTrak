@@ -1,13 +1,13 @@
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
-using FinTrak.Core.Entities;
 using Anthropic.SDK;
-using FinTrak.Core.Interfaces;
-using System.Text.Json;
-using Anthropic.SDK.Messaging;
 using Anthropic.SDK.Constants;
-using FuzzySharp;
+using Anthropic.SDK.Messaging;
+using FinTrak.Core.Entities;
+using FinTrak.Core.Interfaces;
 using FinTrak.Core.Utilities;
+using FinTrak.Infrastructure.Persistance;
+using FuzzySharp;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace FinTrak.Infrastructure.Services
 {
@@ -165,7 +165,7 @@ namespace FinTrak.Infrastructure.Services
             return memoryStream.ToArray();
         }
 
-        
+
         public record PdfTransaction(string Date, string Merchant, decimal Amount, string Category, string CategoryDetailed);
     }
 }

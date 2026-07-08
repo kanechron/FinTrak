@@ -1,17 +1,16 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using System.Security.Claims;
-using System.Text.Json;
-using FinTrak.Core.Entities;
+﻿using FinTrak.Core.Entities;
 using FinTrak.Infrastructure.Persistance;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Going.Plaid.Entity;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace FinTrak.Api.Controllers
 {
@@ -158,7 +157,7 @@ namespace FinTrak.Api.Controllers
             if (state == "login" && user == null) return Redirect((Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:5173") + "/login?error=no_account");
 
             if (state == "register") user = await RegisterUser(payload, _db);
-    
+
 
             if (tokenJson.TryGetProperty("refresh_token", out var rtElement))
             {

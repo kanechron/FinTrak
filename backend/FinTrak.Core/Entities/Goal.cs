@@ -37,6 +37,6 @@ namespace FinTrak.Core.Entities
 
         /// <summary>Soft delete timestamp. Null means the goal is active.</summary>
         public DateTime? DeletedAt { get; set; } = null;
-        public bool IsActive {get; set;} = true;
+        public bool IsActive { get; set; } = true;
     }
 }

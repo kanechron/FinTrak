@@ -2,10 +2,10 @@
 
 namespace FinTrak.Core.Utilities
 {
-    
+
     public static class RecurringDateUtil
     {
-        
+
         /// <summary>
         /// Calculates the next recurring end date for a budget based on its period and recurring date settings.
         /// </summary>
@@ -18,7 +18,7 @@ namespace FinTrak.Core.Utilities
 
             var nextMonth = startDate.AddMonths(1);
 
-            
+
             switch (recurringDate.ToLower())
             {
                 case "first":
@@ -50,7 +50,7 @@ namespace FinTrak.Core.Utilities
                 case "first":
                     return new DateOnly(nextYear.Year, 1, 1);
                 case "last":
-                    return new DateOnly(startDate.Year, 12, 31); 
+                    return new DateOnly(startDate.Year, 12, 31);
                 default:
                     return new DateOnly(nextYear.Year, startDate.Month, startDate.Day); // Keep same month/day next year       
             }

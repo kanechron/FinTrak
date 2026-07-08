@@ -1,14 +1,14 @@
 using FinTrak.Infrastructure.Persistance;
-using static FinTrak.Core.Utilities.RecurringDateUtil;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using static FinTrak.Core.Utilities.RecurringDateUtil;
 
 
 
 namespace FinTrak.Infrastructure.BackgroundServices
 {
-    
+
     public class RecurringDateService : BackgroundService
     {
 
@@ -24,7 +24,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                
+
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<FinTrakDbContext>();
 
@@ -34,7 +34,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
 
                 foreach (var budget in budgetsToUpdate)
                 {
-                   
+
                     switch (budget.Period?.ToString().ToLower())
                     {
                         case "weekly":
@@ -55,7 +55,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
                 }
                 await db.SaveChangesAsync(cancellationToken);
 
-            await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
+                await Task.Delay(TimeSpan.FromDays(1), cancellationToken);
 
             }
 

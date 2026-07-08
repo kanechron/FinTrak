@@ -21,7 +21,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                
+
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<FinTrakDbContext>();
 
@@ -33,7 +33,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
                 await db.Budgets
                     .Where(g => g.DeletedAt != null && g.DeletedAt < cutoff)
                     .ExecuteDeleteAsync(cancellationToken);
-                
+
                 // await db.Bills
                 //     .Where(g => g.DeletedAt != null && g.DeletedAt < cutoff)
                 //     .ExecuteDeleteAsync(cancellationToken);
@@ -44,6 +44,6 @@ namespace FinTrak.Infrastructure.BackgroundServices
 
         }
 
-        
+
     }
 }

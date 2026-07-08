@@ -1,21 +1,19 @@
-using FinTrak.Infrastructure.Persistance;
-using FinTrak.Infrastructure.BackgroundServices;
-using Serilog;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Api.Middleware;
-using Going.Plaid;
-using Microsoft.AspNetCore.Mvc;
-using FinTrak.Core.BackgroundServices;
-using Microsoft.AspNetCore.HttpOverrides;
 using Anthropic.SDK;
-using FinTrak.Infrastructure.Services;
-using FinTrak.Infrastructure.Repositories;
+using FinTrak.Api.Middleware;
+using FinTrak.Core.BackgroundServices;
 using FinTrak.Core.Interfaces;
+using FinTrak.Infrastructure.BackgroundServices;
+using FinTrak.Infrastructure.Persistance;
+using FinTrak.Infrastructure.Repositories;
+using FinTrak.Infrastructure.Services;
 using FluentValidation;
+using Going.Plaid;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System.Threading.RateLimiting;
-using System.Globalization;
-using Microsoft.AspNetCore.RateLimiting;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -124,7 +122,7 @@ var connectionString =
 builder.Services.AddHealthChecks().AddNpgSql(connectionString);
 
 builder.Services.AddDbContext<FinTrakDbContext>(opt => opt.UseNpgsql(connectionString)
-    
+
 );
 
 // -------------------------------------------------------------------------

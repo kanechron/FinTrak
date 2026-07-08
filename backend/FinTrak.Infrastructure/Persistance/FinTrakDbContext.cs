@@ -23,7 +23,7 @@ namespace FinTrak.Infrastructure.Persistance
         public DbSet<Invite> Invites => Set<Invite>();
         public DbSet<MerchantAlias> MerchantAliases => Set<MerchantAlias>();
         public DbSet<SyncQueue> SyncQueue => Set<SyncQueue>();
-        
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

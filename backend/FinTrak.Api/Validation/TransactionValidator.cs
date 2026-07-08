@@ -1,5 +1,5 @@
-using FluentValidation;
 using FinTrak.Core.Entities;
+using FluentValidation;
 
 namespace FinTrak.Api.Validation;
 

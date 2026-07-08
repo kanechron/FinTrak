@@ -1,10 +1,10 @@
-using System.Security.Claims;
-using System.Text.Json;
 using FinTrak.Infrastructure.Persistance;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace FinTrak.Api.Middleware
 {

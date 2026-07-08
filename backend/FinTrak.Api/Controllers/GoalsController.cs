@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+﻿using AutoMapper;
+using FinTrak.Api.Validation;
+using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
-using AutoMapper;
-using FinTrak.Core.DTOs;
-using FinTrak.Api.Validation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FinTrak.Api.Controllers
 {

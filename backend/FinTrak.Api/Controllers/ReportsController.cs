@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using FinTrak.Core.DTOs;
+using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Persistance;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using FinTrak.Core.DTOs;
-using FinTrak.Core.Interfaces;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fintrak.Api.Controllers
 {
@@ -35,13 +35,13 @@ namespace Fintrak.Api.Controllers
 
             var transactionsQuery = _db.Transactions
                 .Where(
-                    t => t.DeletedAt == null 
-                    && !t.IsPending 
+                    t => t.DeletedAt == null
+                    && !t.IsPending
                     && t.Amount > 0
-                    && t.Date != null 
+                    && t.Date != null
                     && t.Date >= fromDate
                     && t.Date <= toDate
-                    && t.CategoryId != null 
+                    && t.CategoryId != null
                     && t.UserId == userId);
 
             if (categoryIds != null && categoryIds.Length > 0)
@@ -61,7 +61,7 @@ namespace Fintrak.Api.Controllers
                 {
                     "csv" => File(_exportService.ExportToCsv(spending!), "text/csv", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.csv"),
                     "xlsx" => File(_exportService.ExportToXlsx(spending!, fromDate, toDate), "application/vnd.openxlmformats-officedocument.spreadsheetml.sheet", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.xlsx"),
-                    _ => BadRequest(new {error = "Unsupported format."})
+                    _ => BadRequest(new { error = "Unsupported format." })
                 };
             }
 
@@ -77,11 +77,11 @@ namespace Fintrak.Api.Controllers
 
             var spending = await _db.Transactions
                 .Where(
-                    t => t.DeletedAt == null 
-                    && !t.IsPending 
+                    t => t.DeletedAt == null
+                    && !t.IsPending
                     && t.Amount > 0
-                    && t.Date != null 
-                    && t.Date >= fromDate 
+                    && t.Date != null
+                    && t.Date >= fromDate
                     && t.Date <= toDate
                     && t.UserId == userId
                     && t.CategoryId == categoryId
@@ -98,7 +98,7 @@ namespace Fintrak.Api.Controllers
                 {
                     "csv" => File(_exportService.ExportToCsv(spending!), "text/csv", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.csv"),
                     "xlsx" => File(_exportService.ExportToXlsx(spending!, fromDate, toDate), "application/vnd.openxlmformats-officedocument.spreadsheetml.sheet", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.xlsx"),
-                    _ => BadRequest(new {error = "Unsupported format."})
+                    _ => BadRequest(new { error = "Unsupported format." })
                 };
             }
 
@@ -114,12 +114,12 @@ namespace Fintrak.Api.Controllers
 
             var spending = await _db.Transactions
                 .Where(
-                    t => t.DeletedAt == null 
-                    && !t.IsPending 
-                    && t.Amount > 0 
-                    && t.Date != null 
-                    && t.Date >= fromDate 
-                    && t.Date <= toDate 
+                    t => t.DeletedAt == null
+                    && !t.IsPending
+                    && t.Amount > 0
+                    && t.Date != null
+                    && t.Date >= fromDate
+                    && t.Date <= toDate
                     && t.UserId == userId)
                 .Join(_db.Categories, t => t.CategoryId, c => c.Id, (t, c) => new { t.Date, t.Amount, c.Name })
                 .Where(x => !x.Name.StartsWith("TRANSFER_") && !x.Name.StartsWith("INCOME"))
@@ -129,13 +129,13 @@ namespace Fintrak.Api.Controllers
                 .ThenBy(g => g.Month)
                 .ToListAsync();
 
-                if (format != null)
+            if (format != null)
             {
                 return format switch
                 {
                     "csv" => File(_exportService.ExportToCsv(spending!), "text/csv", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.csv"),
                     "xlsx" => File(_exportService.ExportToXlsx(spending!, fromDate, toDate), "application/vnd.openxlmformats-officedocument.spreadsheetml.sheet", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.xlsx"),
-                    _ => BadRequest(new {error = "Unsupported format."})
+                    _ => BadRequest(new { error = "Unsupported format." })
                 };
             }
 
@@ -174,13 +174,13 @@ namespace Fintrak.Api.Controllers
                 .ThenBy(g => g.Month)
                 .ToListAsync();
 
-                if (format != null)
+            if (format != null)
             {
                 return format switch
                 {
                     "csv" => File(_exportService.ExportToCsv(result!), "text/csv", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.csv"),
                     "xlsx" => File(_exportService.ExportToXlsx(result!, fromDate, toDate), "application/vnd.openxlmformats-officedocument.spreadsheetml.sheet", $"{fromDate:yyyy-MM-dd}_{toDate:yyyy-MM-dd}.xlsx"),
-                    _ => BadRequest(new {error = "Unsupported format."})
+                    _ => BadRequest(new { error = "Unsupported format." })
                 };
             }
 

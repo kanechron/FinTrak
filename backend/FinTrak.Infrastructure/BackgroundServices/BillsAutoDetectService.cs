@@ -1,6 +1,6 @@
+using FinTrak.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using FinTrak.Core.Interfaces;
 
 namespace FinTrak.Core.BackgroundServices
 {
@@ -25,6 +25,6 @@ namespace FinTrak.Core.BackgroundServices
             }
         }
 
-        
+
     }
 }

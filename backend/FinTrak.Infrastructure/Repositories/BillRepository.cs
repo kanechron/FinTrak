@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Persistance;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Infrastructure.Repositories;
 
@@ -20,7 +20,7 @@ public class BillRepository(FinTrakDbContext db) : IBillRepository
 
     public async Task AddAsync(Bill bill, CancellationToken cancellationToken = default)
     {
-        
+
         _db.Bills.Add(bill);
         await _db.SaveChangesAsync(cancellationToken);
     }

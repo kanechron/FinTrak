@@ -1,5 +1,3 @@
-using FinTrak.Core.Entities;
-
 namespace FinTrak.Core.DTOs
 {
     public class BudgetDto

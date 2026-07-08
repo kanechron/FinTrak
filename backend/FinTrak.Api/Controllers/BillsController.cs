@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using FinTrak.Api.Validation;
+using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
-using AutoMapper;
-using FinTrak.Core.DTOs;
-using FinTrak.Api.Validation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace FinTrak.Api.Controllers
 {
@@ -46,7 +46,7 @@ namespace FinTrak.Api.Controllers
                 IsAutoPay = bill.IsAutoPay,
                 Status = bill.Status
             };
-            
+
             await _repo.AddAsync(newBill, cancellationToken);
             return Ok(new { message = "Bill added successfully.", billId = newBill.Id });
         }

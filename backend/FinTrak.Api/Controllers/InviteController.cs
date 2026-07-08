@@ -1,15 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using FinTrak.Core.Entities;
 using FinTrak.Infrastructure.Persistance;
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Core.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class InvitesController : ControllerBase {
+    public class InvitesController : ControllerBase
+    {
         private readonly FinTrakDbContext _db;
 
         public InvitesController(FinTrakDbContext db)
@@ -29,14 +30,14 @@ namespace FinTrak.Api.Controllers
 
                 _db.Invites.Add(newInvite);
                 await _db.SaveChangesAsync();
-                
+
                 var baseUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:5173";
 
                 return Ok(new { link = $"{baseUrl}/api/invites/{newInvite.Token}" });
             }
             catch (Exception ex)
             {
-                
+
                 return StatusCode(500, new
                 {
                     message = "Could not create invite link: " + ex.Message
@@ -61,11 +62,11 @@ namespace FinTrak.Api.Controllers
 
                 HttpContext.Session.SetString("invite_token", token.ToString());
                 return Redirect("/api/auth/login");
-                
+
             }
             catch (Exception ex)
             {
-                
+
                 return StatusCode(500, new
                 {
                     message = "Could not validate token: " + ex.Message

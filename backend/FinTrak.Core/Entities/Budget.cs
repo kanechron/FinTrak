@@ -36,7 +36,7 @@ namespace FinTrak.Core.Entities
         /// <summary>When the budget ends. Null for open-ended budgets.</summary>
         public DateOnly? EndDate { get; set; } = null;
 
-        public string RecurringDate {get; set; } = string.Empty;
+        public string RecurringDate { get; set; } = string.Empty;
 
         /// <summary>Soft delete timestamp. Null means the budget is active.</summary>
         public DateTime? DeletedAt { get; set; } = null;

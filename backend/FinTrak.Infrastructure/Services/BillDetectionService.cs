@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using FinTrak.Infrastructure.Persistance;
-using FinTrak.Core.Interfaces;
 using FinTrak.Core.Entities;
+using FinTrak.Core.Interfaces;
+using FinTrak.Infrastructure.Persistance;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Infrastructure.Services
 {
@@ -28,7 +28,7 @@ namespace FinTrak.Infrastructure.Services
                 return [];
 
             var existingBills = await _db.Bills
-                .Where(b => 
+                .Where(b =>
                 b.DeletedAt == null)
                 .Select(b => b.Name)
                 .ToListAsync(cancellationToken);
