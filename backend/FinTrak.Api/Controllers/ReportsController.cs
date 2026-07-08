@@ -13,16 +13,10 @@ namespace Fintrak.Api.Controllers
     [ApiController]
     [Route("[controller]")]
     [EnableRateLimiting("export")]
-    public class ReportsController : ControllerBase
+    public class ReportsController(FinTrakDbContext db, IExportService exportService) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-        private readonly IExportService _exportService;
-
-        public ReportsController(FinTrakDbContext db, IExportService exportService)
-        {
-            _db = db;
-            _exportService = exportService;
-        }
+        private readonly FinTrakDbContext _db = db;
+        private readonly IExportService _exportService = exportService;
 
         private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 

@@ -19,14 +19,9 @@ namespace FinTrak.Api.Middleware
     /// If the refresh token is missing, expired, or revoked, the middleware does
     /// nothing and lets the request fall through unauthenticated.
     /// </summary>
-    public class SilentRefreshMiddleware
+    public class SilentRefreshMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
-
-        public SilentRefreshMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
+        private readonly RequestDelegate _next = next;
 
         public async Task InvokeAsync(HttpContext context, FinTrakDbContext db)
         {
