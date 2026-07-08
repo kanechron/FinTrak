@@ -5,14 +5,9 @@ using FinTrak.Core.Entities;
 
 namespace FinTrak.Infrastructure.Services
 {
-    public class BillDetectionService : IBillDetectionService
+    public class BillDetectionService(FinTrakDbContext db) : IBillDetectionService
     {
-        private readonly FinTrakDbContext _db;
-
-        public BillDetectionService(FinTrakDbContext db)
-        {
-            _db = db;
-        }
+        private readonly FinTrakDbContext _db = db;
 
         public async Task<List<List<TransactionGroup>>> DetectAsync(CancellationToken cancellationToken = default)
         {

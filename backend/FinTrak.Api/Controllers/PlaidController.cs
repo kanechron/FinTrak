@@ -23,14 +23,9 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("plaid")]
     [Authorize]
-    public class PlaidController : ControllerBase
+    public class PlaidController(FinTrakDbContext db) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-
-        public PlaidController(FinTrakDbContext db)
-        {
-            _db = db;
-        }
+        private readonly FinTrakDbContext _db = db;
 
         private Guid GetUserId() =>
             Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

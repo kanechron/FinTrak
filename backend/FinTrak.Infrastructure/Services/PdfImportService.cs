@@ -11,16 +11,11 @@ using FinTrak.Core.Utilities;
 
 namespace FinTrak.Infrastructure.Services
 {
-    public class PdfImportService : IPdfImportService
+    public class PdfImportService(FinTrakDbContext db, AnthropicClient client) : IPdfImportService
     {
-        private readonly FinTrakDbContext _db;
-        private readonly AnthropicClient _client;
-        public PdfImportService(FinTrakDbContext db, AnthropicClient client)
-        {
-            _db = db;
-            _client = client;
+        private readonly FinTrakDbContext _db = db;
+        private readonly AnthropicClient _client = client;
 
-        }
         public async Task<int> ImportAsync(Stream pdf, Guid userId, CancellationToken cancellationToken = default)
         {
             if (pdf == null || pdf.Length == 0)

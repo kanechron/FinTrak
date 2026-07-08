@@ -4,14 +4,9 @@ using FinTrak.Core.Interfaces;
 
 namespace FinTrak.Infrastructure.BackgroundServices
 {
-    public class BillsAutoDetectService : BackgroundService
+    public class BillsAutoDetectService(IServiceScopeFactory scopeFactory) : BackgroundService
     {
-        private readonly IServiceScopeFactory _scopeFactory;
-
-        public BillsAutoDetectService(IServiceScopeFactory scopeFactory)
-        {
-            _scopeFactory = scopeFactory;
-        }
+        private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
