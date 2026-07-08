@@ -53,19 +53,18 @@ namespace FinTrak.Infrastructure.Services
                 })
                 .ToListAsync(cancellationToken);
 
-            return flat
+            return [.. flat
                 .GroupBy(g => g.MerchantName)
-                .Select(g => g.ToList())
-                .ToList();
+                .Select(g => g.ToList())];
         }
 
 
         private static List<List<TransactionGroup>> FilterByCategory(List<List<TransactionGroup>> transGroups) =>
-            transGroups.Where(bucket =>
+            [.. transGroups.Where(bucket =>
                 bucket.First().Category != null &&
                 bucket.All(g => g.Category == bucket.First().Category) &&
                 !BlacklistedCategories.Contains(bucket.First().Category!)
-            ).ToList();
+            )];
 
         private async Task<List<List<TransactionGroup>>> FilterExistingBills(
         List<List<TransactionGroup>> groups, CancellationToken cancellationToken)
@@ -76,23 +75,23 @@ namespace FinTrak.Infrastructure.Services
                 .Select(b => new { b.Name, b.Amount })
                 .ToListAsync(cancellationToken);
 
-            return groups.Where(bucket =>
+            return [.. groups.Where(bucket =>
             {
                 var group = bucket.First();
                 var groupAmount = group.Amounts.FirstOrDefault();
                 return !existingBills.Any(e =>
                     e.Name == group.MerchantName &&
                     e.Amount == groupAmount);
-            }).ToList();
+            })];
         }
 
 
         private static List<List<TransactionGroup>> FilterByAmount(List<List<TransactionGroup>> transGroups) =>
-            transGroups.Where(bucket =>
+            [.. transGroups.Where(bucket =>
                 bucket.SelectMany(g => g.Amounts)
                       .Distinct()
                       .Count() == 1
-            ).ToList();
+            )];
 
 
         private static readonly HashSet<string> BlacklistedCategories = [.. Enum.GetNames(typeof(BlacklistedCategory))];
