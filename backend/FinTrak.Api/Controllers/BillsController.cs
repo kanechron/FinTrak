@@ -58,10 +58,11 @@ namespace FinTrak.Api.Controllers
             var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBill == null) return NotFound("Bill not found.");
 
-            existingBill.Name = updatedBill.Name ?? existingBill.Name;
+            existingBill.Name = !string.IsNullOrEmpty(updatedBill.Name) ? updatedBill.Name : existingBill.Name;
             existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
             existingBill.CategoryId = updatedBill.CategoryId != Guid.Empty ? updatedBill.CategoryId : existingBill.CategoryId;
             existingBill.Frequency = updatedBill.Frequency != 0 ? updatedBill.Frequency : existingBill.Frequency;
+            existingBill.Status = updatedBill.Status != 0 ? updatedBill.Status : existingBill.Status;
             existingBill.DueDay = updatedBill.DueDay ?? existingBill.DueDay;
             existingBill.CustomDate = updatedBill.CustomDate ?? existingBill.CustomDate;
             existingBill.LastPaidDate = updatedBill.LastPaidDate ?? existingBill.LastPaidDate;

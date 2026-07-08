@@ -17,7 +17,7 @@ namespace FinTrak.Infrastructure.Services
         public async Task<List<List<TransactionGroup>>> DetectAsync(Guid userId,CancellationToken cancellationToken = default)
         {
             var transactions = await FetchTransactions(cancellationToken, userId);
-            var filtered = await FilterExistingBills(transactions, cancellationToken);
+            var filtered = await FilterExistingBills(transactions, userId, cancellationToken);
             var amountFilter = FilterByAmount(filtered);
             return FilterByCategory(amountFilter);
         }
@@ -28,7 +28,7 @@ namespace FinTrak.Infrastructure.Services
                 return [];
 
             var existingBills = await _db.Bills
-                .Where(b => 
+                .Where(b =>
                 b.DeletedAt == null
                 && b.UserId == userId)
                 .Select(b => b.Name)
@@ -36,6 +36,7 @@ namespace FinTrak.Infrastructure.Services
 
             var flat = await _db.Transactions
                 .Where(t => t.DeletedAt == null
+                    && t.UserId == userId
                     && !t.IsPending
                     && t.CategoryId != null
                     && t.MerchantName != null
@@ -69,10 +70,11 @@ namespace FinTrak.Infrastructure.Services
             ).ToList();
 
         private async Task<List<List<TransactionGroup>>> FilterExistingBills(
-        List<List<TransactionGroup>> groups, CancellationToken cancellationToken)
+        List<List<TransactionGroup>> groups, Guid userId, CancellationToken cancellationToken)
         {
             var existingBills = await _db.Bills
                 .Where(b => b.DeletedAt == null &&
+                    b.UserId == userId &&
                     (b.Status == BillStatus.Accepted || b.Status == BillStatus.Declined))
                 .Select(b => new { b.Name, b.Amount })
                 .ToListAsync(cancellationToken);

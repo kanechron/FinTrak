@@ -48,33 +48,36 @@ function formatFrequency(f: string): string {
   }
 }
 
+function monthlyEquivalent(bill: Bill): number {
+  switch (bill.frequency) {
+    case 'Weekly': return bill.amount * 4.33
+    case 'BiWeekly': return bill.amount * 2.17
+    case 'Monthly': return bill.amount
+    case 'Quarterly': return bill.amount / 3
+    case 'Yearly': return bill.amount / 12
+    default: return bill.amount
+  }
+}
+
 export default function Bills() {
-  const [bills, setBills] = useState<Bill[]>([])
-  const confirmed = bills.filter(b => b.status === 'Accepted')
-  const suggestions = bills.filter(b => b.status === 'Pending')
+  const [acceptedBills, setAcceptedBills] = useState<Bill[]>([])
+  const [pendingBills, setPendingBills] = useState<Bill[]>([])
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [historyCache, setHistoryCache] = useState<Record<string, Transaction[]>>({})
 
-  const fetchBills = () => getBills().then(setBills)
+  const fetchBills = () =>
+    getBills().then(data => {
+      setAcceptedBills(data.filter(b => b.status === 'Accepted'))
+      setPendingBills(data.filter(b => b.status === 'Pending'))
+    })
 
   useEffect(() => {
     fetchBills()
   }, [])
 
-  const manualBills = bills.filter(b => !b.isAutoDetected)
-
-  const monthlyTotal = bills.reduce((sum, b) => {
-    switch (b.frequency) {
-      case 'Weekly': return sum + b.amount * 4.33
-      case 'BiWeekly': return sum + b.amount * 2.17
-      case 'Monthly': return sum + b.amount
-      case 'Quarterly': return sum + b.amount / 3
-      case 'Yearly': return sum + b.amount / 12
-      default: return sum + b.amount
-    }
-  }, 0)
+  const monthlyTotal = acceptedBills.reduce((sum, b) => sum + monthlyEquivalent(b), 0)
 
   async function handleDelete(id: string) {
     try {
@@ -210,57 +213,55 @@ export default function Bills() {
         </button>
       </div>
 
-      {/* Summary */}
       <section className="border border-red-900/40 bg-red-950/20 rounded-xl p-5 flex items-center justify-between">
         <div>
           <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Est. Monthly Total</p>
           <p className="text-3xl font-bold tracking-tight text-red-100">{formatAmount(-monthlyTotal)}</p>
-          <p className="text-sm text-gray-500 mt-1">{bills.length} bill{bills.length !== 1 ? 's' : ''} tracked</p>
+          <p className="text-sm text-gray-500 mt-1">{acceptedBills.length} bill{acceptedBills.length !== 1 ? 's' : ''} tracked</p>
         </div>
       </section>
 
-      <BillSection title="Manual" items={manualBills} />
+      <BillSection title="My Bills" items={acceptedBills} />
 
-      {/* Auto-Detected Suggestions */}
       <section className="border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800">
           <h2 className="font-medium">Auto-Detected</h2>
           <p className="text-xs text-gray-500 mt-0.5">Recurring patterns found in your transactions</p>
         </div>
-        {bills.filter(b => b.status === 'Pending').length === 0 ? (
+        {pendingBills.length === 0 ? (
           <div className="px-5 py-12 text-center text-gray-600 text-sm">No suggestions found.</div>
         ) : (
           <div>
-            {bills.filter(b => b.status === 'Pending').map(bill => (
-                <div key={bill.id} className="border-b border-gray-800 last:border-0 px-5 py-4 flex items-center justify-between hover:bg-gray-900/40 transition-colors">
-                  <div className="space-y-0.5">
-                    <span className="text-gray-100 font-semibold text-sm">{bill.name}</span>
-                    <div className="flex items-center gap-3">
-                      {bill.category && <p className="text-xs text-gray-500">{bill.category}</p>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-100 font-bold text-base">{formatAmount(bill.amount)}</span>
-                    <button
-                      onClick={async () => {
-                        await updateBill(bill.id, { status: 'Accepted' })
-                        fetchBills()
-                      }}
-                      className="text-emerald-500 hover:text-emerald-400 transition-colors text-lg"
-                    >
-                      ✓
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await updateBill(bill.id, { status: 'Declined' })
-                        fetchBills()
-                      }}
-                      className="text-gray-600 hover:text-red-400 transition-colors"
-                    >
-                      ✕
-                    </button>
+            {pendingBills.map(bill => (
+              <div key={bill.id} className="border-b border-gray-800 last:border-0 px-5 py-4 flex items-center justify-between hover:bg-gray-900/40 transition-colors">
+                <div className="space-y-0.5">
+                  <span className="text-gray-100 font-semibold text-sm">{bill.name}</span>
+                  <div className="flex items-center gap-3">
+                    {bill.category && <p className="text-xs text-gray-500">{bill.category}</p>}
                   </div>
                 </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-gray-100 font-bold text-base">{formatAmount(-bill.amount)}</span>
+                  <button
+                    onClick={async () => {
+                      await updateBill(bill.id, { status: 'Accepted' })
+                      fetchBills()
+                    }}
+                    className="text-emerald-500 hover:text-emerald-400 transition-colors text-lg"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await updateBill(bill.id, { status: 'Declined' })
+                      fetchBills()
+                    }}
+                    className="text-gray-600 hover:text-red-400 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}
