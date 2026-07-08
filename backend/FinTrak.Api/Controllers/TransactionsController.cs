@@ -117,9 +117,9 @@ namespace FinTrak.Api.Controllers
         [EnableRateLimiting("expensive")]
         public async Task<IActionResult> ParsePDF([FromForm] PdfUploadRequest request, CancellationToken cancellationToken)
         {
-            if (request.pdf == null || request.pdf.Length == 0) return BadRequest(new { error = "No PDF file provided." });
+            if (request.Pdf == null || request.Pdf.Length == 0) return BadRequest(new { error = "No PDF file provided." });
 
-            var count = await _pdfImportService.ImportAsync(request.pdf.OpenReadStream(), GetUserId(), cancellationToken);
+            var count = await _pdfImportService.ImportAsync(request.Pdf.OpenReadStream(), GetUserId(), cancellationToken);
             return Ok(new { imported = count });
         }
 
@@ -129,6 +129,6 @@ namespace FinTrak.Api.Controllers
 
     public class PdfUploadRequest
     {
-        public IFormFile pdf { get; set; } = null!;
+        public IFormFile Pdf { get; set; } = null!;
     }
 }
