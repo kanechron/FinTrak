@@ -20,7 +20,6 @@ public class BillRepository(FinTrakDbContext db) : IBillRepository
 
     public async Task AddAsync(Bill bill, CancellationToken cancellationToken = default)
     {
-        
         _db.Bills.Add(bill);
         await _db.SaveChangesAsync(cancellationToken);
     }

@@ -2,7 +2,7 @@ namespace FinTrak.Core.Interfaces;
 
 public interface IBillDetectionService
 {
-    Task<List<List<TransactionGroup>>> DetectAsync(CancellationToken cancellationToken = default);
+    Task<List<List<TransactionGroup>>> DetectAsync(Guid userId, CancellationToken cancellationToken = default);
 }
 
 public class TransactionGroup

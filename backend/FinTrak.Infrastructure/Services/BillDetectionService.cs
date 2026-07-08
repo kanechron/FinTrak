@@ -14,27 +14,29 @@ namespace FinTrak.Infrastructure.Services
             _db = db;
         }
 
-        public async Task<List<List<TransactionGroup>>> DetectAsync(CancellationToken cancellationToken = default)
+        public async Task<List<List<TransactionGroup>>> DetectAsync(Guid userId,CancellationToken cancellationToken = default)
         {
-            var transactions = await FetchTransactions(cancellationToken);
-            var filtered = await FilterExistingBills(transactions, cancellationToken);
+            var transactions = await FetchTransactions(cancellationToken, userId);
+            var filtered = await FilterExistingBills(transactions, userId, cancellationToken);
             var amountFilter = FilterByAmount(filtered);
             return FilterByCategory(amountFilter);
         }
 
-        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken cancellationToken)
+        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken cancellationToken, Guid userId)
         {
             if (cancellationToken.IsCancellationRequested)
                 return [];
 
             var existingBills = await _db.Bills
-                .Where(b => 
-                b.DeletedAt == null)
+                .Where(b =>
+                b.DeletedAt == null
+                && b.UserId == userId)
                 .Select(b => b.Name)
                 .ToListAsync(cancellationToken);
 
             var flat = await _db.Transactions
                 .Where(t => t.DeletedAt == null
+                    && t.UserId == userId
                     && !t.IsPending
                     && t.CategoryId != null
                     && t.MerchantName != null
@@ -68,10 +70,11 @@ namespace FinTrak.Infrastructure.Services
             ).ToList();
 
         private async Task<List<List<TransactionGroup>>> FilterExistingBills(
-        List<List<TransactionGroup>> groups, CancellationToken cancellationToken)
+        List<List<TransactionGroup>> groups, Guid userId, CancellationToken cancellationToken)
         {
             var existingBills = await _db.Bills
                 .Where(b => b.DeletedAt == null &&
+                    b.UserId == userId &&
                     (b.Status == BillStatus.Accepted || b.Status == BillStatus.Declined))
                 .Select(b => new { b.Name, b.Amount })
                 .ToListAsync(cancellationToken);
@@ -96,7 +99,11 @@ namespace FinTrak.Infrastructure.Services
 
 
         private static readonly HashSet<string> BlacklistedCategories = new(Enum.GetNames(typeof(BlacklistedCategory)));
+
+        
     }
+
+    
 
     file enum BlacklistedCategory
     {
@@ -106,4 +113,5 @@ namespace FinTrak.Infrastructure.Services
         TRAVEL,
         RECREATION
     }
+
 }
