@@ -94,7 +94,7 @@ namespace FinTrak.Infrastructure.Services
             )];
 
 
-        private static readonly HashSet<string> BlacklistedCategories = [.. Enum.GetNames(typeof(BlacklistedCategory))];
+        private static readonly HashSet<string> BlacklistedCategories = [.. Enum.GetNames<BlacklistedCategory>()];
     }
 
     file enum BlacklistedCategory
