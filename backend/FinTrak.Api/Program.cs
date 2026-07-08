@@ -333,7 +333,7 @@ static void LoadEnv()
                 // Unquoted values treat # as an inline comment delimiter (matches Docker Compose behaviour).
                 var value = rawValue.StartsWith('"') || rawValue.StartsWith('\'')
                     ? rawValue.Trim('"').Trim('\'')
-                    : rawValue.IndexOf('#') >= 0
+                    : rawValue.Contains('#')
                         ? rawValue[..rawValue.IndexOf('#')].TrimEnd()
                         : rawValue;
 
