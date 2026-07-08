@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getBills, getSuggestions, addBill, deleteBill, type Bill, type TransactionGroup } from '../../api/bills'
+import { getBills, deleteBill, type Bill, updateBill } from '../../api/bills'
 import { formatAmount } from '../../utils/format'
 import AddBillModal from '../../components/modals/AddBillModal'
 import EditBillModal from '../../components/modals/EditBillModal'
@@ -50,7 +50,8 @@ function formatFrequency(f: string): string {
 
 export default function Bills() {
   const [bills, setBills] = useState<Bill[]>([])
-  const [suggestions, setSuggestions] = useState<TransactionGroup[][]>([])
+  const confirmed = bills.filter(b => b.status === 'Accepted')
+  const suggestions = bills.filter(b => b.status === 'Pending')
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -60,7 +61,6 @@ export default function Bills() {
 
   useEffect(() => {
     fetchBills()
-    getSuggestions().then(setSuggestions)
   }, [])
 
   const manualBills = bills.filter(b => !b.isAutoDetected)
@@ -227,29 +227,24 @@ export default function Bills() {
           <h2 className="font-medium">Auto-Detected</h2>
           <p className="text-xs text-gray-500 mt-0.5">Recurring patterns found in your transactions</p>
         </div>
-        {suggestions.length === 0 ? (
+        {bills.filter(b => b.status === 'Pending').length === 0 ? (
           <div className="px-5 py-12 text-center text-gray-600 text-sm">No suggestions found.</div>
         ) : (
           <div>
-            {suggestions.map((group, i) => {
-              const s = group[0]
-              const amount = s.amounts[0]
-              return (
-                <div key={i} className="border-b border-gray-800 last:border-0 px-5 py-4 flex items-center justify-between hover:bg-gray-900/40 transition-colors">
+            {bills.filter(b => b.status === 'Pending').map(bill => (
+                <div key={bill.id} className="border-b border-gray-800 last:border-0 px-5 py-4 flex items-center justify-between hover:bg-gray-900/40 transition-colors">
                   <div className="space-y-0.5">
-                    <span className="text-gray-100 font-semibold text-sm">{s.merchantName}</span>
+                    <span className="text-gray-100 font-semibold text-sm">{bill.name}</span>
                     <div className="flex items-center gap-3">
-                      {s.category && <p className="text-xs text-gray-500">{s.category}</p>}
-                      <p className="text-xs text-gray-600">{s.count} occurrences</p>
+                      {bill.category && <p className="text-xs text-gray-500">{bill.category}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-100 font-bold text-base">{amount != null ? formatAmount(-amount) : '—'}</span>
+                    <span className="text-gray-100 font-bold text-base">{formatAmount(bill.amount)}</span>
                     <button
                       onClick={async () => {
-                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: s.categoryId, status: 'Accepted' })
+                        await updateBill(bill.id, { status: 'Accepted' })
                         fetchBills()
-                        setSuggestions(prev => prev.filter((_, idx) => idx !== i))
                       }}
                       className="text-emerald-500 hover:text-emerald-400 transition-colors text-lg"
                     >
@@ -257,9 +252,8 @@ export default function Bills() {
                     </button>
                     <button
                       onClick={async () => {
-                        await addBill({ name: s.merchantName, amount: amount ?? 0, frequency: 'Monthly', dueDay: null, customDate: null, lastPaidDate: null, isAutoPay: false, categoryId: s.categoryId, status: 'Declined' })
+                        await updateBill(bill.id, { status: 'Declined' })
                         fetchBills()
-                        setSuggestions(prev => prev.filter((_, idx) => idx !== i))
                       }}
                       className="text-gray-600 hover:text-red-400 transition-colors"
                     >
@@ -267,8 +261,7 @@ export default function Bills() {
                     </button>
                   </div>
                 </div>
-              )
-            })}
+            ))}
           </div>
         )}
       </section>

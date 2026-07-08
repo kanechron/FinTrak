@@ -29,9 +29,9 @@ export function getBills(): Promise<Bill[]> {
     return api.get<Bill[]>('/bills/get-bills')
 }
 
-export function getSuggestions(): Promise<TransactionGroup[][]> {
-  return api.get<TransactionGroup[][]>('/bills/get-suggestions')
-}
+// export function getSuggestions(): Promise<TransactionGroup[][]> {
+//   return api.get<TransactionGroup[][]>('/bills/get-suggestions')
+// }
 
 export function addBill(bill: Partial<Omit<Bill, 'id' | 'category' | 'nextDueDate' | 'isAutoDetected'>>): Promise<void> {
     return api.post('/bills/add-bill', bill)
