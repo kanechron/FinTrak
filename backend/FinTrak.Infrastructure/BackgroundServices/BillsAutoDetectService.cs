@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FinTrak.Core.Interfaces;
 
-namespace FinTrak.Core.BackgroundServices
+namespace FinTrak.Infrastructure.BackgroundServices
 {
     public class BillsAutoDetectService : BackgroundService
     {

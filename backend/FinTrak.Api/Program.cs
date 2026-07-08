@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Api.Middleware;
 using Going.Plaid;
 using Microsoft.AspNetCore.Mvc;
-using FinTrak.Core.BackgroundServices;
 using Microsoft.AspNetCore.HttpOverrides;
 using Anthropic.SDK;
 using FinTrak.Infrastructure.Services;
