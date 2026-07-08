@@ -9,22 +9,23 @@ namespace FinTrak.Infrastructure.Services
     {
         private readonly FinTrakDbContext _db = db;
 
-        public async Task<List<List<TransactionGroup>>> DetectAsync(CancellationToken cancellationToken = default)
+        public async Task<List<List<TransactionGroup>>> DetectAsync(Guid userId,CancellationToken cancellationToken = default)
         {
-            var transactions = await FetchTransactions(cancellationToken);
+            var transactions = await FetchTransactions(cancellationToken, userId);
             var filtered = await FilterExistingBills(transactions, cancellationToken);
             var amountFilter = FilterByAmount(filtered);
             return FilterByCategory(amountFilter);
         }
 
-        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken cancellationToken)
+        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken cancellationToken, Guid userId)
         {
             if (cancellationToken.IsCancellationRequested)
                 return [];
 
             var existingBills = await _db.Bills
                 .Where(b => 
-                b.DeletedAt == null)
+                b.DeletedAt == null
+                && b.UserId == userId)
                 .Select(b => b.Name)
                 .ToListAsync(cancellationToken);
 
@@ -92,6 +93,8 @@ namespace FinTrak.Infrastructure.Services
         private static readonly HashSet<string> BlacklistedCategories = [.. Enum.GetNames<BlacklistedCategory>()];
     }
 
+    
+
     file enum BlacklistedCategory
     {
         FOOD_AND_DRINK,
@@ -100,4 +103,5 @@ namespace FinTrak.Infrastructure.Services
         TRAVEL,
         RECREATION
     }
+
 }

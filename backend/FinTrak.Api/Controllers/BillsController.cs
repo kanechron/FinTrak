@@ -6,6 +6,7 @@ using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 using FinTrak.Api.Validation;
+using Going.Plaid.User;
 
 namespace FinTrak.Api.Controllers
 {
@@ -84,7 +85,8 @@ namespace FinTrak.Api.Controllers
         [HttpGet("get-suggestions")]
         public async Task<IActionResult> GetSuggestions(CancellationToken cancellationToken)
         {
-            var suggestions = await _billDetectionService.DetectAsync(cancellationToken);
+            var userId = GetUserId();
+            var suggestions = await _billDetectionService.DetectAsync(userId, cancellationToken);
             return Ok(suggestions);
         }
 
