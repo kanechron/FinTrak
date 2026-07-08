@@ -7,13 +7,13 @@ namespace FinTrak.Core.Utilities
         public static string NormalizeName(this string? input)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
-            string cleaned = InputCleanerRegex().Replace(input, "");
+            string cleaned = RemoveNonAlphanumericRegex().Replace(input, "");
             cleaned = CollapseWhitespaceRegex().Replace(cleaned, " ").Trim();
             return cleaned.ToLower();
         }
 
         [GeneratedRegex(@"[^a-zA-Z0-9\s]")]
-        private static partial Regex InputCleanerRegex();
+        private static partial Regex RemoveNonAlphanumericRegex();
 
         [GeneratedRegex(@"\s+")]
         private static partial Regex CollapseWhitespaceRegex();
