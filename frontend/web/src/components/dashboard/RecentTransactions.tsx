@@ -1,22 +1,22 @@
-import { useState } from 'react'
-import { formatAmount } from '../../utils/format'
+import { useState } from "react";
+import { formatAmount } from "../../utils/format";
 
 interface Transaction {
-  id: string
-  date: string
-  merchant: string
-  amount: number
-  category: string | null
-  pending: boolean
+  id: string;
+  date: string;
+  merchant: string;
+  amount: number;
+  category: string | null;
+  pending: boolean;
 }
 
 interface Props {
-  transactions: Transaction[]
+  transactions: Transaction[];
 }
 
 export default function RecentTransactions({ transactions }: Props) {
-  const [expanded, setExpanded] = useState(false)
-  const visible = expanded ? transactions : transactions.slice(0, 10)
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? transactions : transactions.slice(0, 10);
 
   return (
     <section className="col-span-3 border border-gray-800 rounded-xl p-5 space-y-4">
@@ -27,7 +27,7 @@ export default function RecentTransactions({ transactions }: Props) {
             onClick={() => setExpanded(!expanded)}
             className="text-xs text-gray-500 hover:text-gray-300"
           >
-            {expanded ? 'Show less' : 'View all'}
+            {expanded ? "Show less" : "View all"}
           </button>
         )}
       </div>
@@ -45,13 +45,17 @@ export default function RecentTransactions({ transactions }: Props) {
             <tr key={t.id} className="text-gray-300">
               <td className="py-2.5">
                 {t.merchant}
-                {t.pending && <span className="ml-2 text-xs text-yellow-500">Pending</span>}
+                {t.pending && (
+                  <span className="ml-2 text-xs text-yellow-500">Pending</span>
+                )}
               </td>
               <td className="py-2.5 text-gray-500">{t.category}</td>
               <td className="py-2.5 text-gray-500">{t.date}</td>
               {/* Plaid stores debits as positive and credits as negative.
                   Negate for display so debits show red and credits show green. */}
-              <td className={`py-2.5 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <td
+                className={`py-2.5 text-right font-mono ${t.amount < 0 ? "text-emerald-400" : "text-red-400"}`}
+              >
                 {formatAmount(-t.amount)}
               </td>
             </tr>
@@ -59,5 +63,5 @@ export default function RecentTransactions({ transactions }: Props) {
         </tbody>
       </table>
     </section>
-  )
+  );
 }

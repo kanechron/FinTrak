@@ -4,5 +4,5 @@ export default function Bills() {
       <h2 className="font-medium">Bills</h2>
       <p className="text-sm text-gray-500">Coming soon.</p>
     </div>
-  )
+  );
 }

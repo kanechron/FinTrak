@@ -4,5 +4,5 @@ export default function Account() {
       <h2 className="font-medium">Account</h2>
       <p className="text-sm text-gray-500">Coming soon.</p>
     </div>
-  )
+  );
 }

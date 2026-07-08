@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-html, body, .no-scrollbar {
+html,
+body,
+.no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -11,12 +13,12 @@ body::-webkit-scrollbar,
   display: none;
 }
 
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
 }

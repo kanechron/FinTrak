@@ -4,5 +4,5 @@ export default function Reports() {
       <h2 className="font-medium">Reports</h2>
       <p className="text-sm text-gray-500">Coming soon.</p>
     </div>
-  )
+  );
 }

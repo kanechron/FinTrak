@@ -1,3 +1,3 @@
 export default function ReloadPage() {
-    window.location.reload();
+  window.location.reload();
 }
