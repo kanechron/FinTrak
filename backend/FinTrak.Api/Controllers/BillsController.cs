@@ -84,7 +84,8 @@ namespace FinTrak.Api.Controllers
         [HttpGet("get-suggestions")]
         public async Task<IActionResult> GetSuggestions(CancellationToken cancellationToken)
         {
-            var suggestions = await _billDetectionService.DetectAsync(cancellationToken);
+            var userId = GetUserId();
+            var suggestions = await _billDetectionService.DetectAsync(userId, cancellationToken);
             return Ok(suggestions);
         }
 
