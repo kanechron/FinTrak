@@ -308,9 +308,7 @@ namespace FinTrak.Api.Controllers
                     foreach (var t in response.Removed)
                     {
                         existingRemoved.TryGetValue(t.TransactionId!, out var existing);
-
-                        if (existing != null)
-                            existing.DeletedAt = DateTime.UtcNow;
+                        existing?.DeletedAt = DateTime.UtcNow;
                     }
 
                     await _db.SaveChangesAsync();
