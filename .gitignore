@@ -1,6 +1,4 @@
-# Dependencies
 node_modules/
-
 .env
 .cloudflared/*.json
 .cloudflared/cert.pem

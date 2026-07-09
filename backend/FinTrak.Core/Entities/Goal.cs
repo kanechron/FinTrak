@@ -21,7 +21,7 @@ namespace FinTrak.Core.Entities
         public decimal CurrentAmount { get; set; } = 0m;
 
         //<summary>List of accounts linked to this goal. A goal can be funded from multiple accounts.</summary>
-        public List<Account> LinkedAccounts { get; set; } = [];
+        public List<Account> LinkedAccounts { get; set; } = new();
 
         /// <summary>User-defined priority for ordering goals. Lower numbers are higher priority.</summary>
         public int Priority { get; set; } = 0;

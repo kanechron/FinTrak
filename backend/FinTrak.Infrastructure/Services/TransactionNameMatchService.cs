@@ -5,9 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Infrastructure.Services;
 
-public class TransactionNameMatchService(FinTrakDbContext db) : ITransactionNameMatchService
+public class TransactionNameMatchService : ITransactionNameMatchService
 {
-    private readonly FinTrakDbContext _db = db;
+    private readonly FinTrakDbContext _db;
+
+        public TransactionNameMatchService(FinTrakDbContext db)
+        {
+            _db = db;
+        }
 
     public async Task<int> MatchByName(ApplyCategoryRequest request, CancellationToken cancellationToken)
         {

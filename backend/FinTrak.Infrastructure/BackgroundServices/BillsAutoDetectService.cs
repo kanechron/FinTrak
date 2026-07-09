@@ -5,11 +5,16 @@ using FinTrak.Core.Entities;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 
-namespace FinTrak.Infrastructure.BackgroundServices
+namespace FinTrak.Core.BackgroundServices
 {
-    public class BillsAutoDetectService(IServiceScopeFactory scopeFactory) : BackgroundService
+    public class BillsAutoDetectService : BackgroundService
     {
-        private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
+
+        public BillsAutoDetectService(IServiceScopeFactory scopeFactory)
+        {
+            _scopeFactory = scopeFactory;
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {

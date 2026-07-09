@@ -26,9 +26,14 @@ namespace FinTrak.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("auth")]
-    public class AuthController(FinTrakDbContext db) : ControllerBase
+    public class AuthController : ControllerBase
     {
-        private readonly FinTrakDbContext _db = db;
+        private readonly FinTrakDbContext _db;
+
+        public AuthController(FinTrakDbContext db)
+        {
+            _db = db;
+        }
 
         [HttpGet("register")]
         [AllowAnonymous]
