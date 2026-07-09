@@ -11,13 +11,13 @@ namespace FinTrak.Infrastructure.Services
 
         public async Task<List<List<TransactionGroup>>> DetectAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            var transactions = await FetchTransactions(cancellationToken, userId);
+            var transactions = await FetchTransactions(userId, cancellationToken);
             var filtered = await FilterExistingBills(transactions, userId, cancellationToken);
             var amountFilter = FilterByAmount(filtered);
             return FilterByCategory(amountFilter);
         }
 
-        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken cancellationToken, Guid userId)
+        private async Task<List<List<TransactionGroup>>> FetchTransactions(Guid userId, CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested)
                 return [];

@@ -1,10 +1,9 @@
-using FinTrak.Core.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using FinTrak.Core.Interfaces;
 using FinTrak.Core.Entities;
+using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FinTrak.Infrastructure.BackgroundServices
 {
@@ -37,7 +36,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
                             Status = BillStatus.Pending
                         };
                     });
-                    await db.Bills.AddRangeAsync(bills);
+                    await db.Bills.AddRangeAsync(bills, stoppingToken);
                 }
 
                 await db.SaveChangesAsync(stoppingToken);
