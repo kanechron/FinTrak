@@ -13,11 +13,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import SortableGoal from '../../components/dashboard/SortableGoal'
 
 export default function Goals() {
@@ -32,7 +28,9 @@ export default function Goals() {
     setAllocatedGoals(allocateGoalAmounts(g, a))
   }
 
-  useEffect(() => { fetchGoals() }, [])
+  useEffect(() => {
+    fetchGoals()
+  }, [])
 
   const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
 
@@ -51,25 +49,33 @@ export default function Goals() {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = allocatedGoals.findIndex(g => g.id === active.id)
-    const newIndex = allocatedGoals.findIndex(g => g.id === over.id)
+    const oldIndex = allocatedGoals.findIndex((g) => g.id === active.id)
+    const newIndex = allocatedGoals.findIndex((g) => g.id === over.id)
     const reordered = arrayMove(allocatedGoals, oldIndex, newIndex)
     const reorderedWithPriority = reordered.map((g, i) => ({ ...g, priority: i }))
 
     setAllocatedGoals(reorderedWithPriority)
-    await Promise.all(reorderedWithPriority.map(g => updateGoal(g.id, { priority: g.priority })))
+    await Promise.all(reorderedWithPriority.map((g) => updateGoal(g.id, { priority: g.priority })))
     fetchGoals()
   }
 
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-6">
-      <AddGoalModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} onSuccess={fetchGoals} accounts={accounts} />
+      <AddGoalModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={fetchGoals}
+        accounts={accounts}
+      />
       {selectedGoal && (
         <EditGoalModal
           goal={selectedGoal}
           isOpen={!!selectedGoal}
           onClose={() => setSelectedGoal(null)}
-          onSuccess={() => { setSelectedGoal(null); fetchGoals() }}
+          onSuccess={() => {
+            setSelectedGoal(null)
+            fetchGoals()
+          }}
           accounts={accounts}
         />
       )}
@@ -82,11 +88,15 @@ export default function Goals() {
           <p className="text-sm text-gray-500 mt-1">across {accounts.length} accounts</p>
         </div>
         <div className="flex gap-6">
-          {accounts.map(a => (
+          {accounts.map((a) => (
             <div key={a.last4} className="text-right">
               <p className="text-sm text-gray-300">{a.name}</p>
-              <p className={`text-sm font-medium ${a.balance < 0 ? 'text-red-400' : ''}`}>{formatAmount(a.balance)}</p>
-              <p className="text-xs text-gray-600">{a.type} · {a.last4}</p>
+              <p className={`text-sm font-medium ${a.balance < 0 ? 'text-red-400' : ''}`}>
+                {formatAmount(a.balance)}
+              </p>
+              <p className="text-xs text-gray-600">
+                {a.type} · {a.last4}
+              </p>
             </div>
           ))}
         </div>
@@ -96,25 +106,41 @@ export default function Goals() {
       <section className="border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="font-medium">Goals</h2>
-          <button onClick={() => setAddModalOpen(true)} className="text-sm text-blue-500 hover:text-blue-400 cursor-pointer">
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="text-sm text-blue-500 hover:text-blue-400 cursor-pointer"
+          >
             + Add Goal
           </button>
         </div>
         <div className="p-5 space-y-4">
           {allocatedGoals.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">No goals yet — add one to get started.</p>
+            <p className="text-sm text-gray-500 text-center py-8">
+              No goals yet — add one to get started.
+            </p>
           ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={allocatedGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
-                {allocatedGoals.map(g => (
-                  <SortableGoal key={g.id} goal={g} onDelete={handleDelete} onClick={() => setSelectedGoal(g)} />
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={allocatedGoals.map((g) => g.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {allocatedGoals.map((g) => (
+                  <SortableGoal
+                    key={g.id}
+                    goal={g}
+                    onDelete={handleDelete}
+                    onClick={() => setSelectedGoal(g)}
+                  />
                 ))}
               </SortableContext>
             </DndContext>
           )}
         </div>
       </section>
-
     </main>
   )
 }

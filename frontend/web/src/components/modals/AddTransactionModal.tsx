@@ -8,8 +8,13 @@ interface Props {
   onSuccess: () => void
 }
 
-const inputClass = "w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
-const formatName = (name: string) => name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase())
+const inputClass =
+  'w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500'
+const formatName = (name: string) =>
+  name
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase())
 
 export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Props) {
   const [merchant, setMerchant] = useState('')
@@ -22,23 +27,30 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (isOpen) getCategories().then(setCategories).catch(() => {})
+    if (isOpen)
+      getCategories()
+        .then(setCategories)
+        .catch(() => {})
   }, [isOpen])
 
   const parentCategories = useMemo(
-    () => categories.filter(c => c.detailId === null).sort((a, b) => a.name.localeCompare(b.name)),
+    () =>
+      categories.filter((c) => c.detailId === null).sort((a, b) => a.name.localeCompare(b.name)),
     [categories]
   )
 
   const childCategories = useMemo(
-    () => parentCategoryId
-      ? categories.filter(c => c.detailId === parentCategoryId).sort((a, b) => a.name.localeCompare(b.name))
-      : [],
+    () =>
+      parentCategoryId
+        ? categories
+            .filter((c) => c.detailId === parentCategoryId)
+            .sort((a, b) => a.name.localeCompare(b.name))
+        : [],
     [categories, parentCategoryId]
   )
 
   const selectedParentName = useMemo(
-    () => parentCategories.find(c => c.id === parentCategoryId)?.name ?? '',
+    () => parentCategories.find((c) => c.id === parentCategoryId)?.name ?? '',
     [parentCategories, parentCategoryId]
   )
 
@@ -90,16 +102,19 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
       <div
         className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-medium">Add Transaction</h2>
 
         <input
           value={merchant}
-          onChange={e => setMerchant(e.target.value)}
+          onChange={(e) => setMerchant(e.target.value)}
           type="text"
           placeholder="Merchant"
           className={inputClass}
@@ -107,7 +122,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
 
         <input
           value={amount ?? ''}
-          onChange={e => setAmount(e.target.value === '' ? null : Number(e.target.value))}
+          onChange={(e) => setAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Amount"
           min={0}
@@ -119,7 +134,7 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
           <label className="text-xs text-gray-500">Date</label>
           <input
             value={date}
-            onChange={e => setDate(e.target.value)}
+            onChange={(e) => setDate(e.target.value)}
             type="date"
             className={inputClass}
           />
@@ -129,12 +144,14 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
           <label className="text-xs text-gray-500">Category</label>
           <select
             value={parentCategoryId ?? ''}
-            onChange={e => handleParentChange(e.target.value || null)}
+            onChange={(e) => handleParentChange(e.target.value || null)}
             className={inputClass}
           >
             <option value="">No Category</option>
-            {parentCategories.map(c => (
-              <option key={c.id} value={c.id}>{formatName(c.name)}</option>
+            {parentCategories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {formatName(c.name)}
+              </option>
             ))}
           </select>
 
@@ -143,12 +160,14 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
               <label className="text-xs text-gray-500">Subcategory</label>
               <select
                 value={categoryDetailedId ?? ''}
-                onChange={e => setCategoryDetailedId(e.target.value || null)}
+                onChange={(e) => setCategoryDetailedId(e.target.value || null)}
                 className={inputClass}
               >
                 <option value="">No Subcategory</option>
-                {childCategories.map(c => (
-                  <option key={c.id} value={c.id}>{formatName(stripParentPrefix(c.name))}</option>
+                {childCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {formatName(stripParentPrefix(c.name))}
+                  </option>
                 ))}
               </select>
             </>

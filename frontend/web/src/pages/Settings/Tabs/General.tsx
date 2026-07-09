@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { parsePdf } from '../../../api/transactions'
 
-
 export default function General() {
   const [file, setFile] = useState<File | null>(null)
 
@@ -22,11 +21,13 @@ export default function General() {
 
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Import bank statement</h3>
-        <p className="text-sm text-gray-500">Upload a PDF bank statement to import transactions automatically.</p>
+        <p className="text-sm text-gray-500">
+          Upload a PDF bank statement to import transactions automatically.
+        </p>
 
         <label className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded-lg transition-colors cursor-pointer">
           <span>{file ? file.name : 'Choose PDF'}</span>
-          
+
           <input
             type="file"
             accept=".pdf,application/pdf"

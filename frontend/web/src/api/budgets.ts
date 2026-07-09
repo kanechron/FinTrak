@@ -14,8 +14,6 @@ export interface Budget {
   recurringDate: string | null
 }
 
-
-
 export function getBudgets(): Promise<Budget[]> {
   return api.get<Budget[]>('/budgets/get-budgets')
 }
@@ -24,7 +22,10 @@ export function addBudget(budget: Omit<Budget, 'id' | 'spent' | 'category'>): Pr
   return api.post('/budgets/add-budget', budget)
 }
 
-export function updateBudget(id: string, budget: Partial<Omit<Budget, 'id' | 'spent'>>): Promise<void> {
+export function updateBudget(
+  id: string,
+  budget: Partial<Omit<Budget, 'id' | 'spent'>>
+): Promise<void> {
   return api.patch(`/budgets/update-budget/${id}`, budget)
 }
 

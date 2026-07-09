@@ -24,10 +24,10 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
   const [recurringDayCustom, setRecurringDayCustom] = useState<number>(1)
 
   useEffect(() => {
-    getCategories().then(setCategories).catch(() => {})
+    getCategories()
+      .then(setCategories)
+      .catch(() => {})
   }, [isOpen])
-
-
 
   if (!isOpen) return null
 
@@ -58,16 +58,19 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
       <div
         className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-medium">Edit Budget</h2>
 
         <input
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Budget Name"
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
@@ -75,7 +78,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
 
         <input
           value={amount ?? ''}
-          onChange={e => setAmount(e.target.value === '' ? null : Number(e.target.value))}
+          onChange={(e) => setAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Spending Limit"
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
@@ -83,7 +86,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
 
         <select
           value={period}
-          onChange={e => setPeriod(e.target.value)}
+          onChange={(e) => setPeriod(e.target.value)}
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
         >
           <option value="Weekly">Weekly</option>
@@ -97,7 +100,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
             <label className="text-xs text-gray-500">Start Date</label>
             <input
               value={startDate}
-              onChange={e => setStartDate(e.target.value)}
+              onChange={(e) => setStartDate(e.target.value)}
               type="date"
               className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
             />
@@ -106,7 +109,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
             <input
               type="checkbox"
               checked={isRecurring}
-              onChange={e => setIsRecurring(e.target.checked)}
+              onChange={(e) => setIsRecurring(e.target.checked)}
               className="w-4 h-4 accent-emerald-500 cursor-pointer"
             />
             Recurring
@@ -121,13 +124,13 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
                 min={1}
                 max={28}
                 value={recurringDayCustom}
-                onChange={e => setRecurringDayCustom(Number(e.target.value))}
+                onChange={(e) => setRecurringDayCustom(Number(e.target.value))}
                 className="w-16 p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
               />
             )}
             <select
               value={recurringDay}
-              onChange={e => setRecurringDay(e.target.value)}
+              onChange={(e) => setRecurringDay(e.target.value)}
               className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
             >
               {period === 'Weekly' ? (
@@ -156,7 +159,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
             <label className="text-xs text-gray-500">End Date</label>
             <input
               value={typeof endDate === 'string' ? endDate : ''}
-              onChange={e => setEndDate(e.target.value)}
+              onChange={(e) => setEndDate(e.target.value)}
               type="date"
               className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
             />
@@ -166,15 +169,20 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
         <select
           size={8}
           value={categoryId || ''}
-          onChange={e => setCategoryId(e.target.value || null)}
+          onChange={(e) => setCategoryId(e.target.value || null)}
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
         >
           <option value="">All Categories</option>
-          {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())}
-            </option>
-          ))}
+          {[...categories]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name
+                  .replace(/_/g, ' ')
+                  .toLowerCase()
+                  .replace(/\b\w/g, (char) => char.toUpperCase())}
+              </option>
+            ))}
         </select>
 
         {error && <p className="text-red-500 text-xs">{error}</p>}

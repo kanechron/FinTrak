@@ -12,11 +12,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 
 interface Props {
   goals: Goal[] | null
@@ -54,16 +50,14 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = displayGoals.findIndex(g => g.id === active.id)
-    const newIndex = displayGoals.findIndex(g => g.id === over.id)
+    const oldIndex = displayGoals.findIndex((g) => g.id === active.id)
+    const newIndex = displayGoals.findIndex((g) => g.id === over.id)
     const reordered = arrayMove(displayGoals, oldIndex, newIndex)
     const reorderedWithPriority = reordered.map((g, i) => ({ ...g, priority: i }))
 
     setLocalGoals(reorderedWithPriority)
 
-    await Promise.all(
-      reorderedWithPriority.map((g) => updateGoal(g.id, { priority: g.priority }))
-    )
+    await Promise.all(reorderedWithPriority.map((g) => updateGoal(g.id, { priority: g.priority })))
     onGoalAdded()
   }
 
@@ -92,18 +86,31 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
           goal={selectedGoal}
           isOpen={!!selectedGoal}
           onClose={() => setSelectedGoal(null)}
-          onSuccess={() => { setSelectedGoal(null); onGoalAdded() }}
+          onSuccess={() => {
+            setSelectedGoal(null)
+            onGoalAdded()
+          }}
           accounts={accounts}
         />
       )}
       {displayGoals.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">No goals yet — add one to get started.</p>
+        <p className="text-sm text-gray-500 text-center py-4">
+          No goals yet — add one to get started.
+        </p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={displayGoals.map(g => g.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext
+            items={displayGoals.map((g) => g.id)}
+            strategy={verticalListSortingStrategy}
+          >
             <div className="space-y-4">
               {displayGoals.map((g) => (
-                <SortableGoal key={g.id} goal={g} onDelete={handleDelete} onClick={() => setSelectedGoal(g)} />
+                <SortableGoal
+                  key={g.id}
+                  goal={g}
+                  onDelete={handleDelete}
+                  onClick={() => setSelectedGoal(g)}
+                />
               ))}
             </div>
           </SortableContext>

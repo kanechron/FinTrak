@@ -12,78 +12,76 @@ import { getGoals, type Goal } from '../../api/goals'
 import allocateGoalAmounts from '../../utils/AllocateGoalAmounts'
 
 export default function Dashboard() {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([])
+  const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
-const [transactions, setTransactions] = useState<Transaction[]>([])
-const [accounts, setAccounts] = useState<Account[]>([])
-const [budgets, setBudgets] = useState<Budget[]>([])
-const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
-const [error, setError] = useState<string | null>(null)
-const [loaded, setLoaded] = useState(false)
+  async function fetchData() {
+    try {
+      const [transactions, accounts, budgets, goals] = await Promise.all([
+        getTransactions(),
+        getAccounts(),
+        getBudgets(),
+        getGoals(),
+      ])
+      setTransactions(transactions)
+      setAccounts(accounts)
+      setBudgets(budgets)
+      setAllocatedGoals(allocateGoalAmounts(goals, accounts))
+    } catch {
+      setError('Failed to load dashboard data.')
+    } finally {
+      setLoaded(true)
+    }
+  }
+  useEffect(() => {
+    fetchData()
+  }, [])
 
-async function fetchData() {
-  try {
-    const [transactions, accounts, budgets, goals] = await Promise.all([
-      getTransactions(),
-      getAccounts(),
-      getBudgets(),
-      getGoals(),
-    ])
-    setTransactions(transactions)
-    setAccounts(accounts)
+  useEffect(() => {
+    if (!loaded) return
+    if (accounts.length > 0 && transactions.length === 0) {
+      fetch('/api/plaid/sync', { method: 'POST', credentials: 'include' })
+        .then(() => fetchData())
+        .catch(() => {})
+    }
+  }, [loaded])
+
+  async function fetchGoals() {
+    const [goals, accs] = await Promise.all([getGoals(), getAccounts()])
+    setAllocatedGoals(allocateGoalAmounts(goals, accs))
+  }
+
+  async function fetchBudgets() {
+    const budgets = await getBudgets()
     setBudgets(budgets)
-    setAllocatedGoals(allocateGoalAmounts(goals, accounts))
-  } catch {
-    setError('Failed to load dashboard data.')
-  } finally {
-    setLoaded(true)
   }
-}
-useEffect(() => {
-  fetchData()
-}, [])
 
-useEffect(() => {
-  if (!loaded) return
-  if (accounts.length > 0 && transactions.length === 0) {
-    fetch('/api/plaid/sync', { method: 'POST', credentials: 'include' })
-      .then(() => fetchData())
-      .catch(() => {})
-  }
-}, [loaded])
-
-
-
-async function fetchGoals() {
-  const [goals, accs] = await Promise.all([getGoals(), getAccounts()])
-  setAllocatedGoals(allocateGoalAmounts(goals, accs))
-}
-
-async function fetchBudgets() {
-  const budgets = await getBudgets()
-  setBudgets(budgets)
-}
-
-  
-const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
-  if (error) return <main className="max-w-5xl mx-auto px-3 py-8"><p className="text-red-500 text-sm">{error}</p></main>
+  const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
+  if (error)
+    return (
+      <main className="max-w-5xl mx-auto px-3 py-8">
+        <p className="text-red-500 text-sm">{error}</p>
+      </main>
+    )
   if (loaded && accounts.length === 0) return <Welcome />
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-8">
-
       {/* Top row: Balance Card + Progress Widgets */}
       <section className="grid grid-cols-3 gap-4">
         <BalanceCard availableBalance={availableBalance} accounts={accounts} />
         <div className="col-span-2 flex flex-col gap-4">
-          <GoalList goals={allocatedGoals} onGoalAdded={fetchGoals} accounts={accounts}/>
+          <GoalList goals={allocatedGoals} onGoalAdded={fetchGoals} accounts={accounts} />
         </div>
       </section>
 
       <div className="grid grid-cols-5 gap-6">
         <RecentTransactions transactions={transactions} />
         <BudgetList budgets={budgets} onBudgetAdded={fetchBudgets} />
-        
       </div>
-
     </main>
   )
 }

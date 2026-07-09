@@ -51,7 +51,9 @@ export default function RecentTransactions({ transactions }: Props) {
               <td className="py-2.5 text-gray-500">{t.date}</td>
               {/* Plaid stores debits as positive and credits as negative.
                   Negate for display so debits show red and credits show green. */}
-              <td className={`py-2.5 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <td
+                className={`py-2.5 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}
+              >
                 {formatAmount(-t.amount)}
               </td>
             </tr>

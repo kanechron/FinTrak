@@ -27,7 +27,9 @@ export default function BalanceCard({ availableBalance, accounts }: Props) {
                 {formatAmount(a.balance)}
               </p>
             </div>
-            <p className="text-xs text-gray-500">{a.type} · {a.last4}</p>
+            <p className="text-xs text-gray-500">
+              {a.type} · {a.last4}
+            </p>
           </div>
         ))}
       </div>

@@ -14,7 +14,7 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
   const [targetAmount, setTargetAmount] = useState<number | null>(goal.targetAmount)
   const [targetDate, setTargetDate] = useState<string | null>(goal.targetDate)
   const [linkedAccounts, setLinkedAccounts] = useState<{ id: string; name: string }[]>(
-    goal.linkedAccounts.map(a => ({ id: a.id, name: a.name }))
+    goal.linkedAccounts.map((a) => ({ id: a.id, name: a.name }))
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
     setName(goal.name)
     setTargetAmount(goal.targetAmount)
     setTargetDate(goal.targetDate)
-    setLinkedAccounts(goal.linkedAccounts.map(a => ({ id: a.id, name: a.name })))
+    setLinkedAccounts(goal.linkedAccounts.map((a) => ({ id: a.id, name: a.name })))
     setError(null)
   }, [goal])
 
@@ -44,7 +44,7 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
         isActive: goal.isActive,
         priority: goal.priority,
         currentAmount: goal.currentAmount,
-        linkedAccounts: linkedAccounts.map(a => ({ id: a.id, name: '', mask: '' })),
+        linkedAccounts: linkedAccounts.map((a) => ({ id: a.id, name: '', mask: '' })),
       })
       onSuccess()
       onClose()
@@ -56,24 +56,27 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
   }
 
   const toggleAccount = (a: { id: string; name: string }) => {
-    if (linkedAccounts.some(acc => acc.id === a.id)) {
-      setLinkedAccounts(linkedAccounts.filter(acc => acc.id !== a.id))
+    if (linkedAccounts.some((acc) => acc.id === a.id)) {
+      setLinkedAccounts(linkedAccounts.filter((acc) => acc.id !== a.id))
     } else {
       setLinkedAccounts([...linkedAccounts, { id: a.id, name: a.name }])
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
       <div
         className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-medium">Edit Goal</h2>
 
         <input
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Goal Name"
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
@@ -81,7 +84,7 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
 
         <input
           value={targetAmount ?? ''}
-          onChange={e => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
+          onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Target Amount"
           className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
@@ -91,7 +94,7 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
           <label className="text-xs text-gray-500">Target Date</label>
           <input
             value={targetDate || ''}
-            onChange={e => setTargetDate(e.target.value || null)}
+            onChange={(e) => setTargetDate(e.target.value || null)}
             type="date"
             className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
           />
@@ -100,12 +103,12 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
         <div className="flex flex-col gap-2">
           <label className="text-xs text-gray-500">Linked Accounts</label>
           <div className="flex flex-wrap gap-2">
-            {accounts.map(a => (
+            {accounts.map((a) => (
               <button
                 key={a.id}
                 onClick={() => toggleAccount(a)}
                 className={`py-1 px-2 text-sm rounded transition-colors ${
-                  linkedAccounts.some(acc => acc.id === a.id)
+                  linkedAccounts.some((acc) => acc.id === a.id)
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}

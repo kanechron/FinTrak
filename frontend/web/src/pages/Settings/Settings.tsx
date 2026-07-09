@@ -8,7 +8,8 @@ import Goals from './Tabs/Goals'
 import Bills from './Tabs/Bills'
 import Reports from './Tabs/Reports'
 
-type Section = 'general' | 'account' | 'display' | 'transactions' | 'budgets' | 'goals' | 'bills' | 'reports'
+type Section =
+  'general' | 'account' | 'display' | 'transactions' | 'budgets' | 'goals' | 'bills' | 'reports'
 
 const navGroups = [
   {
@@ -40,7 +41,7 @@ export default function Settings() {
           {navGroups.map((group, i) => (
             <div key={i} className="flex flex-col gap-1">
               {i > 0 && <div className="border-t border-gray-800 mb-2" />}
-              {group.items.map(s => (
+              {group.items.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setActive(s.id)}

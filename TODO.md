@@ -1,18 +1,41 @@
 # FinTrak — TODO
 
+## Bugs / Stability
+- [ ] **First-sync on new account** — new users' transactions don't sync automatically; trigger a Plaid sync on first login or first account link
+- [ ] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
+- [ ] **Bill deduplication** — background service re-adds the same Pending bills every 7 days if they haven't been reviewed; check for existing Pending bills before inserting
+- [ ] **Ownership checks on write endpoints** — PATCH/DELETE for bills, budgets, and goals don't verify the resource belongs to the requesting user
+
 ## Transactions
 - [ ] **Search & filter** — filter by name, category, amount, date, or any metric
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
-- [ ] **Separate categories** - all categories appear in the same dropdown under the Add Transaction modal
+- [ ] **Separate categories** — all categories appear in the same dropdown under the Add Transaction modal
 - [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
+- [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
+- [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
+
+## Reports
+- [ ] **Clickable chart segments** — clicking a category slice or bar navigates to the transactions that make it up
+- [ ] **Projected monthly outcome** — estimated income (detected from pay period frequency) minus confirmed bills; designed to give a directional picture of future financial health, not exact figures
+- [ ] **Date range picker** — let users scope reports to a custom date range
+- [ ] **Net worth snapshot** — account balances (assets) minus outstanding bills (liabilities)
+
+## AI
+- [ ] **AI budgeting assistant** — user inputs a goal (or pulls from existing Budget/Goal items) and Claude returns a personalized plan to reach it; consider what data to pass as context (spending history, bills, income estimate)
 
 ## Settings
 - [ ] **Transaction page size** — configurable limit for how many transactions load at once
 
-## Architecture
-- [x] **Rate limiting** — fixed window on auth endpoints (`/auth/login`, `/auth/callback`) and write endpoints; ASP.NET Core built-in middleware
-- [x] **Health checks** — `AddHealthChecks().AddNpgsql(...)` + `/health` endpoint for Docker container health monitoring
-- [x] **Remove debug logging** — `Console.WriteLine` + `.LogTo` still in `Program.cs`; Serilog is now in place
+## UX
+- [ ] **Error pages** — dedicated 404, 500, and auth-error pages/components
+- [ ] **UI redesign** — navigation overhaul and visual refresh; evaluate light mode or theme toggle
+- [ ] **Loading skeletons** — replace blank states during fetch with skeleton loaders
+- [ ] **Toast notifications** — user feedback when sync completes, bill accepted, budget saved, etc.; most actions are currently silent
+- [ ] **Onboarding flow** — first-time users land on an empty dashboard with no guidance; short setup wizard (link bank → first sync → add a budget) to reduce drop-off
+
+## Docs
+- [ ] **README: How to use** — walkthrough of core flows (sync, budgets, bills, goals, reports) aimed at a new user
+- [ ] **Disclaimer** — add to README and the app UI (footer or onboarding screen): FinTrak is a personal project, not a financial advisory tool; data shown is for informational purposes only and should not be taken as financial advice
 
 ## Testing
 - [ ] **Integration tests** — xUnit + `WebApplicationFactory`; cover PDF import dedup logic and Plaid sync at minimum
@@ -21,3 +44,5 @@
 ## Platform
 - [ ] **Mobile web** — responsive/mobile-optimized version of the web app
 - [ ] **Mobile app** — React Native app (iOS/Android)
+- [ ] **Push notifications** — bill due date reminders; pairs with mobile app
+- [ ] **Full data export** — let users export all their data as JSON for portability and backup

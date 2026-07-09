@@ -55,8 +55,7 @@ export default function Navbar() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node))
-        setMenuOpen(false)
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -136,7 +135,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-[9999] bg-gray-950 border-b border-gray-800 h-14 flex items-stretch justify-between">
       <nav className="flex-1 flex items-stretch">
-        {leftTabs.map(tab => (
+        {leftTabs.map((tab) => (
           <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className={tabClass}>
             {tab.label}
           </NavLink>
@@ -148,7 +147,7 @@ export default function Navbar() {
         >
           {label[status]}
         </button>
-        {rightTabs.map(tab => (
+        {rightTabs.map((tab) => (
           <NavLink key={tab.path} to={tab.path} className={tabClass}>
             {tab.label}
           </NavLink>
@@ -157,7 +156,7 @@ export default function Navbar() {
 
       <div className="flex items-center px-6 relative" ref={menuRef}>
         <button
-          onClick={() => setMenuOpen(prev => !prev)}
+          onClick={() => setMenuOpen((prev) => !prev)}
           className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-sm transition-colors"
         >
           J
@@ -165,7 +164,10 @@ export default function Navbar() {
         {menuOpen && (
           <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden z-50">
             <button
-              onClick={() => { setMenuOpen(false); navigate('/settings') }}
+              onClick={() => {
+                setMenuOpen(false)
+                navigate('/settings')
+              }}
               className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
             >
               Settings

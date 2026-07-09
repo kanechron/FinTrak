@@ -1,5 +1,12 @@
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts'
 import { type Budget } from '../../api/budgets'
 
@@ -12,7 +19,7 @@ interface Props {
 }
 
 export default function BudgetPerformanceChart({ data }: Props) {
-  const chartData = data.map(b => ({
+  const chartData = data.map((b) => ({
     name: b.name,
     Spent: Number(b.spent.toFixed(2)),
     Remaining: Number(Math.max(0, b.amount - b.spent).toFixed(2)),
@@ -27,8 +34,13 @@ export default function BudgetPerformanceChart({ data }: Props) {
       <BarChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
         <XAxis dataKey="name" tick={axisStyle} />
-        <YAxis tick={axisStyle} tickFormatter={v => `$${v}`} />
-        <Tooltip formatter={(v: unknown) => `$${(v as number).toFixed(2)}`} contentStyle={tooltipStyle} labelStyle={tooltipTextStyle} itemStyle={tooltipTextStyle} />
+        <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
+        <Tooltip
+          formatter={(v: unknown) => `$${(v as number).toFixed(2)}`}
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipTextStyle}
+          itemStyle={tooltipTextStyle}
+        />
         <Legend wrapperStyle={{ fontSize: 11, color: '#6b7280' }} />
         <Bar dataKey="Spent" stackId="budget" fill="#f472b6" />
         <Bar dataKey="Remaining" stackId="budget" fill="#818cf8" radius={[4, 4, 0, 0]} />

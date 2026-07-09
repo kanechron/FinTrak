@@ -1,9 +1,8 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from 'react-router-dom'
 
 export default function Login() {
-  const [searchParams] = useSearchParams();
-  const error = searchParams.get("error");
-
+  const [searchParams] = useSearchParams()
+  const error = searchParams.get('error')
 
   // Redirects the browser to the backend login endpoint which kicks off Google OAuth.
   // The backend handles the full PKCE flow and redirects back to the frontend on success.
@@ -15,8 +14,6 @@ export default function Login() {
     window.location.href = '/api/auth/register'
   }
 
-  
-
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 font-sans flex items-center justify-center">
       <div className="border border-gray-800 rounded-xl p-10 flex flex-col items-center gap-6 w-80">
@@ -24,8 +21,8 @@ export default function Login() {
         <p className="text-sm text-gray-500 text-center">Sign in to access your dashboard</p>
         {error && (
           <p className="text-sm text-red-400 text-center">
-            {error === "no_account" && "No account found. Please sign up."}
-            {error === "account_exists" && "You already have an account. Please sign in."}
+            {error === 'no_account' && 'No account found. Please sign up.'}
+            {error === 'account_exists' && 'You already have an account. Please sign in.'}
           </p>
         )}
 

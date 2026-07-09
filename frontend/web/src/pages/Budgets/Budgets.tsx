@@ -34,13 +34,20 @@ export default function Budgets() {
 
   return (
     <main className="max-w-5xl mx-auto px-3 py-8 space-y-6">
-      <AddBudgetModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} onSuccess={fetchBudgets} />
+      <AddBudgetModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={fetchBudgets}
+      />
       {selectedBudget && (
         <EditBudgetModal
           budget={selectedBudget}
           isOpen={!!selectedBudget}
           onClose={() => setSelectedBudget(null)}
-          onSuccess={() => { setSelectedBudget(null); fetchBudgets() }}
+          onSuccess={() => {
+            setSelectedBudget(null)
+            fetchBudgets()
+          }}
         />
       )}
 
@@ -52,11 +59,15 @@ export default function Budgets() {
           <p className="text-sm text-gray-500 mt-1">across {accounts.length} accounts</p>
         </div>
         <div className="flex gap-6">
-          {accounts.map(a => (
+          {accounts.map((a) => (
             <div key={a.last4} className="text-right">
               <p className="text-sm text-gray-300">{a.name}</p>
-              <p className={`text-sm font-medium ${a.balance < 0 ? 'text-red-400' : ''}`}>{formatAmount(a.balance)}</p>
-              <p className="text-xs text-gray-600">{a.type} · {a.last4}</p>
+              <p className={`text-sm font-medium ${a.balance < 0 ? 'text-red-400' : ''}`}>
+                {formatAmount(a.balance)}
+              </p>
+              <p className="text-xs text-gray-600">
+                {a.type} · {a.last4}
+              </p>
             </div>
           ))}
         </div>
@@ -66,15 +77,20 @@ export default function Budgets() {
       <section className="border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="font-medium">Budgets</h2>
-          <button onClick={() => setAddModalOpen(true)} className="text-sm text-blue-500 hover:text-blue-400 cursor-pointer">
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="text-sm text-blue-500 hover:text-blue-400 cursor-pointer"
+          >
             + Add Budget
           </button>
         </div>
         <div className="divide-y divide-gray-900">
           {budgets.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-12">No budgets yet — add one to get started.</p>
+            <p className="text-sm text-gray-500 text-center py-12">
+              No budgets yet — add one to get started.
+            </p>
           )}
-          {budgets.map(b => (
+          {budgets.map((b) => (
             <div
               key={b.id}
               onClick={() => setSelectedBudget(b)}
@@ -84,20 +100,29 @@ export default function Budgets() {
                 <div className="flex items-center gap-2">
                   <span className="text-gray-200 font-medium">{b.name}</span>
                   {b.isRecurring && (
-                    <span className="text-xs text-emerald-400 border border-emerald-800 rounded px-1.5 py-0.5">Recurring</span>
+                    <span className="text-xs text-emerald-400 border border-emerald-800 rounded px-1.5 py-0.5">
+                      Recurring
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-500">{formatAmount(b.spent)} / {formatAmount(b.amount)}</span>
+                  <span className="text-gray-500">
+                    {formatAmount(b.spent)} / {formatAmount(b.amount)}
+                  </span>
                   <button
                     onClick={(e) => handleDelete(e, b.id)}
                     className="text-red-500 hover:text-red-400 transition-colors text-sm"
-                  >✕</button>
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
               {b.category && (
                 <p className="text-xs text-gray-400">
-                  {b.category.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                  {b.category
+                    .replace(/_/g, ' ')
+                    .toLowerCase()
+                    .replace(/\b\w/g, (c) => c.toUpperCase())}
                 </p>
               )}
               <p className="text-xs text-gray-500">
@@ -108,7 +133,6 @@ export default function Budgets() {
           ))}
         </div>
       </section>
-
     </main>
   )
 }

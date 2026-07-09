@@ -1,5 +1,12 @@
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ReferenceLine,
+  ResponsiveContainer,
 } from 'recharts'
 import { type CashFlow } from '../../api/reports'
 
@@ -16,7 +23,7 @@ interface Props {
 }
 
 export default function CashFlowChart({ data }: Props) {
-  const chartData = data.map(d => ({
+  const chartData = data.map((d) => ({
     label: formatMonth(d.year, d.month),
     net: d.net,
   }))
@@ -25,7 +32,7 @@ export default function CashFlowChart({ data }: Props) {
     return <p className="text-center text-gray-500 text-sm py-12">No data for selected period</p>
   }
 
-  const values = chartData.map(d => d.net)
+  const values = chartData.map((d) => d.net)
   const min = Math.min(...values, 0)
   const max = Math.max(...values, 0)
   const zeroPercent = max === min ? 50 : (max / (max - min)) * 100
@@ -41,7 +48,7 @@ export default function CashFlowChart({ data }: Props) {
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
         <XAxis dataKey="label" tick={axisStyle} />
-        <YAxis tick={axisStyle} tickFormatter={v => `$${v}`} />
+        <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
         <Tooltip
           formatter={(v: unknown) => [`$${(v as number).toFixed(2)}`, 'Net']}
           contentStyle={tooltipStyle}
@@ -49,7 +56,13 @@ export default function CashFlowChart({ data }: Props) {
           itemStyle={tooltipTextStyle}
         />
         <ReferenceLine y={0} stroke="#374151" strokeWidth={1.5} />
-        <Line type="monotone" dataKey="net" stroke="url(#netGradient)" strokeWidth={2} dot={false} />
+        <Line
+          type="monotone"
+          dataKey="net"
+          stroke="url(#netGradient)"
+          strokeWidth={2}
+          dot={false}
+        />
       </LineChart>
     </ResponsiveContainer>
   )

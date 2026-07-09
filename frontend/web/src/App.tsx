@@ -41,16 +41,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/login"
-          element={authed ? <Navigate to="/" replace /> : <Login />}
-        />
+        <Route path="/login" element={authed ? <Navigate to="/" replace /> : <Login />} />
         <Route
           path="*"
           element={
             authed ? (
               <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
-                <Timer timer={1800} /> {/* 1800 = 30 minutes in seconds 
+                <Timer timer={1800} />{' '}
+                {/* 1800 = 30 minutes in seconds 
                 REMINDER: Add configurable timeout to settings
                 */}
                 <Navbar />

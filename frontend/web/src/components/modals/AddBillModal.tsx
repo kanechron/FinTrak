@@ -8,7 +8,8 @@ interface Props {
   onSuccess: () => void
 }
 
-const inputClass = "w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+const inputClass =
+  'w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500'
 
 export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   const [name, setName] = useState('')
@@ -23,7 +24,10 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (isOpen) getCategories().then(setCategories).catch(() => {})
+    if (isOpen)
+      getCategories()
+        .then(setCategories)
+        .catch(() => {})
   }, [isOpen])
 
   if (!isOpen) return null
@@ -79,16 +83,19 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
       <div
         className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-medium">Add Bill</h2>
 
         <input
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Bill Name"
           className={inputClass}
@@ -96,7 +103,7 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
 
         <input
           value={amount ?? ''}
-          onChange={e => setAmount(e.target.value === '' ? null : Number(e.target.value))}
+          onChange={(e) => setAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Amount"
           min={0}
@@ -106,7 +113,11 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
 
         <select
           value={frequency}
-          onChange={e => { setFrequency(e.target.value); setDueDay(null); setCustomDate('') }}
+          onChange={(e) => {
+            setFrequency(e.target.value)
+            setDueDay(null)
+            setCustomDate('')
+          }}
           className={inputClass}
         >
           <option value="Weekly">Weekly</option>
@@ -122,7 +133,7 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
             <label className="text-xs text-gray-500">Due Day of Month</label>
             <input
               value={dueDay ?? ''}
-              onChange={e => setDueDay(e.target.value === '' ? null : Number(e.target.value))}
+              onChange={(e) => setDueDay(e.target.value === '' ? null : Number(e.target.value))}
               type="number"
               placeholder="e.g. 15"
               min={1}
@@ -137,7 +148,7 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
             <label className="text-xs text-gray-500">Due Date</label>
             <input
               value={customDate}
-              onChange={e => setCustomDate(e.target.value)}
+              onChange={(e) => setCustomDate(e.target.value)}
               type="date"
               className={inputClass}
             />
@@ -147,23 +158,30 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
         <select
           size={5}
           value={categoryId ?? ''}
-          onChange={e => setCategoryId(e.target.value || null)}
+          onChange={(e) => setCategoryId(e.target.value || null)}
           className={`${inputClass} max-h-36 overflow-y-auto`}
         >
           <option value="">No Category</option>
-          {categories.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, ch => ch.toUpperCase())}
-            </option>
-          ))}
+          {categories
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name
+                  .replace(/_/g, ' ')
+                  .toLowerCase()
+                  .replace(/\b\w/g, (ch) => ch.toUpperCase())}
+              </option>
+            ))}
         </select>
 
         <label className="flex items-center gap-3 text-sm text-gray-300 cursor-pointer">
           <div
-            onClick={() => setIsAutoPay(p => !p)}
+            onClick={() => setIsAutoPay((p) => !p)}
             className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${isAutoPay ? 'bg-emerald-500' : 'bg-gray-700'}`}
           >
-            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isAutoPay ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            <div
+              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isAutoPay ? 'translate-x-4' : 'translate-x-0.5'}`}
+            />
           </div>
           Auto-pay
         </label>

@@ -42,7 +42,7 @@ export function getTransactionsByCategory(id: string): Promise<Transaction[]> {
 }
 
 export function addTransaction(transaction: TransactionAddPayload): Promise<void> {
-  return api.post('transactions/add-transaction', transaction)
+  return api.post('/transactions/add-transaction', transaction)
 }
 
 export async function parsePdf(pdf: File): Promise<unknown> {
@@ -57,14 +57,20 @@ export async function parsePdf(pdf: File): Promise<unknown> {
   return res.json()
 }
 
-export function updateTransaction(id: string, transaction: TransactionUpdatePayload): Promise<void> {
-  return api.patch(`transactions/update-transaction/${id}`, transaction)
+export function updateTransaction(
+  id: string,
+  transaction: TransactionUpdatePayload
+): Promise<void> {
+  return api.patch(`/transactions/update-transaction/${id}`, transaction)
 }
 
 export function deleteTransaction(id: string): Promise<void> {
-  return api.delete(`transactions/delete-transaction/${id}`)
+  return api.delete(`/transactions/delete-transaction/${id}`)
 }
 
-export function applyCategoryByMerchant(merchantName: string, categoryId: string | null): Promise<void> {
-  return api.patch('transactions/apply-category-by-merchant', { merchantName, categoryId })
+export function applyCategoryByMerchant(
+  merchantName: string,
+  categoryId: string | null
+): Promise<void> {
+  return api.patch('/transactions/apply-category-by-merchant', { merchantName, categoryId })
 }

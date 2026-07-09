@@ -71,7 +71,10 @@ export default function Welcome() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-3 py-8 flex flex-col items-center justify-center gap-4" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
+    <main
+      className="max-w-5xl mx-auto px-3 py-8 flex flex-col items-center justify-center gap-4"
+      style={{ minHeight: 'calc(100vh - 3.5rem)' }}
+    >
       <h1 className="text-3xl font-semibold tracking-tight">Welcome</h1>
       <p className="text-gray-400 text-sm">Connect your bank to begin</p>
       <button
