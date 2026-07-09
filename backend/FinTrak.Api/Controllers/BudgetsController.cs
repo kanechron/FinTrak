@@ -80,6 +80,7 @@ namespace FinTrak.Api.Controllers
         {
             var existingBudget = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBudget == null) return NotFound(new { error = "Budget not found." });
+            if (existingBudget.UserId != GetUserId()) return Forbid();
 
             existingBudget.Name = budget.Name ?? existingBudget.Name;
             existingBudget.Amount = budget.Amount > 0 ? budget.Amount : existingBudget.Amount;
@@ -105,6 +106,7 @@ namespace FinTrak.Api.Controllers
         {
             var existingBudget = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBudget == null) return NotFound(new { error = "Budget not found." });
+            if (existingBudget.UserId != GetUserId()) return Forbid();
 
             existingBudget.DeletedAt = DateTime.UtcNow;
             existingBudget.IsActive = false;

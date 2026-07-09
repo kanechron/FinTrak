@@ -57,6 +57,7 @@ namespace FinTrak.Api.Controllers
         {
             var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBill == null) return NotFound("Bill not found.");
+            if (existingBill.UserId != GetUserId()) return Forbid();
 
             existingBill.Name = !string.IsNullOrEmpty(updatedBill.Name) ? updatedBill.Name : existingBill.Name;
             existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
@@ -77,6 +78,7 @@ namespace FinTrak.Api.Controllers
         {
             var existingBill = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingBill == null) return NotFound("Bill not found.");
+            if (existingBill.UserId != GetUserId()) return Forbid();
 
             existingBill.DeletedAt = DateTime.UtcNow;
             await _repo.SaveAsync(cancellationToken);

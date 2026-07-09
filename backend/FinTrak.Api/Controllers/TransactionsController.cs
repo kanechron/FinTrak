@@ -72,6 +72,7 @@ namespace FinTrak.Api.Controllers
         {
             var existing = await _repo.GetByIdAsync(id, cancellationToken);
             if (existing == null) return NotFound(new { error = "Transaction not found" });
+            if (existing.UserId != GetUserId()) return Forbid();
 
             if (!string.IsNullOrWhiteSpace(update.MerchantName))
                 existing.MerchantName = update.MerchantName.NormalizeName();
@@ -106,6 +107,7 @@ namespace FinTrak.Api.Controllers
         {
             var existing = await _repo.GetByIdAsync(id, cancellationToken);
             if (existing == null) return NotFound(new { error = "Could not find transaction {id}" });
+            if (existing.UserId != GetUserId()) return Forbid();
 
             existing.DeletedAt = DateTime.UtcNow;
             await _repo.SaveAsync(cancellationToken);
