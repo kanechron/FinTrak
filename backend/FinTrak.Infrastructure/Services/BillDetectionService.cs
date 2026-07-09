@@ -30,7 +30,8 @@ namespace FinTrak.Infrastructure.Services
             var existingBills = await _db.Bills
                 .Where(b =>
                 b.DeletedAt == null
-                && b.UserId == userId)
+                && b.UserId == userId
+                && b.Status != BillStatus.Declined)
                 .Select(b => b.Name)
                 .ToListAsync(cancellationToken);
 
