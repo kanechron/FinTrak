@@ -15,7 +15,7 @@ namespace FinTrak.Infrastructure.Services
         // ---------------------------------------------------------------------
         public byte[] ExportToCsv(List<CategorySpendingDto> data, string delimiter)
         {
-            if (data.Count() == 0) return null!;
+            if (data.Count == 0 ) return null!;
 
             var props = TypeDescriptor.GetProperties(typeof(CategorySpendingDto))
             .Cast<PropertyDescriptor>()
@@ -38,7 +38,7 @@ namespace FinTrak.Infrastructure.Services
         }
         public byte[] ExportToCsv(List<CategoryDetailSpendingDto> data, string delimiter)
         {
-            if (data.Count() == 0) return null!;
+            if (data.Count == 0 ) return null!;
 
             var props = TypeDescriptor.GetProperties(typeof(CategorySpendingDto))
             .Cast<PropertyDescriptor>()
@@ -61,7 +61,7 @@ namespace FinTrak.Infrastructure.Services
         }
         public byte[] ExportToCsv(List<MonthlySpendingDto> data, string delimiter)
         {
-            if (data.Count() == 0) return null!;
+            if (data.Count == 0 ) return null!;
 
             var props = TypeDescriptor.GetProperties(typeof(CategorySpendingDto))
             .Cast<PropertyDescriptor>()
@@ -84,7 +84,7 @@ namespace FinTrak.Infrastructure.Services
         }
         public byte[] ExportToCsv(List<CashFlowDto> data, string delimiter)
         {
-            if (data.Count() == 0) return null!;
+            if (data.Count == 0 ) return null!;
 
             var props = TypeDescriptor.GetProperties(typeof(CategorySpendingDto))
             .Cast<PropertyDescriptor>()

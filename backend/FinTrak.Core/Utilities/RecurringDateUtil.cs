@@ -45,15 +45,12 @@ namespace FinTrak.Core.Utilities
 
             var nextYear = startDate.AddYears(1);
 
-            switch (recurringDate.ToLower())
+            return recurringDate.ToLower() switch
             {
-                case "first":
-                    return new DateOnly(nextYear.Year, 1, 1);
-                case "last":
-                    return new DateOnly(startDate.Year, 12, 31);
-                default:
-                    return new DateOnly(nextYear.Year, startDate.Month, startDate.Day); // Keep same month/day next year       
-            }
+                "first" => new DateOnly(nextYear.Year, 1, 1),
+                "last" => new DateOnly(startDate.Year, 12, 31),
+                _ => new DateOnly(nextYear.Year, startDate.Month, startDate.Day),// Keep same month/day next year       
+            };
         }
 
         public static DateOnly GetRecurringDateWeek(DateOnly startDate, string recurringDate)

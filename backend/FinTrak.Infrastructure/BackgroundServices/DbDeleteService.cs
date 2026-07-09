@@ -5,17 +5,11 @@ using Microsoft.Extensions.Hosting;
 
 namespace FinTrak.Infrastructure.BackgroundServices
 {
-    public class DbDeleteService : BackgroundService
+    public class DbDeleteService(IServiceScopeFactory scopeFactory) : BackgroundService
     {
 
         //Inject IServiceScopeFactory to 
-        private readonly IServiceScopeFactory _scopeFactory;
-
-        public DbDeleteService(IServiceScopeFactory scopeFactory)
-        {
-            _scopeFactory = scopeFactory;
-        }
-
+        private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {

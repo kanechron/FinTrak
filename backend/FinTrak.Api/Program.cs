@@ -1,9 +1,10 @@
 using Anthropic.SDK;
 using FinTrak.Api.Middleware;
-using FinTrak.Core.BackgroundServices;
-using FinTrak.Core.Interfaces;
-using FinTrak.Infrastructure.BackgroundServices;
-using FinTrak.Infrastructure.Persistance;
+using Going.Plaid;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
+using Anthropic.SDK;
+using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
 using FinTrak.Infrastructure.Services;
 using FluentValidation;
@@ -331,7 +332,7 @@ static void LoadEnv()
                 // Unquoted values treat # as an inline comment delimiter (matches Docker Compose behaviour).
                 var value = rawValue.StartsWith('"') || rawValue.StartsWith('\'')
                     ? rawValue.Trim('"').Trim('\'')
-                    : rawValue.IndexOf('#') >= 0
+                    : rawValue.Contains('#')
                         ? rawValue[..rawValue.IndexOf('#')].TrimEnd()
                         : rawValue;
 
