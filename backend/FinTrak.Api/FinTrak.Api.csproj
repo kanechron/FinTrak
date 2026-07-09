@@ -14,7 +14,6 @@
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="Going.Plaid" Version="6.63.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.75.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OAuth" Version="2.3.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.17">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
