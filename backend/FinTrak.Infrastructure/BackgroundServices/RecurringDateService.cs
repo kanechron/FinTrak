@@ -8,7 +8,7 @@ using static FinTrak.Core.Utilities.RecurringDateUtil;
 
 namespace FinTrak.Infrastructure.BackgroundServices
 {
-    
+
     public class RecurringDateService(IServiceScopeFactory scopeFactory) : BackgroundService
     {
 

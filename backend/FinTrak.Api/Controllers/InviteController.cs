@@ -9,7 +9,8 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("[controller]")]
     [Authorize]
-    public class InvitesController(FinTrakDbContext db) : ControllerBase {
+    public class InvitesController(FinTrakDbContext db) : ControllerBase
+    {
         private readonly FinTrakDbContext _db = db;
 
         [HttpPost("create")]

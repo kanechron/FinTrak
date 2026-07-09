@@ -21,7 +21,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
 
                 var userIds = await db.Users.Select(u => u.Id).ToListAsync(stoppingToken);
 
-                foreach(var userId in userIds)
+                foreach (var userId in userIds)
                 {
                     var suggestions = await detectionService.DetectAsync(userId, stoppingToken);
 
