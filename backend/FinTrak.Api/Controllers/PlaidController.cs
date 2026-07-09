@@ -23,14 +23,9 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("plaid")]
     [Authorize]
-    public class PlaidController : ControllerBase
+    public class PlaidController(FinTrakDbContext db) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
-
-        public PlaidController(FinTrakDbContext db)
-        {
-            _db = db;
-        }
+        private readonly FinTrakDbContext _db = db;
 
         private Guid GetUserId() =>
             Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -223,10 +218,10 @@ public async Task<IActionResult> Sync([FromServices] PlaidClient plaid)
 
                 accounts.TryGetValue(t.AccountId!, out var account);
 
-                var categoryName = t.Name?.ToLower().Contains("deposit") == true
+                var categoryName = t.Name?.ToLower().Contains("deposit", StringComparison.CurrentCultureIgnoreCase) == true
                     ? "INCOME"
                     : t.PersonalFinanceCategory?.Primary ?? string.Empty;
-                var detailedCategoryName = t.Name?.ToLower().Contains("deposit") == true
+                var detailedCategoryName = t.Name?.ToLower().Contains("deposit", StringComparison.CurrentCultureIgnoreCase) == true
                     ? string.Empty
                     : t.PersonalFinanceCategory?.Detailed ?? string.Empty;
 

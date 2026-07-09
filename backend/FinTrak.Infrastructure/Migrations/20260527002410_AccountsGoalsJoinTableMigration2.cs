@@ -41,7 +41,7 @@ namespace FinTrak.Infrastructure.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_GoalAccounts",
                 table: "GoalAccounts",
-                columns: new[] { "LinkedAccountsId", "LinkedGoalsId" });
+                columns: ["LinkedAccountsId", "LinkedGoalsId"]);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_GoalAccounts_Accounts_LinkedAccountsId",
@@ -91,7 +91,7 @@ namespace FinTrak.Infrastructure.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_AccountGoal",
                 table: "AccountGoal",
-                columns: new[] { "LinkedAccountsId", "LinkedGoalsId" });
+                columns: ["LinkedAccountsId", "LinkedGoalsId"]);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_AccountGoal_Accounts_LinkedAccountsId",

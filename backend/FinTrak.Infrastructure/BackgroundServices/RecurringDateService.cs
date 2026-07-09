@@ -9,16 +9,11 @@ using Microsoft.Extensions.Hosting;
 namespace FinTrak.Infrastructure.BackgroundServices
 {
     
-    public class RecurringDateService : BackgroundService
+    public class RecurringDateService(IServiceScopeFactory scopeFactory) : BackgroundService
     {
 
         //Inject IServiceScopeFactory to 
-        private readonly IServiceScopeFactory _scopeFactory;
-
-        public RecurringDateService(IServiceScopeFactory scopeFactory)
-        {
-            _scopeFactory = scopeFactory;
-        }
+        private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
@@ -30,7 +25,7 @@ namespace FinTrak.Infrastructure.BackgroundServices
 
                 var budgetsToUpdate = await db.Budgets
                 .Where(b => b.IsRecurring && b.IsActive && b.DeletedAt == null && b.RecurringDate != null && b.EndDate <= DateOnly.FromDateTime(DateTime.UtcNow))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
                 foreach (var budget in budgetsToUpdate)
                 {
