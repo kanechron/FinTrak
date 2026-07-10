@@ -1,9 +1,9 @@
 # FinTrak — TODO
 
 ## Bugs / Stability
-- [ ] **First-sync on new account** — new users' transactions don't sync automatically; trigger a Plaid sync on first login or first account link
+- [ ] **First-sync on new account** — Plaid processes transaction history asynchronously after a new account is linked; implement Plaid webhooks (`INITIAL_UPDATE`, `HISTORICAL_UPDATE`) to trigger a sync when data is ready instead of relying on an immediate sync that returns empty
 - [ ] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
-- [ ] **Bill deduplication** — background service re-adds the same Pending bills every 7 days if they haven't been reviewed; check for existing Pending bills before inserting
+- [x] **Bill deduplication** — background service re-adds the same Pending bills every 7 days if they haven't been reviewed; check for existing Pending bills before inserting
 - [x] **Ownership checks on write endpoints** — PATCH/DELETE for bills, budgets, and goals don't verify the resource belongs to the requesting user
 
 ## Transactions

@@ -34,11 +34,16 @@ export default function Welcome() {
     token: linkToken,
     onSuccess: async (publicToken) => {
       try {
+        console.log('[Plaid] exchange-token starting')
         await exchangeToken(publicToken)
+        console.log('[Plaid] exchange-token succeeded')
         setStatus('syncing')
+        console.log('[Plaid] sync starting')
         await runSync()
+        console.log('[Plaid] sync succeeded')
         ReloadPage()
-      } catch {
+      } catch (err) {
+        console.error('[Plaid] error:', err)
         setStatus('error')
       }
     },
