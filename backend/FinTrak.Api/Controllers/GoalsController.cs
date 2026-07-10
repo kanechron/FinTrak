@@ -59,6 +59,7 @@ namespace FinTrak.Api.Controllers
         {
             var existingGoal = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingGoal == null) return NotFound(new { message = "Goal not found." });
+            if (existingGoal.UserId != GetUserId()) return Forbid();
 
             var accountIds = goal.LinkedAccounts?.Select(a => a.Id).ToList() ?? [];
             var allAccounts = await _accountRepo.GetByUserIdAsync(GetUserId(), cancellationToken);
@@ -80,6 +81,7 @@ namespace FinTrak.Api.Controllers
         {
             var existingGoal = await _repo.GetByIdAsync(id, cancellationToken);
             if (existingGoal == null) return NotFound(new { message = "Goal not found." });
+            if (existingGoal.UserId != GetUserId()) return Forbid();
 
             existingGoal.DeletedAt = DateTime.UtcNow;
             existingGoal.IsActive = false;

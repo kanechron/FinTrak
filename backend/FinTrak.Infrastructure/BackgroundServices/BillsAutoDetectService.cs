@@ -30,16 +30,19 @@ namespace FinTrak.Core.BackgroundServices
                 {
                     var suggestions = await detectionService.DetectAsync(userId, stoppingToken);
 
-                    var bills = suggestions.Select(bucket =>
+                    var bills = suggestions
+                    
+                    .Select(bucket =>
                     {
-                        var group = bucket.First();
-                        return new Bill
-                        {
-                            UserId = userId,
-                            Name = group.MerchantName,
-                            Amount = group.Amounts.FirstOrDefault() ?? 0m,
-                            Status = BillStatus.Pending
-                        };
+                        var group = bucket.First();                        
+                           return new Bill
+                            {
+                                UserId = userId,
+                                Name = group.MerchantName,
+                                Amount = group.Amounts.FirstOrDefault() ?? 0m,
+                                Status = BillStatus.Pending
+                            }; 
+                       
                     });
                     await db.Bills.AddRangeAsync(bills);
                 }
