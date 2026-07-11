@@ -2,6 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Core.Interfaces;
 using FinTrak.Core.Entities;
+using FuzzySharp;
+using FinTrak.Core.Utilities;
+using System.Text.RegularExpressions;
+using Microsoft.VisualBasic;
 
 namespace FinTrak.Infrastructure.Services
 {
@@ -14,105 +18,169 @@ namespace FinTrak.Infrastructure.Services
             _db = db;
         }
 
-        public async Task<List<List<TransactionGroup>>> DetectAsync(Guid userId,CancellationToken cancellationToken = default)
+        public async Task<List<List<TransactionGroup>>> DetectAsync(Guid userId, CancellationToken cancellationToken = default)
         {
             var transactions = await FetchTransactions(cancellationToken, userId);
-            var filtered = await FilterExistingBills(transactions, userId, cancellationToken);
-            var amountFilter = FilterByAmount(filtered);
-            return FilterByCategory(amountFilter);
+
+            return transactions;
         }
 
-        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken cancellationToken, Guid userId)
+        private async Task<List<List<TransactionGroup>>> FetchTransactions(CancellationToken ct, Guid userId)
         {
-            if (cancellationToken.IsCancellationRequested)
+            if (ct.IsCancellationRequested)
                 return [];
 
-            var existingBills = await _db.Bills
+            var deleteBills = await _db.Bills
+                .Where(b =>
+                b.DeletedAt == null
+                && b.UserId == userId
+                && b.Status == BillStatus.Pending)
+                .ToListAsync(ct);
+
+            foreach (var bill in deleteBills)
+            {
+                bill.DeletedAt = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync(ct);
+
+            var name = await _db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => u.Name)
+                .FirstOrDefaultAsync(ct) ?? string.Empty;
+
+            var transactionsInit = await _db.Transactions
+            .Where(t =>
+            t.DeletedAt == null &&
+            t.UserId == userId &&
+            t.IsPending == false &&
+            t.Date >= DateOnly.FromDateTime(DateTime.Today.AddMonths(-6)) &&
+            t.Date <= DateOnly.FromDateTime(DateTime.Today))
+            .Select(t => new
+            {
+                t.MerchantNameNormalized,
+                t.MerchantName,
+                t.Amount,
+                t.Date,
+                t.CategoryId
+            })
+            .ToListAsync(ct);
+
+            var transactions = transactionsInit.Select(t => new TransactionGroup
+            {
+                MerchantName = (t.MerchantNameNormalized ?? t.MerchantName).NormalizeForBillDetection(name),
+                Amounts = new List<decimal?> { t.Amount },
+                Dates = new List<DateOnly?> { t.Date },
+                CategoryId = t.CategoryId
+            });
+
+            var groups = transactions
+                .GroupBy(t => t.MerchantName)
+                .Select(g => new TransactionGroup
+                {
+                    MerchantName = g.Key,
+                    Amounts = g.Select(t => t.Amounts.First()).ToList(),
+                    Dates = g.Select(t => t.Dates.First()).ToList(),
+                    CategoryId = g.First().CategoryId
+                })
+                .ToList();
+
+            var clusters = new List<List<TransactionGroup>>();
+
+            foreach (var group in groups)
+            {
+                var found = false;
+                foreach (var cluster in clusters)
+                {
+                    if (cluster.All(member => Fuzz.TokenSetRatio(group.MerchantName, member.MerchantName) >= 75))
+                    {
+                        cluster.Add(group);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) clusters.Add(new List<TransactionGroup> { group });
+            }
+
+            
+
+
+            clusters = clusters.Where(c => c.Sum(g => g.Amounts.Count) >= 3).ToList();
+
+            // Split each fuzzy cluster into amount-consistent sub-clusters.
+            // This handles the case where one merchant name covers two different bills
+            // (home vs auto insurance under the same payee name).
+            var subClustered = new List<List<TransactionGroup>>();
+            foreach (var cluster in clusters)
+            {
+                var subs = new List<List<TransactionGroup>>();
+                foreach (var group in cluster)
+                {
+                    var groupBaseline = group.Amounts.Where(a => a.HasValue).Select(a => a!.Value).FirstOrDefault();
+                    if (groupBaseline == 0) continue;
+
+                    bool placed = false;
+                    foreach (var sub in subs)
+                    {
+                        var subBaseline = sub.First().Amounts.Where(a => a.HasValue).Select(a => a!.Value).First();
+                        if (Math.Abs(groupBaseline - subBaseline) / subBaseline <= 0.015m)
+                        {
+                            sub.Add(group);
+                            placed = true;
+                            break;
+                        }
+                    }
+                    if (!placed) subs.Add(new List<TransactionGroup> { group });
+                }
+                subClustered.AddRange(subs);
+            }
+            clusters = subClustered.Where(c => c.Sum(g => g.Amounts.Count) >= 3).ToList();
+
+            // select all List<TransactionGroup> lists where all TransactionGroup objects' date values are 28-32 days of eachother OR all fall on the same day of the month
+            clusters = clusters
+                .Where(parent =>
+                {
+                    var dates = parent.SelectMany(list => list.Dates).Where(d => d.HasValue).Select(d => d!.Value).ToList();
+                    var arrA = new List<int?>();
+                    foreach (var date in dates)
+                    {
+                        arrA.Add(date.Day);
+                    }
+                    var sameDay = arrA.Distinct().Count() == 1;
+
+                    dates.Sort();
+                    bool gapCheck = true;
+                    for (int i = 0; i < dates.Count()-1; i++)
+                    {
+                        var dateA = dates[i]!.DayNumber;
+                        var dateB = dates[i+1]!.DayNumber;
+                        if((dateB-dateA) % 30 > 3 && (dateB-dateA) % 30 < 27 )
+                        {
+                            gapCheck = false;
+                            break;
+                        }
+                    }
+                    return sameDay || gapCheck;
+                }).ToList();
+
+            var existingBillNames = await _db.Bills
                 .Where(b =>
                 b.DeletedAt == null
                 && b.UserId == userId
                 && b.Status != BillStatus.Declined)
-                .Select(b => b.Name)
-                .ToListAsync(cancellationToken);
+                .Select(b => new { b.Name, b.Amount })
+                .ToListAsync(ct);
 
-            var flat = await _db.Transactions
-                .Where(t => t.DeletedAt == null
-                    && t.UserId == userId
-                    && !t.IsPending
-                    && t.CategoryId != null
-                    && t.MerchantName != null
-                    && !existingBills.Contains(t.MerchantName))
-                .OrderBy(t => t.Date)
-                .GroupBy(t => t.MerchantName)
-                .Where(g => g.Count() >= 3)
-                .Select(g => new TransactionGroup
+            var existingBills = existingBillNames.Select(n => new { Name = n.Name.NormalizeName(), n.Amount }).ToList();
+
+            return clusters
+                .Where(c =>
                 {
-                    MerchantName = g.Key!,
-                    Count = g.Count(),
-                    Amounts = g.Select(t => t.Amount).ToList(),
-                    Dates = g.Select(t => t.Date).OrderBy(d => d).ToList(),
-                    Category = g.Select(t => t.CategoryDetailed != null ? t.CategoryDetailed.Name : null).FirstOrDefault(),
-                    CategoryId = g.Select(t => t.CategoryId).FirstOrDefault()
+                    var group = c.First();
+                    var amount = group.Amounts.First();
+                    return !existingBills.Any(e => Fuzz.TokenSetRatio(group.MerchantName, e.Name) >= 75 && e.Amount == amount);
                 })
-                .ToListAsync(cancellationToken);
-
-            return flat
-                .GroupBy(g => g.MerchantName)
-                .Select(g => g.ToList())
                 .ToList();
         }
-
-
-        private static List<List<TransactionGroup>> FilterByCategory(List<List<TransactionGroup>> transGroups) =>
-            transGroups.Where(bucket =>
-                bucket.First().Category != null &&
-                bucket.All(g => g.Category == bucket.First().Category) &&
-                !BlacklistedCategories.Contains(bucket.First().Category!)
-            ).ToList();
-
-        private async Task<List<List<TransactionGroup>>> FilterExistingBills(
-        List<List<TransactionGroup>> groups, Guid userId, CancellationToken cancellationToken)
-        {
-            var existingBills = await _db.Bills
-                .Where(b => b.DeletedAt == null &&
-                    b.UserId == userId &&
-                    (b.Status == BillStatus.Accepted || b.Status == BillStatus.Declined))
-                .Select(b => new { b.Name, b.Amount })
-                .ToListAsync(cancellationToken);
-
-            return groups.Where(bucket =>
-            {
-                var group = bucket.First();
-                var groupAmount = group.Amounts.FirstOrDefault();
-                return !existingBills.Any(e =>
-                    e.Name == group.MerchantName &&
-                    e.Amount == groupAmount);
-            }).ToList();
-        }
-
-
-        private static List<List<TransactionGroup>> FilterByAmount(List<List<TransactionGroup>> transGroups) =>
-            transGroups.Where(bucket =>
-                bucket.SelectMany(g => g.Amounts)
-                      .Distinct()
-                      .Count() == 1
-            ).ToList();
-
-
-        private static readonly HashSet<string> BlacklistedCategories = new(Enum.GetNames(typeof(BlacklistedCategory)));
-
-        
     }
-
-    
-
-    file enum BlacklistedCategory
-    {
-        FOOD_AND_DRINK,
-        ENTERTAINMENT,
-        SHOPS,
-        TRAVEL,
-        RECREATION
-    }
-
 }

@@ -1,7 +1,10 @@
 # FinTrak — TODO
 
 ## Bugs / Stability
-- [ ] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
+- [ ] **Bill detection — NormalizeName noise stripping** — NFCU prefixes many transactions with "ach transaction", "pos debit visa check card 1744", trailing reference numbers, etc.; strip these in `NormalizeName()` so "ach transaction erie ins group eriexpspay 7135227986 ach debit" collapses to "erie ins group" before grouping; this is the root fix for Erie Insurance and similar bills not clustering correctly
+- [ ] **Bill detection — count threshold** — with only 90 days of history a monthly bill appears ~2-3 times; consider lowering minimum from 3 to 2 or making it dynamic based on the date range pulled
+- [ ] **Remove `[Auto Bill]` console logs** from `BillDetectionService.cs` once detection is working correctly
+- [ ] **Remove Welcome.tsx console logs** added during Plaid first-sync debugging
 
 
 ## Transactions
