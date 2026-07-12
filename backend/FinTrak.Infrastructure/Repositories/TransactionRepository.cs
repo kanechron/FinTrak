@@ -9,17 +9,18 @@ public class TransactionRepository(FinTrakDbContext db) : ITransactionRepository
 {
     private readonly FinTrakDbContext _db = db;
 
-    public async Task<List<Transaction>> GetByUserIdAsync(Guid userId, int? offset = null, int? limit = null, CancellationToken cancellationToken = default)
+    public async Task<List<Transaction>> GetByUserIdAsync(Guid userId, DateOnly? fromDate, DateOnly? toDate, CancellationToken cancellationToken = default)
     {
-        var query = _db.Transactions
+        IQueryable<Transaction> query = _db.Transactions
             .Where(t => t.DeletedAt == null && t.UserId == userId)
             .Include(t => t.Category)
             .Include(t => t.CategoryDetailed)
             .OrderByDescending(t => t.Date);
 
-        return (limit == null || limit == 0)
-            ? await query.ToListAsync(cancellationToken)
-            : await query.Skip(offset ?? 0).Take(limit.Value).ToListAsync(cancellationToken);
+        if (fromDate.HasValue) query = query.Where(t => t.Date >= fromDate);
+        if (toDate.HasValue) query = query.Where(t => t.Date <= toDate);
+        return await query.ToListAsync(cancellationToken);
+
     }
 
     public async Task<List<Transaction>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default) =>

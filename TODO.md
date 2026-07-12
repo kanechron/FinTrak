@@ -6,7 +6,7 @@
 - [ ] **Remove `[Auto Bill]` console logs** from `BillDetectionService.cs` once detection is working correctly
 - [ ] **Remove Welcome.tsx console logs** added during Plaid first-sync debugging
 
-
+ 
 ## Transactions
 - [ ] **Search & filter** — filter by name, category, amount, date, or any metric
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
