@@ -4,6 +4,7 @@
 - [x] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
 
 
+ 
 ## Transactions
 - [x] **Search & filter** — filter by name, category, amount, date, or any metric
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)

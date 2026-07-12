@@ -29,10 +29,10 @@ export interface TransactionUpdatePayload {
   categoryDetailedId?: string | null
 }
 
-export function getTransactions(offset?: number, limit?: number): Promise<Transaction[]> {
+export function getTransactions(from?: string, to?: string): Promise<Transaction[]> {
   const params = new URLSearchParams()
-  if (offset != undefined) params.append('offset', offset.toString())
-  if (limit != undefined) params.append('limit', limit.toString())
+  if (from != undefined) params.append('from', from.toString())
+  if (to != undefined) params.append('to', to.toString())
   const query = params.toString()
   return api.get<Transaction[]>(`/transactions/get-transactions${query ? `?${query}` : ''}`)
 }

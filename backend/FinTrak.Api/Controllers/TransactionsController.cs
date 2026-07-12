@@ -23,9 +23,12 @@ namespace FinTrak.Api.Controllers
         private readonly TransactionValidator _tValidator = tValidator;
 
         [HttpGet("get-transactions")]
-        public async Task<IActionResult> GetTransactions([FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetTransactions([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
         {
-            var transactions = await _repo.GetByUserIdAsync(GetUserId(), offset, limit, cancellationToken);
+            var fromDate = DateOnly.TryParse(from, out var f) ? f : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
+            var toDate = DateOnly.TryParse(to, out var t) ? t : DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var transactions = await _repo.GetByUserIdAsync(GetUserId(), fromDate, toDate, cancellationToken);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
