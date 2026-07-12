@@ -11,4 +11,8 @@ public class CategoryRepository(FinTrakDbContext db) : ICategoryRepository
 
     public async Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await _db.Categories.ToListAsync(cancellationToken);
+    public async Task<List<Category>> GetParentsAsync(CancellationToken cancellationToken = default) =>
+        await _db.Categories.Where(c => c.DetailId == null).ToListAsync(cancellationToken);
+    public async Task<List<Category>> GetDetailedAsync(CancellationToken cancellationToken = default) =>
+        await _db.Categories.Where(c => c.DetailId != null).ToListAsync(cancellationToken);
 }
