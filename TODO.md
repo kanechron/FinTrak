@@ -8,7 +8,7 @@
 ## Transactions
 - [x] **Search & filter** — filter by name, category, amount, date, or any metric
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
-- [ ] **Separate categories** — all categories appear in the same dropdown under the Add Transaction modal
+- [x] **Separate categories** — all categories appear in the same dropdown under the Add Transaction modal
 - [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 - [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
 - [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action

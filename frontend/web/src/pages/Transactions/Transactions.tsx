@@ -88,7 +88,7 @@ export default function Transactions() {
   useEffect(() => {
       const handler = setTimeout(() => {
         fetchTransactions()
-      }, 600)
+      }, 750)
       return () => clearTimeout(handler)
   }, [fromDate, toDate])
 
