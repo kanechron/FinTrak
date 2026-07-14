@@ -20,16 +20,33 @@ public class TransactionRepository(FinTrakDbContext db) : ITransactionRepository
         if (fromDate.HasValue) query = query.Where(t => t.Date >= fromDate);
         if (toDate.HasValue) query = query.Where(t => t.Date <= toDate);
         return await query.ToListAsync(cancellationToken);
-
     }
 
-    public async Task<List<Transaction>> GetByCategoryIdAsync(Guid categoryId, CancellationToken cancellationToken = default) =>
-        await _db.Transactions
-            .Where(t => t.DeletedAt == null && t.CategoryId == categoryId)
+    public async Task<List<Transaction>> GetByCategoryIdAsync(Guid userId, Guid categoryId, DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
+    {
+        IQueryable<Transaction> query = _db.Transactions
+            .Where(t => t.DeletedAt == null && t.UserId == userId && t.CategoryId == categoryId)
             .Include(t => t.Category)
             .Include(t => t.CategoryDetailed)
-            .OrderByDescending(t => t.Date)
-            .ToListAsync(cancellationToken);
+            .OrderByDescending(t => t.Date);
+ 
+        if (from.HasValue) query = query.Where(t => t.Date >= from);
+        if (to.HasValue) query = query.Where(t => t.Date <= to);
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Transaction>> GetByDetailedCategoryIdAsync(Guid userId, Guid detailedCategoryId, DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
+    {
+        IQueryable<Transaction> query = _db.Transactions
+            .Where(t => t.DeletedAt == null && t.UserId == userId && t.CategoryDetailedId == detailedCategoryId)
+            .Include(t => t.Category)
+            .Include(t => t.CategoryDetailed)
+            .OrderByDescending(t => t.Date);
+
+        if (from.HasValue) query = query.Where(t => t.Date >= from);
+        if (to.HasValue) query = query.Where(t => t.Date <= to);
+        return await query.ToListAsync(cancellationToken);
+    }
 
     public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _db.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.DeletedAt == null, cancellationToken);
