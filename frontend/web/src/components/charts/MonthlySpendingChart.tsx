@@ -76,7 +76,7 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
                 fill="#818cf8"
                 radius={[4, 4, 0, 0]}
                 style={{ cursor: 'pointer' }}
-                onClick={(d) => onPointClick(d.year, d.month)}
+                onClick={(d) => onPointClick((d as any).year, (d as any).month)}
               />
             </BarChart>
           ) : chartType === 'Area' ? (
@@ -96,7 +96,7 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
                 stroke="#818cf8"
                 fill="#818cf8"
                 fillOpacity={0.15}
-                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: (_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month) }}
+                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: ((_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month)) as any }}
               />
             </AreaChart>
           ) : (
@@ -116,7 +116,7 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
                 stroke="#818cf8"
                 strokeWidth={2}
                 dot={{ fill: '#818cf8', r: 3 }}
-                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: (_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month) }}
+                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: ((_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month)) as any }}
               />
             </LineChart>
           )}

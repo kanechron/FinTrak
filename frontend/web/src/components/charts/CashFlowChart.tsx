@@ -68,8 +68,8 @@ export default function CashFlowChart({ data, onPointClick }: Props) {
           activeDot={{
             r: 5,
             style: { cursor: 'pointer' },
-            onClick: (_: unknown, p: { payload: { year: number; month: number } }) =>
-              onPointClick?.(p.payload.year, p.payload.month),
+            onClick: ((_: unknown, p: { payload: { year: number; month: number } }) =>
+              onPointClick?.(p.payload.year, p.payload.month)) as any,
           }}
         />
       </LineChart>
