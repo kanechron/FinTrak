@@ -33,9 +33,16 @@ namespace FinTrak.Api.Controllers
         }
 
         [HttpGet("get-transactions-by-category/{id}")]
-        public async Task<IActionResult> GetTransactionsByCategory(Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetTransactionsByCategory(Guid id, [FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken cancellationToken)
         {
-            var transactions = await _repo.GetByCategoryIdAsync(id, cancellationToken);
+            var transactions = await _repo.GetByCategoryIdAsync(GetUserId(), id, from, to, cancellationToken);
+            return Ok(_mapper.Map<List<TransactionDto>>(transactions));
+        }
+
+        [HttpGet("get-transactions-by-detailed-category/{id}")]
+        public async Task<IActionResult> GetTransactionsByDetailedCategory(Guid id, [FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken cancellationToken)
+        {
+            var transactions = await _repo.GetByDetailedCategoryIdAsync(GetUserId(), id, from, to, cancellationToken);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 

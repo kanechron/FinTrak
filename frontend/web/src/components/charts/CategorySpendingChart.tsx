@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   PieChart,
   Pie,
-  Cell,
   Tooltip,
   Legend,
   ResponsiveContainer,
@@ -37,17 +36,20 @@ const formatAmount = (v: unknown) => `$${(v as number).toFixed(2)}`
 
 interface Props {
   data: CategorySpending[]
+  onSliceClick: (id: string, name: string) => void
 }
 
-export default function CategorySpendingChart({ data }: Props) {
+export default function CategorySpendingChart({ data, onSliceClick }: Props) {
   const [chartType, setChartType] = useState('Pie')
 
+  const coloredData = data.map((item, i) => ({ ...item, fill: COLORS[i % COLORS.length] }))
+
   return (
-    <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
+    <>
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="font-medium">Spending by Category</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Breakdown for selected period</p>
+          <h2 className="font-medium">Category Spending</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Spending breakdown by category</p>
         </div>
         <select
           value={chartType}
@@ -64,7 +66,7 @@ export default function CategorySpendingChart({ data }: Props) {
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           {chartType === 'Bar' ? (
-            <BarChart data={data} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
+            <BarChart data={coloredData} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
               <XAxis
                 dataKey="name"
@@ -81,27 +83,21 @@ export default function CategorySpendingChart({ data }: Props) {
                 labelStyle={tooltipTextStyle}
                 itemStyle={tooltipTextStyle}
               />
-              <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                {data.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Bar>
+              <Bar dataKey="amount" radius={[4, 4, 0, 0]} />
             </BarChart>
           ) : (
             <PieChart>
               <Pie
-                data={data}
+                data={coloredData}
                 dataKey="amount"
                 nameKey="name"
                 cx="50%"
                 cy="50%"
                 outerRadius={110}
                 innerRadius={chartType === 'Donut' ? 55 : 0}
-              >
-                {data.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
+                onClick={(data) => onSliceClick(data.payload.id, data.payload.name)}
+                style={{ cursor: 'pointer' }}
+              />
               <Tooltip
                 formatter={formatAmount}
                 contentStyle={tooltipStyle}
@@ -113,6 +109,6 @@ export default function CategorySpendingChart({ data }: Props) {
           )}
         </ResponsiveContainer>
       )}
-    </section>
+    </>
   )
 }

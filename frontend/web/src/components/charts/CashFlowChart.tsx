@@ -20,11 +20,14 @@ function formatMonth(year: number, month: number) {
 
 interface Props {
   data: CashFlow[]
+  onPointClick?: (year: number, month: number) => void
 }
 
-export default function CashFlowChart({ data }: Props) {
+export default function CashFlowChart({ data, onPointClick }: Props) {
   const chartData = data.map((d) => ({
     label: formatMonth(d.year, d.month),
+    year: d.year,
+    month: d.month,
     net: d.net,
   }))
 
@@ -62,6 +65,12 @@ export default function CashFlowChart({ data }: Props) {
           stroke="url(#netGradient)"
           strokeWidth={2}
           dot={false}
+          activeDot={{
+            r: 5,
+            style: { cursor: 'pointer' },
+            onClick: (_: unknown, p: { payload: { year: number; month: number } }) =>
+              onPointClick?.(p.payload.year, p.payload.month),
+          }}
         />
       </LineChart>
     </ResponsiveContainer>

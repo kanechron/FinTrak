@@ -31,18 +31,19 @@ function formatMonth(year: number, month: number) {
 
 interface Props {
   data: MonthlySpending[]
+  onPointClick: (year: number, month: number) => void
 }
 
-export default function MonthlySpendingChart({ data }: Props) {
+export default function MonthlySpendingChart({ data, onPointClick }: Props) {
   const [chartType, setChartType] = useState('Line')
 
   const chartData = data.map((d) => ({ ...d, label: formatMonth(d.year, d.month) }))
 
   return (
-    <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
+    <>
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="font-medium">Monthly Spending Trend</h2>
+          <h2 className="font-medium">Monthly Spending</h2>
           <p className="text-xs text-gray-500 mt-0.5">Total spend over selected period</p>
         </div>
         <select
@@ -70,7 +71,13 @@ export default function MonthlySpendingChart({ data }: Props) {
                 labelStyle={tooltipTextStyle}
                 itemStyle={tooltipTextStyle}
               />
-              <Bar dataKey="amount" fill="#818cf8" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="amount"
+                fill="#818cf8"
+                radius={[4, 4, 0, 0]}
+                style={{ cursor: 'pointer' }}
+                onClick={(d) => onPointClick(d.year, d.month)}
+              />
             </BarChart>
           ) : chartType === 'Area' ? (
             <AreaChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
@@ -89,6 +96,7 @@ export default function MonthlySpendingChart({ data }: Props) {
                 stroke="#818cf8"
                 fill="#818cf8"
                 fillOpacity={0.15}
+                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: (_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month) }}
               />
             </AreaChart>
           ) : (
@@ -108,11 +116,12 @@ export default function MonthlySpendingChart({ data }: Props) {
                 stroke="#818cf8"
                 strokeWidth={2}
                 dot={{ fill: '#818cf8', r: 3 }}
+                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: (_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month) }}
               />
             </LineChart>
           )}
         </ResponsiveContainer>
       )}
-    </section>
+    </>
   )
 }

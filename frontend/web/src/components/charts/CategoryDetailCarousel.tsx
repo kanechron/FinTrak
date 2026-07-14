@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { getCategoryDetailSpending } from '../../api/reports'
 import type { CategorySpending } from '../../api/reports'
 
@@ -26,12 +26,13 @@ interface Props {
   categories: CategorySpending[]
   from?: string
   to?: string
+  onSliceClick: (id: string, name: string) => void
 }
 
-export default function CategoryDetailCarousel({ categories, from, to }: Props) {
+export default function CategoryDetailCarousel({ categories, from, to, onSliceClick }: Props) {
   const [index, setIndex] = useState(0)
   const [detailCache, setDetailCache] = useState<
-    Record<string, { name: string; amount: number }[]>
+    Record<string, { id: string; name: string; amount: number }[]>
   >({})
   const [loading, setLoading] = useState(false)
 
@@ -46,7 +47,7 @@ export default function CategoryDetailCarousel({ categories, from, to }: Props) 
       )
     )
       .then((results) => {
-        const cache: Record<string, { name: string; amount: number }[]> = {}
+        const cache: Record<string, { id: string; name: string; amount: number }[]> = {}
         results.forEach((r) => {
           cache[r.id] = r.data
         })
@@ -68,8 +69,10 @@ export default function CategoryDetailCarousel({ categories, from, to }: Props) 
       ...d,
       name: d.name.startsWith(current.name + '_') ? d.name.slice(current.name.length + 1) : d.name,
     })),
-    ...(uncategorized > 0.005 ? [{ name: formatName(current.name), amount: uncategorized }] : []),
+    ...(uncategorized > 0.005 ? [{ id: '', name: formatName(current.name), amount: uncategorized }] : []),
   ]
+
+  const coloredData = displayData.map((item, i) => ({ ...item, fill: COLORS[i % COLORS.length] }))
 
   return (
     <section className="border border-gray-800 rounded-xl p-5 space-y-3">
@@ -107,17 +110,17 @@ export default function CategoryDetailCarousel({ categories, from, to }: Props) 
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie
-              data={displayData}
+              data={coloredData}
               dataKey="amount"
               nameKey="name"
               cx="50%"
               cy="50%"
               outerRadius={110}
-            >
-              {displayData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Pie>
+              onClick={(data) => {
+                if (data.payload.id) onSliceClick(data.payload.id, data.payload.name)
+              }}
+              style={{ cursor: 'pointer' }}
+            />
             <Tooltip
               formatter={formatAmount}
               contentStyle={tooltipStyle}

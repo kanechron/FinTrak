@@ -25,12 +25,6 @@ export default function Transactions() {
   const [fromDate, setFromDate] = useState<string | null>(null)
   const [toDate, setToDate] = useState<string | null>(null)
 
-  // — Derived
-  // const selectedCategories = useMemo(
-  //   () => categoryIds.filter((c) => selectedCategoryIds.has(c.id)),
-  //   [categoryIds, selectedCategoryIds]
-  // )
-
   // — Data fetchers
   const fetchTransactions = () => {
     setLoading(true)
