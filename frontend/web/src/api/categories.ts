@@ -9,3 +9,9 @@ export interface Category {
 export function getCategories() {
   return api.get<Category[]>('/categories/get-categories')
 }
+export function getParentCategories() {
+  return api.get<Category[]>('/categories/get-categories-parents')
+}
+export function getDetailedCategories() {
+  return api.get<Category[]>('/categories/get-categories-detailed')
+}

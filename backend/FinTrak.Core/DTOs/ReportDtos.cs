@@ -9,6 +9,7 @@ namespace FinTrak.Core.DTOs
 
     public class CategoryDetailSpendingDto
     {
+        public Guid Id { get; init; }
         public string Name { get; init; } = "";
         public decimal? Amount { get; init; }
     }

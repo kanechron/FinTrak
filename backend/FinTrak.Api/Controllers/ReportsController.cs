@@ -12,7 +12,7 @@ namespace Fintrak.Api.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    [EnableRateLimiting("export")]
+    [EnableRateLimiting("report")]
     public class ReportsController : ControllerBase
     {
         private readonly FinTrakDbContext _db;
@@ -86,9 +86,9 @@ namespace Fintrak.Api.Controllers
                     && t.UserId == userId
                     && t.CategoryId == categoryId
                     && t.CategoryDetailedId != null)
-                .Join(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, c) => new { t.Amount, c.Name })
-                .GroupBy(x => x.Name)
-                .Select(g => new CategoryDetailSpendingDto { Name = g.Key, Amount = g.Sum(x => x.Amount) })
+                .Join(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id })
+                .GroupBy(x => new { x.Name, x.Id })
+                .Select(g => new CategoryDetailSpendingDto { Id = g.Key.Id, Name = g.Key.Name, Amount = g.Sum(x => x.Amount) })
                 .OrderByDescending(g => g.Amount)
                 .ToListAsync();
 
@@ -114,15 +114,16 @@ namespace Fintrak.Api.Controllers
 
             var spending = await _db.Transactions
                 .Where(
-                    t => t.DeletedAt == null 
-                    && !t.IsPending 
-                    && t.Amount > 0 
-                    && t.Date != null 
-                    && t.Date >= fromDate 
-                    && t.Date <= toDate 
+                    t => t.DeletedAt == null
+                    && !t.IsPending
+                    && t.Amount > 0
+                    && t.Date != null
+                    && t.Date >= fromDate
+                    && t.Date <= toDate
                     && t.UserId == userId)
-                .Join(_db.Categories, t => t.CategoryId, c => c.Id, (t, c) => new { t.Date, t.Amount, c.Name })
-                .Where(x => !x.Name.StartsWith("TRANSFER_") && !x.Name.StartsWith("INCOME"))
+                .GroupJoin(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, cats) => new { t, cats })
+                .SelectMany(x => x.cats.DefaultIfEmpty(), (x, c) => new { x.t.Date, x.t.Amount, DetailName = c == null ? null : c.Name })
+                .Where(x => x.DetailName == null || (!(x.DetailName.StartsWith("TRANSFER") && !x.DetailName.Contains("_FROM_APPS")) && !x.DetailName.StartsWith("INCOME")))
                 .GroupBy(x => new { x.Date!.Value.Year, x.Date!.Value.Month })
                 .Select(g => new MonthlySpendingDto { Year = g.Key.Year, Month = g.Key.Month, Amount = g.Sum(x => x.Amount) })
                 .OrderBy(g => g.Year)
@@ -142,6 +143,40 @@ namespace Fintrak.Api.Controllers
             return Ok(spending);
         }
 
+        [HttpGet("monthly-transactions")]
+        public async Task<IActionResult> GetMonthlyTransactions([FromQuery] string? from, [FromQuery] string? to)
+        {
+            var fromDate = DateOnly.TryParse(from, out var f) ? f : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
+            var toDate = DateOnly.TryParse(to, out var t) ? t : DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var userId = GetUserId();
+            var result = await _db.Transactions
+            .Where(
+                    t => t.DeletedAt == null
+                    && !t.IsPending
+                    && t.Amount >= 0
+                    && t.Date != null
+                    && t.Date >= fromDate
+                    && t.Date <= toDate
+                    && t.UserId == userId
+                    && (t.CategoryDetailedId == null || !(t.CategoryDetailed!.Name.StartsWith("TRANSFER") && !t.CategoryDetailed!.Name.Contains("_FROM_APPS"))))
+            .Include(i => i.Category)
+            .Include(i => i.CategoryDetailed)
+            .Select(g => new TransactionDto
+            {   
+                Id = g.Id,
+                Merchant = g.MerchantName,
+                Amount = g.Amount,
+                Date = g.Date.ToString()!,
+                Category = g.Category!.Name,
+                CategoryDetailed = g.CategoryDetailed != null ? g.CategoryDetailed.Name : null,
+                Pending = g.IsPending
+            })
+            .ToListAsync();
+
+            return Ok(result);
+        }
+
         [HttpGet("cash-flow")]
         public async Task<IActionResult> GetCashFlow([FromQuery] string? from, [FromQuery] string? to, [FromQuery] string? format)
         {
@@ -157,10 +192,6 @@ namespace Fintrak.Api.Controllers
                     && t.Date >= fromDate
                     && t.Date <= toDate
                     && t.UserId == userId)
-                .GroupJoin(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, cats) => new { t, cats })
-                .SelectMany(x => x.cats.DefaultIfEmpty(), (x, c) => new { x.t.Date, x.t.Amount, CategoryName = c == null ? null : c.Name })
-                .Where(x => x.CategoryName == null ||
-                    (x.CategoryName != "TRANSFER_OUT_ACCOUNT_TRANSFER" && x.CategoryName != "TRANSFER_IN_ACCOUNT_TRANSFER"))
                 .GroupBy(t => new { t.Date!.Value.Year, t.Date!.Value.Month })
                 .Select(g => new CashFlowDto
                 {
@@ -183,6 +214,39 @@ namespace Fintrak.Api.Controllers
                     _ => BadRequest(new {error = "Unsupported format."})
                 };
             }
+
+            return Ok(result);
+        }
+
+        [HttpGet("cash-flow-transactions")]
+        public async Task<IActionResult> GetCashFlowTransactions([FromQuery] string? from,[FromQuery] string? to)
+        {
+            var userId = GetUserId();
+            var fromDate = DateOnly.TryParse(from, out var f) ? f : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
+            var toDate = DateOnly.TryParse(to, out var t) ? t : DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var result = await _db.Transactions
+            .Where(
+                    t => t.DeletedAt == null
+                    && !t.IsPending
+                    && t.Date != null
+                    && t.Date >= fromDate
+                    && t.Date <= toDate
+                    && t.UserId == userId)
+            .Include(i => i.Category)
+            .Include(i => i.CategoryDetailed)
+            .Select(g => new TransactionDto
+            {   
+                Id = g.Id,
+                Merchant = g.MerchantName,
+                Amount = g.Amount,
+                Date = g.Date.ToString()!,
+                Category = g.Category!.Name,
+                CategoryDetailed = g.CategoryDetailed != null ? g.CategoryDetailed.Name : null,
+                Pending = g.IsPending
+            })
+            .OrderByDescending(t => t.Amount)
+            .ToListAsync();
 
             return Ok(result);
         }
