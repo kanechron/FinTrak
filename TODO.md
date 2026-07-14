@@ -14,7 +14,7 @@
 - [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
 
 ## Reports
-- [ ] **Clickable chart segments** — clicking a category slice or bar navigates to the transactions that make it up
+- [x] **Clickable chart segments** — clicking a category slice or bar navigates to the transactions that make it up
 - [ ] **Projected monthly outcome** — estimated income (detected from pay period frequency) minus confirmed bills; designed to give a directional picture of future financial health, not exact figures
 - [ ] **Date range picker** — let users scope reports to a custom date range
 - [ ] **Net worth snapshot** — account balances (assets) minus outstanding bills (liabilities)
