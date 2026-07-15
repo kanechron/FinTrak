@@ -52,6 +52,7 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<MerchantAlias>().HasIndex(m => m.RawName).IsUnique();
             modelBuilder.Entity<Invite>().HasIndex(i => i.Token);
             modelBuilder.Entity<Category>().HasIndex(i => i.DetailId);
+            modelBuilder.Entity<Category>().HasIndex(c => c.Name).IsUnique();
 
             // Enum storage — store as string for readability in the database
             modelBuilder.Entity<Transaction>()

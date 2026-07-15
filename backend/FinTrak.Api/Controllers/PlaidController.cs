@@ -178,7 +178,8 @@ namespace FinTrak.Api.Controllers
                 .ToListAsync(ct);
 
             var categoryCache = (await _db.Categories.ToListAsync())
-                .ToDictionary(c => c.Name, c => c);
+                .GroupBy(c => c.Name)
+                .ToDictionary(g => g.Key, g => g.First());
 
             foreach (var item in items)
             {

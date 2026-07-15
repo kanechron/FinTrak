@@ -29,6 +29,9 @@ export default function BudgetCard({ budget: b, onDelete, onClick }: Props) {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <span className="text-xs text-ink-2 tabular-nums">
+            ${b.spent.toFixed(2)} / ${b.amount.toFixed(2)}
+          </span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${chipClass}`}>{pct}%</span>
           {/* stopPropagation prevents the card's onClick from firing when deleting */}
           <button

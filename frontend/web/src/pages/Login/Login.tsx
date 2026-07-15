@@ -76,7 +76,7 @@ export default function Login() {
 
           <button
             onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}
-            className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors animate-bounce"
+            className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors"
           >
             <span>About this project</span>
             <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
@@ -116,7 +116,7 @@ export default function Login() {
 
           <button
             onClick={() => motivationRef.current?.scrollIntoView({ behavior: 'smooth' })}
-            className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors animate-bounce"
+            className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors"
           >
             <span>Why I built this</span>
             <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
@@ -149,7 +149,7 @@ export default function Login() {
 
           <button
             onClick={() => featuresRef.current?.scrollIntoView({ behavior: 'smooth' })}
-            className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors animate-bounce"
+            className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors"
           >
             <span>Features</span>
             <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
