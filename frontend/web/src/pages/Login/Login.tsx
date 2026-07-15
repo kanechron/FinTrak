@@ -1,36 +1,36 @@
-import { useRef } from 'react'
+// import { useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { SyncPreview, ReportsPreview, BudgetsPreview, GoalsPreview } from './FeaturePreviews'
+// import { SyncPreview, ReportsPreview, BudgetsPreview, GoalsPreview } from './FeaturePreviews'
 
-const features = [
-  {
-    title: 'Bank Sync',
-    desc: 'Connect accounts via Plaid and keep balances and transactions in sync automatically.',
-    preview: SyncPreview,
-  },
-  {
-    title: 'Visual Reports',
-    desc: 'Spending broken down by category, month, and cash flow — all interactive.',
-    preview: ReportsPreview,
-  },
-  {
-    title: 'Smart Budgets',
-    desc: 'Set limits per category and see status at a glance — on track, close, or over.',
-    preview: BudgetsPreview,
-  },
-  {
-    title: 'Savings Goals',
-    desc: 'Set targets, link accounts, and track progress toward what matters.',
-    preview: GoalsPreview,
-  },
-]
+// const features = [
+//   {
+//     title: 'Bank Sync',
+//     desc: 'Connect accounts via Plaid and keep balances and transactions in sync automatically.',
+//     preview: SyncPreview,
+//   },
+//   {
+//     title: 'Visual Reports',
+//     desc: 'Spending broken down by category, month, and cash flow — all interactive.',
+//     preview: ReportsPreview,
+//   },
+//   {
+//     title: 'Smart Budgets',
+//     desc: 'Set limits per category and see status at a glance — on track, close, or over.',
+//     preview: BudgetsPreview,
+//   },
+//   {
+//     title: 'Savings Goals',
+//     desc: 'Set targets, link accounts, and track progress toward what matters.',
+//     preview: GoalsPreview,
+//   },
+// ]
 
 export default function Login() {
   const [searchParams] = useSearchParams()
   const error = searchParams.get('error')
-  const aboutRef = useRef<HTMLDivElement>(null)
-  const motivationRef = useRef<HTMLDivElement>(null)
-  const featuresRef = useRef<HTMLDivElement>(null)
+  // const aboutRef = useRef<HTMLDivElement>(null)
+  // const motivationRef = useRef<HTMLDivElement>(null)
+  // const featuresRef = useRef<HTMLDivElement>(null)
 
   // Redirects the browser to the backend login endpoint which kicks off Google OAuth.
   // The backend handles the full PKCE flow and redirects back to the frontend on success.
@@ -74,7 +74,7 @@ export default function Login() {
             </button>
           </div>
 
-          <button
+          {/* <button
             onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}
             className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors"
           >
@@ -88,11 +88,11 @@ export default function Login() {
                 strokeLinejoin="round"
               />
             </svg>
-          </button>
+          </button> */}
         </section>
-
+            
         {/* — About — */}
-        <section
+        {/* <section
           ref={aboutRef}
           className="relative min-h-screen flex flex-col items-center justify-center px-6"
           style={{ scrollSnapAlign: 'start' }}
@@ -129,10 +129,10 @@ export default function Login() {
               />
             </svg>
           </button>
-        </section>
+        </section> */}
 
         {/* — Motivation — */}
-        <section
+        {/* <section
           ref={motivationRef}
           className="relative min-h-screen flex flex-col items-center justify-center px-6"
           style={{ scrollSnapAlign: 'start' }}
@@ -162,10 +162,10 @@ export default function Login() {
               />
             </svg>
           </button>
-        </section>
+        </section> */}
 
         {/* — Features — */}
-        <section
+        {/* <section
           ref={featuresRef}
           className="min-h-screen flex flex-col items-center justify-center px-6 py-16"
           style={{ scrollSnapAlign: 'start' }}
@@ -183,7 +183,7 @@ export default function Login() {
               )
             })}
           </div>
-        </section>
+        </section> */}
       </div>
     </div>
   )
