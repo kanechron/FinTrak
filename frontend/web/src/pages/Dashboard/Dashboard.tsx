@@ -63,24 +63,26 @@ export default function Dashboard() {
   const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
   if (error)
     return (
-      <main className="max-w-5xl mx-auto px-3 py-8">
-        <p className="text-red-500 text-sm">{error}</p>
+      <main className="max-w-[76rem] mx-auto px-3 py-8">
+        <p className="text-bad text-sm">{error}</p>
       </main>
     )
   if (loaded && accounts.length === 0) return <Welcome />
   return (
-    <main className="max-w-5xl mx-auto px-3 py-8 space-y-8">
-      {/* Top row: Balance Card + Progress Widgets */}
-      <section className="grid grid-cols-3 gap-4">
-        <BalanceCard availableBalance={availableBalance} accounts={accounts} />
-        <div className="col-span-2 flex flex-col gap-4">
-          <GoalList goals={allocatedGoals} onGoalAdded={fetchGoals} accounts={accounts} />
-        </div>
-      </section>
+    <main className="max-w-[76rem] mx-auto px-3 py-8">
+      <BalanceCard availableBalance={availableBalance} accounts={accounts} />
 
-      <div className="grid grid-cols-5 gap-6">
+      <hr className="border-line my-12" />
+
+      <GoalList goals={allocatedGoals} onGoalAdded={fetchGoals} accounts={accounts} />
+
+      <hr className="border-line my-12" />
+
+      <div className="grid grid-cols-2 gap-14">
         <RecentTransactions transactions={transactions} />
-        <BudgetList budgets={budgets} onBudgetAdded={fetchBudgets} />
+        <div className="pl-14 border-l border-line">
+          <BudgetList budgets={budgets} onBudgetAdded={fetchBudgets} />
+        </div>
       </div>
     </main>
   )

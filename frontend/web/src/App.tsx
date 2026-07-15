@@ -46,7 +46,7 @@ function App() {
           path="*"
           element={
             authed ? (
-              <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
+              <div className="min-h-screen bg-page text-ink">
                 <Timer timer={1800} />{' '}
                 {/* 1800 = 30 minutes in seconds 
                 REMINDER: Add configurable timeout to settings

@@ -5,21 +5,18 @@ import { getAccounts } from '../../api/accounts'
 import { logout } from '../../api/auth'
 import ReloadPage from '../../utils/ReloadPage'
 
-const leftTabs = [
+const tabs = [
   { label: 'Dashboard', path: '/' },
   { label: 'Transactions', path: '/transactions' },
   { label: 'Budgets', path: '/budgets' },
-]
-
-const rightTabs = [
   { label: 'Goals', path: '/goals' },
   { label: 'Bills', path: '/bills' },
   { label: 'Reports', path: '/reports' },
 ]
 
 const tabClass = ({ isActive }: { isActive: boolean }) =>
-  `flex-1 self-stretch flex items-center justify-center text-sm font-semibold tracking-widest uppercase transition-colors ${
-    isActive ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+  `px-3.5 py-2 rounded-lg text-[13px] font-semibold transition-colors ${
+    isActive ? 'text-ink bg-raised' : 'text-ink-3 hover:text-ink-2 hover:bg-raised'
   }`
 
 type Status = 'idle' | 'connecting' | 'syncing' | 'done' | 'error'
@@ -125,62 +122,63 @@ export default function Navbar() {
   }
 
   const color: Record<Status, string> = {
-    idle: 'text-purple-400 hover:text-purple-200',
-    connecting: 'text-purple-500 cursor-not-allowed',
-    syncing: 'text-purple-500 cursor-not-allowed',
-    done: 'text-emerald-400',
-    error: 'text-red-400',
+    idle: 'text-s1 hover:text-ink',
+    connecting: 'text-s1 cursor-not-allowed',
+    syncing: 'text-s1 cursor-not-allowed',
+    done: 'text-good',
+    error: 'text-bad',
   }
 
   return (
-    <header className="sticky top-0 z-[9999] bg-gray-950 border-b border-gray-800 h-14 flex items-stretch justify-between">
-      <nav className="flex-1 flex items-stretch">
-        {leftTabs.map((tab) => (
-          <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className={tabClass}>
-            {tab.label}
-          </NavLink>
-        ))}
+    <header className="sticky top-0 z-[9999] bg-page border-b border-line h-14 flex items-center justify-between px-6">
+      <div className="flex items-center gap-6">
+        <span className="font-semibold text-[14px] tracking-tight text-ink">FinTrak</span>
+        <nav className="flex items-center gap-1">
+          {tabs.map((tab) => (
+            <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className={tabClass}>
+              {tab.label}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+
+      <div className="flex items-center gap-2">
         <button
           onClick={handleClick}
           disabled={status === 'syncing' || status === 'connecting'}
-          className={`self-stretch flex items-center px-8 text-sm font-semibold tracking-widest uppercase transition-colors ${color[status]}`}
+          className={`px-2.5 py-2 text-[12.5px] font-semibold transition-colors ${color[status]}`}
         >
           {label[status]}
         </button>
-        {rightTabs.map((tab) => (
-          <NavLink key={tab.path} to={tab.path} className={tabClass}>
-            {tab.label}
-          </NavLink>
-        ))}
-      </nav>
 
-      <div className="flex items-center px-6 relative" ref={menuRef}>
-        <button
-          onClick={() => setMenuOpen((prev) => !prev)}
-          className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-sm transition-colors"
-        >
-          J
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden z-50">
-            <button
-              onClick={() => {
-                setMenuOpen(false)
-                navigate('/settings')
-              }}
-              className="w-full text-left px-4 py-3 text-sm text-gray-300 hover:bg-gray-800 transition-colors"
-            >
-              Settings
-            </button>
-            <div className="border-t border-gray-800" />
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-gray-800 transition-colors"
-            >
-              Log out
-            </button>
-          </div>
-        )}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            className="w-[30px] h-[30px] rounded-full bg-s1 hover:opacity-90 flex items-center justify-center text-xs font-semibold text-white transition-opacity"
+          >
+            J
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-10 w-40 bg-card border border-line rounded-xl shadow-xl overflow-hidden z-50 p-1">
+              <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  navigate('/settings')
+                }}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] text-ink-2 hover:bg-raised hover:text-ink transition-colors"
+              >
+                Settings
+              </button>
+              <div className="border-t border-line my-1" />
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] text-bad hover:bg-raised transition-colors"
+              >
+                Log out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )

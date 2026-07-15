@@ -48,8 +48,8 @@ namespace Fintrak.Api.Controllers
                 transactionsQuery = transactionsQuery.Where(t => categoryIds.Contains(t.CategoryId!.Value));
 
             var spending = await transactionsQuery
-                .Join(_db.Categories, t => t.CategoryId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id })
-                .Where(x => !x.Name.StartsWith("TRANSFER_") && !x.Name.StartsWith("INCOME"))
+                .Join(_db.Categories, t => t.CategoryId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id, t.CategoryDetailed })
+                .Where(x => (!x.CategoryDetailed!.Name.StartsWith("TRANSFER_") || x.CategoryDetailed.Name.Contains("_FROM_APPS")) && !x.CategoryDetailed.Name.StartsWith("INCOME"))
                 .GroupBy(x => new { x.Name, x.Id })
                 .Select(g => new CategorySpendingDto { Id = g.Key.Id, Name = g.Key.Name, Amount = g.Sum(x => x.Amount) })
                 .OrderByDescending(g => g.Amount)
@@ -86,7 +86,8 @@ namespace Fintrak.Api.Controllers
                     && t.UserId == userId
                     && t.CategoryId == categoryId
                     && t.CategoryDetailedId != null)
-                .Join(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id })
+                .Join(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id, t.CategoryDetailed })
+                .Where(x => (!x.CategoryDetailed!.Name.StartsWith("TRANSFER_") || x.CategoryDetailed.Name.Contains("_FROM_APPS")) && !x.CategoryDetailed.Name.StartsWith("INCOME"))
                 .GroupBy(x => new { x.Name, x.Id })
                 .Select(g => new CategoryDetailSpendingDto { Id = g.Key.Id, Name = g.Key.Name, Amount = g.Sum(x => x.Amount) })
                 .OrderByDescending(g => g.Amount)

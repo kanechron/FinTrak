@@ -14,25 +14,23 @@ interface Props {
 
 export default function BalanceCard({ availableBalance, accounts }: Props) {
   return (
-    <div className="col-span-1 border border-gray-800 rounded-xl p-8 flex flex-col justify-start">
-      <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Available Balance</p>
-      <p className="text-5xl font-bold tracking-tight">{formatAmount(availableBalance)}</p>
-      <p className="text-sm text-gray-500 mt-2">across {accounts.length} accounts</p>
-      <div className="mt-6 pt-6 border-t border-gray-800 space-y-3">
-        {accounts.map((a) => (
-          <div key={a.last4} className="space-y-1">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-300">{a.name}</p>
-              <p className={`text-sm font-medium ${a.balance < 0 ? 'text-red-400' : ''}`}>
-                {formatAmount(a.balance)}
-              </p>
-            </div>
-            <p className="text-xs text-gray-500">
+    <section>
+      <p className="text-[11px] uppercase tracking-wider text-ink-3 mb-2">Available Balance</p>
+      <p className="text-5xl font-bold tracking-tight text-ink">{formatAmount(availableBalance)}</p>
+      <p className="text-sm text-ink-2 mt-1.5">across {accounts.length} accounts</p>
+      <div className="flex mt-7">
+        {accounts.map((a, i) => (
+          <div key={a.last4} className={`flex-1 px-6 ${i === 0 ? 'pl-0' : 'border-l border-line'}`}>
+            <p className="text-[13px] font-medium text-ink-2">{a.name}</p>
+            <p className="text-[11.5px] text-ink-3 mt-0.5 mb-2">
               {a.type} · {a.last4}
+            </p>
+            <p className={`text-lg font-semibold tabular-nums ${a.balance < 0 ? 'text-bad' : 'text-ink'}`}>
+              {formatAmount(a.balance)}
             </p>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }

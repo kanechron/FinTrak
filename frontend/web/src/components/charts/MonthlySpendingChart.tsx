@@ -12,18 +12,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { tooltipStyle, tooltipTextStyle, axisStyle, gridStroke, selectClass } from './chartTheme'
 
 export interface MonthlySpending {
   year: number
   month: number
   amount: number
 }
-
-const selectClass =
-  'bg-gray-900 border border-gray-700 rounded-md text-xs text-gray-400 px-2 py-1 focus:outline-none focus:border-gray-500'
-const tooltipStyle = { backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: 8 }
-const tooltipTextStyle = { color: '#e5e7eb' }
-const axisStyle = { fill: '#6b7280', fontSize: 11 }
 
 function formatMonth(year: number, month: number) {
   return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
@@ -43,8 +38,8 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
     <>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="font-medium">Monthly Spending</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Total spend over selected period</p>
+          <h2 className="font-medium text-ink">Monthly Spending</h2>
+          <p className="text-xs text-ink-3 mt-0.5">Total spend over selected period</p>
         </div>
         <select
           value={chartType}
@@ -57,12 +52,12 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
         </select>
       </div>
       {chartData.length === 0 ? (
-        <p className="text-center text-gray-500 text-sm py-12">No data for selected period</p>
+        <p className="text-center text-ink-3 text-sm py-12">No data for selected period</p>
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           {chartType === 'Bar' ? (
             <BarChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
               <XAxis dataKey="label" tick={axisStyle} />
               <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
               <Tooltip
@@ -73,7 +68,7 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
               />
               <Bar
                 dataKey="amount"
-                fill="#818cf8"
+                fill="var(--s1)"
                 radius={[4, 4, 0, 0]}
                 style={{ cursor: 'pointer' }}
                 onClick={(d) => onPointClick((d as any).year, (d as any).month)}
@@ -81,7 +76,7 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
             </BarChart>
           ) : chartType === 'Area' ? (
             <AreaChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
               <XAxis dataKey="label" tick={axisStyle} />
               <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
               <Tooltip
@@ -93,15 +88,15 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
               <Area
                 type="monotone"
                 dataKey="amount"
-                stroke="#818cf8"
-                fill="#818cf8"
+                stroke="var(--s1)"
+                fill="var(--s1)"
                 fillOpacity={0.15}
                 activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: ((_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month)) as any }}
               />
             </AreaChart>
           ) : (
             <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
               <XAxis dataKey="label" tick={axisStyle} />
               <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
               <Tooltip
@@ -113,9 +108,9 @@ export default function MonthlySpendingChart({ data, onPointClick }: Props) {
               <Line
                 type="monotone"
                 dataKey="amount"
-                stroke="#818cf8"
+                stroke="var(--s1)"
                 strokeWidth={2}
-                dot={{ fill: '#818cf8', r: 3 }}
+                dot={{ fill: 'var(--s1)', r: 3 }}
                 activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: ((_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month)) as any }}
               />
             </LineChart>

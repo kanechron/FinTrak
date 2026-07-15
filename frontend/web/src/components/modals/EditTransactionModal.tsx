@@ -5,6 +5,7 @@ import {
   type Transaction,
 } from '../../api/transactions'
 import { getCategories, type Category } from '../../api/categories'
+import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, checkboxClass } from './modalTheme'
 
 interface Props {
   transaction: Transaction
@@ -13,8 +14,6 @@ interface Props {
   onSuccess: () => void
 }
 
-const inputClass =
-  'w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500'
 const formatName = (name: string) =>
   name
     .replace(/_/g, ' ')
@@ -114,15 +113,9 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-xl flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-medium">Edit Transaction</h2>
+    <div className={overlayClass} onClick={onClose}>
+      <div className={cardClass('max-w-xl')} onClick={(e) => e.stopPropagation()}>
+        <h2 className={titleClass}>Edit Transaction</h2>
 
         <input
           value={merchant}
@@ -143,7 +136,7 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
         />
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Date</label>
+          <label className={labelClass}>Date</label>
           <input
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -153,7 +146,7 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs text-gray-500">Category</label>
+          <label className={labelClass}>Category</label>
           <select
             value={parentCategoryId ?? ''}
             onChange={(e) => handleParentChange(e.target.value || null)}
@@ -169,7 +162,7 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
 
           {childCategories.length > 0 && (
             <>
-              <label className="text-xs text-gray-500">Subcategory</label>
+              <label className={labelClass}>Subcategory</label>
               <select
                 value={categoryDetailedId ?? ''}
                 onChange={(e) => setCategoryDetailedId(e.target.value || null)}
@@ -186,24 +179,20 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
           )}
         </div>
 
-        <label className="flex items-center gap-3 text-sm text-gray-400 cursor-pointer">
+        <label className="flex items-center gap-3 text-sm text-ink-2 cursor-pointer">
           <input
             type="checkbox"
             checked={applyToAll}
             onChange={(e) => setApplyToAll(e.target.checked)}
-            className="accent-blue-500 w-4 h-4"
+            className={checkboxClass}
           />
-          Apply category to all <span className="text-gray-200 font-medium">{merchant}</span>{' '}
+          Apply category to all <span className="text-ink font-medium">{merchant}</span>{' '}
           transactions
         </label>
 
-        {error && <p className="text-red-500 text-xs">{error}</p>}
+        {error && <p className={errorClass}>{error}</p>}
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button onClick={handleSubmit} disabled={isSubmitting} className={primaryButtonClass}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </button>
       </div>

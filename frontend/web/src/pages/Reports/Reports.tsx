@@ -19,34 +19,14 @@ import BudgetPerformanceChart from '../../components/charts/BudgetPerformanceCha
 import CashFlowChart from '../../components/charts/CashFlowChart'
 import CategoryDetailCarousel from '../../components/charts/CategoryDetailCarousel'
 
-const PERIODS = ['7d', '30d', '90d', '6m', '1y', 'All']
+function isoDate(d: Date): string {
+  return d.toISOString().split('T')[0]
+}
 
-function periodToDates(period: string): { from?: string; to?: string } {
-  const to = new Date()
-  const from = new Date()
-  switch (period) {
-    case '7d':
-      from.setDate(from.getDate() - 7)
-      break
-    case '30d':
-      from.setDate(from.getDate() - 30)
-      break
-    case '90d':
-      from.setDate(from.getDate() - 90)
-      break
-    case '6m':
-      from.setMonth(from.getMonth() - 6)
-      break
-    case '1y':
-      from.setFullYear(from.getFullYear() - 1)
-      break
-    case 'All':
-      return {}
-  }
-  return {
-    from: from.toISOString().split('T')[0],
-    to: to.toISOString().split('T')[0],
-  }
+function defaultFrom(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 30)
+  return isoDate(d)
 }
 
 const formatCategoryName = (v: string) =>
@@ -69,7 +49,8 @@ export default function Reports() {
   const [exportOpen, setExportOpen] = useState<string | null>(null)
 
   // — Filters
-  const [period, setPeriod] = useState('30d')
+  const [fromDate, setFromDate] = useState(defaultFrom())
+  const [toDate, setToDate] = useState(isoDate(new Date()))
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set())
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -79,7 +60,8 @@ export default function Reports() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [panelSearch, setPanelSearch] = useState('')
 
-  const { from, to } = periodToDates(period)
+  const from = fromDate
+  const to = toDate
 
   // — Derived
   const selectedCategories = useMemo(
@@ -109,7 +91,7 @@ export default function Reports() {
     return list
   }, [categoryTransactions, sortField, sortDir, panelSearch])
 
-  // — Fetch report data whenever the period changes; reset category filter on each fetch
+  // — Fetch report data whenever the date range changes; reset category filter on each fetch
   useEffect(() => {
     Promise.all([
       getCategorySpending(from, to),
@@ -123,9 +105,9 @@ export default function Reports() {
         setSelectedCategoryIds(new Set())
       })
       .catch(() => setError('Failed to load report data.'))
-  }, [period])
+  }, [fromDate, toDate])
 
-  // — Budgets are period-independent; fetch once on mount
+  // — Budgets are date-range-independent; fetch once on mount
   useEffect(() => {
     getBudgets()
       .then(setBudgets)
@@ -207,40 +189,48 @@ export default function Reports() {
     })
   }
 
+  const exportBtnClass =
+    'text-xs border border-line rounded-lg px-3 py-1 text-ink-3 hover:text-ink-2 hover:border-line-2 transition-colors'
+  const exportMenuClass =
+    'absolute right-0 top-8 z-50 w-36 bg-card border border-line rounded-xl shadow-xl overflow-hidden'
+  const exportItemClass = 'w-full text-left px-4 py-2.5 text-xs text-ink-2 hover:bg-raised transition-colors'
+
   return (
     <div className="flex h-[calc(100vh-56px)] overflow-hidden">
-      <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar px-6 py-8 space-y-8">
-        <h1 className="text-xl font-semibold">Reports</h1>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+      <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar px-6 py-8">
+        <div className="max-w-[76rem] mx-auto space-y-8">
+        <h1 className="text-xl font-semibold text-ink">Reports</h1>
+        {error && <p className="text-bad text-sm">{error}</p>}
 
-        {/* — Filter bar: period buttons + category multi-select */}
+        {/* — Filter bar: date range + category multi-select */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 uppercase tracking-wider mr-2">Period</span>
-          <div className="flex gap-1">
-            {PERIODS.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  period === p
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-900'
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-          <div className="h-4 w-px bg-gray-800 mx-2" />
+          <span className="text-xs text-ink-3 uppercase tracking-wider mr-1">From</span>
+          <input
+            type="date"
+            value={fromDate}
+            max={toDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="text-xs bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 focus:outline-none focus:border-line-2"
+          />
+          <span className="text-xs text-ink-3 uppercase tracking-wider mr-1">To</span>
+          <input
+            type="date"
+            value={toDate}
+            min={fromDate}
+            max={isoDate(new Date())}
+            onChange={(e) => setToDate(e.target.value)}
+            className="text-xs bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 focus:outline-none focus:border-line-2"
+          />
+          <div className="h-4 w-px bg-line mx-2" />
 
           {/* Category multi-select dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((o) => !o)}
-              className={`text-xs border rounded-md px-3 py-1 transition-colors ${
+              className={`text-xs border rounded-lg px-3 py-1 transition-colors ${
                 selectedCategoryIds.size > 0
-                  ? 'text-purple-400 border-purple-700 hover:border-purple-500'
-                  : 'text-gray-500 border-gray-800 hover:text-gray-300'
+                  ? 'text-s1 border-s1/40 hover:border-s1/70'
+                  : 'text-ink-3 border-line hover:text-ink-2'
               }`}
             >
               {selectedCategoryIds.size > 0
@@ -249,30 +239,30 @@ export default function Reports() {
               ▾
             </button>
             {dropdownOpen && categorySpending.length > 0 && (
-              <div className="absolute left-0 top-8 z-50 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+              <div className="absolute left-0 top-8 z-50 w-56 bg-card border border-line rounded-xl shadow-xl overflow-hidden">
                 <div className="max-h-64 overflow-y-auto">
                   {categorySpending.map((c) => (
                     <label
                       key={c.id}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-800 cursor-pointer"
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-raised cursor-pointer"
                     >
                       <input
                         type="checkbox"
                         checked={selectedCategoryIds.has(c.id)}
                         onChange={() => toggleCategory(c.id)}
-                        className="accent-purple-500"
+                        className="accent-s1"
                       />
-                      <span className="text-xs text-gray-300 truncate">
+                      <span className="text-xs text-ink-2 truncate">
                         {formatCategoryName(c.name)}
                       </span>
                     </label>
                   ))}
                 </div>
                 {selectedCategoryIds.size > 0 && (
-                  <div className="border-t border-gray-800 px-4 py-2">
+                  <div className="border-t border-line px-4 py-2">
                     <button
                       onClick={() => setSelectedCategoryIds(new Set())}
-                      className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                      className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
                     >
                       Clear all
                     </button>
@@ -283,7 +273,7 @@ export default function Reports() {
           </div>
         </div>
 
-        <hr className="border-gray-800" />
+        <hr className="border-line" />
 
         {/* — Category Spending chart */}
         <section>
@@ -292,21 +282,21 @@ export default function Reports() {
             <div className="relative" data-export-dropdown>
               <button
                 onClick={() => setExportOpen((o) => (o === 'cat' ? null : 'cat'))}
-                className="text-xs border border-gray-800 rounded-md px-3 py-1 text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors"
+                className={exportBtnClass}
               >
                 Export ▾
               </button>
               {exportOpen === 'cat' && (
-                <div className="absolute right-0 top-8 z-50 w-36 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+                <div className={exportMenuClass}>
                   <button
                     onClick={() => handleExport('csv', 'category-spending')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors"
+                    className={exportItemClass}
                   >
                     CSV
                   </button>
                   <button
                     onClick={() => handleExport('xlsx', 'category-spending')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors"
+                    className={exportItemClass}
                   >
                     Excel
                   </button>
@@ -314,15 +304,25 @@ export default function Reports() {
               )}
             </div>
           </div>
-          <CategorySpendingChart data={categorySpending} onSliceClick={handleSliceClick} />
+          <CategorySpendingChart
+            data={categorySpending}
+            onSliceClick={handleSliceClick}
+            selectedId={clickedCategory?.id}
+          />
         </section>
 
         {/* — Category detail drill-down: shown only when categories are selected */}
         {selectedCategories.length > 0 && (
-          <CategoryDetailCarousel categories={selectedCategories} from={from} to={to} onSliceClick={handleDetailedSliceClick} />
+          <CategoryDetailCarousel
+            categories={selectedCategories}
+            from={from}
+            to={to}
+            onSliceClick={handleDetailedSliceClick}
+            selectedId={clickedCategory?.id}
+          />
         )}
 
-        <hr className="border-gray-800" />
+        <hr className="border-line" />
 
         {/* — Monthly Spending chart */}
         <section>
@@ -330,21 +330,21 @@ export default function Reports() {
             <div className="relative" data-export-dropdown>
               <button
                 onClick={() => setExportOpen((o) => (o === 'monthly' ? null : 'monthly'))}
-                className="text-xs border border-gray-800 rounded-md px-3 py-1 text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors"
+                className={exportBtnClass}
               >
                 Export ▾
               </button>
               {exportOpen === 'monthly' && (
-                <div className="absolute right-0 top-8 z-50 w-36 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+                <div className={exportMenuClass}>
                   <button
                     onClick={() => handleExport('csv', 'monthly-spending')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors"
+                    className={exportItemClass}
                   >
                     CSV
                   </button>
                   <button
                     onClick={() => handleExport('xlsx', 'monthly-spending')}
-                    className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors"
+                    className={exportItemClass}
                   >
                     Excel
                   </button>
@@ -355,14 +355,14 @@ export default function Reports() {
           <MonthlySpendingChart data={monthlySpending} onPointClick={handleMonthClick} />
         </section>
 
-        <hr className="border-gray-800" />
+        <hr className="border-line" />
 
         {/* — Budget Performance + Cash Flow side by side */}
         <div className="grid grid-cols-2 gap-8">
           <section>
             <div className="mb-3">
-              <h2 className="font-medium">Budget Performance</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Spent vs limit per budget</p>
+              <h2 className="font-medium text-ink">Budget Performance</h2>
+              <p className="text-xs text-ink-3 mt-0.5">Spent vs limit per budget</p>
             </div>
             <BudgetPerformanceChart data={budgets} />
           </section>
@@ -370,27 +370,27 @@ export default function Reports() {
           <section>
             <div className="flex items-start justify-between mb-3">
               <div>
-                <h2 className="font-medium">Income vs Expenses</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Net cash flow per month</p>
+                <h2 className="font-medium text-ink">Income vs Expenses</h2>
+                <p className="text-xs text-ink-3 mt-0.5">Net cash flow per month</p>
               </div>
               <div className="relative" data-export-dropdown>
                 <button
                   onClick={() => setExportOpen((o) => (o === 'cashflow' ? null : 'cashflow'))}
-                  className="text-xs border border-gray-800 rounded-md px-3 py-1 text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-colors"
+                  className={exportBtnClass}
                 >
                   Export ▾
                 </button>
                 {exportOpen === 'cashflow' && (
-                  <div className="absolute right-0 top-8 z-50 w-36 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+                  <div className={exportMenuClass}>
                     <button
                       onClick={() => handleExport('csv', 'cash-flow')}
-                      className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors"
+                      className={exportItemClass}
                     >
                       CSV
                     </button>
                     <button
                       onClick={() => handleExport('xlsx', 'cash-flow')}
-                      className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-gray-800 transition-colors"
+                      className={exportItemClass}
                     >
                       Excel
                     </button>
@@ -401,45 +401,46 @@ export default function Reports() {
             <CashFlowChart data={cashFlow} onPointClick={handleCashFlowClick} />
           </section>
         </div>
+        </div>
       </main>
 
       {/* — Category transactions inline panel */}
       <div
-        className={`flex-none border-l border-gray-800 flex flex-col overflow-hidden transition-all duration-300 ${
+        className={`flex-none border-l border-line flex flex-col overflow-hidden transition-all duration-300 ${
           clickedCategory ? 'w-[420px]' : 'w-0'
         }`}
       >
         {clickedCategory && (
           <>
             {/* Panel header */}
-            <div className="flex items-start justify-between px-5 py-4 border-b border-gray-800">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-line">
               <div>
-                <h2 className="font-medium">{formatCategoryName(clickedCategory.name)}</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h2 className="font-medium text-ink">{formatCategoryName(clickedCategory.name)}</h2>
+                <p className="text-xs text-ink-3 mt-0.5">
                   {sortedPanelTransactions.length} transactions
                 </p>
               </div>
               <button
                 onClick={() => setClickedCategory(null)}
-                className="text-gray-500 hover:text-gray-300 transition-colors mt-0.5"
+                className="text-ink-3 hover:text-ink-2 transition-colors mt-0.5"
               >
                 ✕
               </button>
             </div>
 
             {/* Panel filters */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-gray-800">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-line">
               <input
                 type="text"
                 placeholder="Search..."
                 value={panelSearch}
                 onChange={(e) => setPanelSearch(e.target.value)}
-                className="text-xs bg-transparent border border-gray-800 rounded-md px-3 py-1 text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-600 w-full"
+                className="text-xs bg-transparent border border-line rounded-lg px-3 py-1 text-ink-2 placeholder-ink-3 focus:outline-none focus:border-line-2 w-full"
               />
               <select
                 value={sortField}
                 onChange={(e) => setSortField(e.target.value as 'amount' | 'name' | 'date')}
-                className="text-xs bg-gray-900 border border-gray-800 rounded-md px-2 py-1 text-gray-400 focus:outline-none focus:border-gray-600 shrink-0"
+                className="text-xs bg-card border border-line rounded-lg px-2 py-1 text-ink-2 focus:outline-none focus:border-line-2 shrink-0"
               >
                 <option value="amount">Amount</option>
                 <option value="name">Name</option>
@@ -447,7 +448,7 @@ export default function Reports() {
               </select>
               <button
                 onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
-                className="text-xs text-gray-500 hover:text-gray-300 border border-gray-800 rounded-md px-2 py-1 shrink-0 transition-colors"
+                className="text-xs text-ink-3 hover:text-ink-2 border border-line rounded-lg px-2 py-1 shrink-0 transition-colors"
                 title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
               >
                 {sortDir === 'asc' ? '▲' : '▼'}
@@ -456,21 +457,33 @@ export default function Reports() {
 
             {/* Transaction list */}
             <div className="flex-1 overflow-y-auto no-scrollbar">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10 bg-[#090F1C]">
-                  <tr className="text-xs text-gray-500 border-b border-gray-800">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[50%]" />
+                  <col className="w-[25%]" />
+                  <col className="w-[25%]" />
+                </colgroup>
+                <thead className="sticky top-0 z-10 bg-page">
+                  <tr className="text-xs text-ink-3 border-b border-line">
                     <th className="text-left px-5 py-3 font-normal">Merchant</th>
                     <th className="text-left px-5 py-3 font-normal">Date</th>
                     <th className="text-right px-5 py-3 font-normal">Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-900">
+                <tbody className="divide-y divide-line">
                   {sortedPanelTransactions.map((t) => (
-                    <tr key={t.id} className="text-gray-300 hover:bg-gray-900/40 transition-colors">
-                      <td className="px-5 py-3">{t.merchant}</td>
-                      <td className="px-5 py-3 text-gray-500">{t.date}</td>
+                    <tr key={t.id} className="text-ink-2 hover:bg-raised/40 transition-colors">
+                      <td className="px-5 py-3 max-w-0">
+                        <span
+                          className="inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+                          title={t.merchant}
+                        >
+                          {t.merchant}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-ink-3">{t.date}</td>
                       <td
-                        className={`px-5 py-3 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                        className={`px-5 py-3 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-good' : 'text-bad'}`}
                       >
                         {formatAmount(-t.amount)}
                       </td>

@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react'
 import { addBill } from '../../api/bills'
 import { getCategories, type Category } from '../../api/categories'
+import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
-
-const inputClass =
-  'w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500'
 
 export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   const [name, setName] = useState('')
@@ -83,15 +81,9 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-medium">Add Bill</h2>
+    <div className={overlayClass} onClick={onClose}>
+      <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
+        <h2 className={titleClass}>Add Bill</h2>
 
         <input
           value={name}
@@ -130,7 +122,7 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
 
         {showDueDay && (
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Due Day of Month</label>
+            <label className={labelClass}>Due Day of Month</label>
             <input
               value={dueDay ?? ''}
               onChange={(e) => setDueDay(e.target.value === '' ? null : Number(e.target.value))}
@@ -145,7 +137,7 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
 
         {showCustomDate && (
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">Due Date</label>
+            <label className={labelClass}>Due Date</label>
             <input
               value={customDate}
               onChange={(e) => setCustomDate(e.target.value)}
@@ -174,25 +166,16 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
             ))}
         </select>
 
-        <label className="flex items-center gap-3 text-sm text-gray-300 cursor-pointer">
-          <div
-            onClick={() => setIsAutoPay((p) => !p)}
-            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${isAutoPay ? 'bg-emerald-500' : 'bg-gray-700'}`}
-          >
-            <div
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isAutoPay ? 'translate-x-4' : 'translate-x-0.5'}`}
-            />
+        <label className="flex items-center gap-3 text-sm text-ink-2 cursor-pointer">
+          <div onClick={() => setIsAutoPay((p) => !p)} className={toggleTrackClass(isAutoPay)}>
+            <div className={toggleThumbClass(isAutoPay)} />
           </div>
           Auto-pay
         </label>
 
-        {error && <p className="text-red-500 text-xs">{error}</p>}
+        {error && <p className={errorClass}>{error}</p>}
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button onClick={handleSubmit} disabled={isSubmitting} className={primaryButtonClass}>
           {isSubmitting ? 'Saving...' : 'Add Bill'}
         </button>
       </div>
