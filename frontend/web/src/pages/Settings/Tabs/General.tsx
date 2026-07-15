@@ -16,18 +16,17 @@ export default function General() {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="font-medium">General</h2>
+    <div>
+      <h2 className="font-semibold text-[15px] text-ink mb-5">General</h2>
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">Import bank statement</h3>
-        <p className="text-sm text-gray-500">
-          Upload a PDF bank statement to import transactions automatically.
-        </p>
+      <p className="text-[13.5px] font-semibold text-ink mb-1">Import Bank Statement</p>
+      <p className="text-[12.5px] text-ink-3 mb-4 max-w-md">
+        Upload a PDF bank statement to import transactions automatically.
+      </p>
 
-        <label className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm rounded-lg transition-colors cursor-pointer">
+      <div className="flex items-center gap-3.5">
+        <label className="inline-flex items-center gap-2 px-4 py-2 bg-raised hover:bg-line-2 text-[12.5px] font-semibold text-ink-2 rounded-lg transition-colors cursor-pointer">
           <span>{file ? file.name : 'Choose PDF'}</span>
-
           <input
             type="file"
             accept=".pdf,application/pdf"
@@ -38,13 +37,19 @@ export default function General() {
         {file && (
           <span
             onClick={() => setFile(null)}
-            className="ml-3 text-sm text-gray-500 hover:text-gray-300 cursor-pointer transition-colors"
+            className="text-[12px] text-ink-3 hover:text-ink-2 cursor-pointer transition-colors"
           >
             Clear
           </span>
         )}
-        <button onClick={handleSubmit}>submit</button>
       </div>
+
+      <button
+        onClick={handleSubmit}
+        className="mt-4 px-5 py-2 text-[13px] font-semibold rounded-lg bg-s1 text-white hover:opacity-90 transition-opacity"
+      >
+        Submit
+      </button>
     </div>
   )
 }

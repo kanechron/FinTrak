@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { addGoal } from '../../api/goals'
+import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, chipClass } from './modalTheme'
 
 interface Props {
   isOpen: boolean
@@ -43,76 +44,68 @@ export default function AddGoalModal({ isOpen, onClose, onSuccess, accounts }: P
       setTargetDate(null)
       setLinkedAccounts([])
       onClose()
-    } catch (error) {
-      setError('failed to save goal.')
+    } catch {
+      setError('Failed to save goal.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // rest of modal...
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-medium">Add New Goal</h2>
-        {/* Form fields for goal name, target amount, target date */}
+    <div className={overlayClass} onClick={onClose}>
+      <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
+        <h2 className={titleClass}>Add New Goal</h2>
+
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Goal Name"
-          className="w-full p-2 bg-gray-800 rounded"
+          className={inputClass}
         />
 
         <input
-          value={targetAmount || ''}
+          value={targetAmount ?? ''}
           onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Target Amount"
-          className="w-full p-2 bg-gray-800 rounded"
+          className={inputClass}
         />
 
-        <h3 className="text-md font-medium">Target Date</h3>
-        <input
-          value={targetDate || ''}
-          onChange={(e) => setTargetDate(e.target.value || null)}
-          type="date"
-          className="w-full p-2 bg-gray-800 rounded"
-        />
-
-        <h3 className="text-md font-medium">Accounts</h3>
-        <div className="flex flex-wrap gap-2">
-          {accounts.map((a) => (
-            <button
-              key={a.id}
-              className={`py-1 px-2 text-sm rounded ${linkedAccounts.some((acc) => acc.id === a.id) ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-300'}`}
-              onClick={() => {
-                if (linkedAccounts.some((acc) => acc.id === a.id)) {
-                  setLinkedAccounts(linkedAccounts.filter((acc) => acc.id !== a.id))
-                } else {
-                  setLinkedAccounts([...linkedAccounts, { id: a.id, name: a.name }])
-                }
-              }}
-            >
-              {a.name}
-            </button>
-          ))}
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Target Date</label>
+          <input
+            value={targetDate || ''}
+            onChange={(e) => setTargetDate(e.target.value || null)}
+            type="date"
+            className={inputClass}
+          />
         </div>
 
-        {error && <div className="text-red-500 text-sm">{error}</div>}
+        <div className="flex flex-col gap-2">
+          <label className={labelClass}>Linked Accounts</label>
+          <div className="flex flex-wrap gap-2">
+            {accounts.map((a) => (
+              <button
+                key={a.id}
+                className={chipClass(linkedAccounts.some((acc) => acc.id === a.id))}
+                onClick={() => {
+                  if (linkedAccounts.some((acc) => acc.id === a.id)) {
+                    setLinkedAccounts(linkedAccounts.filter((acc) => acc.id !== a.id))
+                  } else {
+                    setLinkedAccounts([...linkedAccounts, { id: a.id, name: a.name }])
+                  }
+                }}
+              >
+                {a.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <br />
-        <button
-          disabled={isSubmitting}
-          className="mt-4 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white py-2 px-4 rounded"
-          onClick={handleSubmit}
-        >
+        {error && <p className={errorClass}>{error}</p>}
+
+        <button disabled={isSubmitting} className={primaryButtonClass} onClick={handleSubmit}>
           {isSubmitting ? 'Saving...' : 'Submit'}
         </button>
       </div>

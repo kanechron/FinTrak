@@ -86,8 +86,11 @@ export default function Transactions() {
       return () => clearTimeout(handler)
   }, [fromDate, toDate])
 
+  const inputClass =
+    'text-xs bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 placeholder-ink-3 focus:outline-none focus:border-line-2'
+
   return (
-    <main className="px-6 py-8 space-y-6">
+    <main className="max-w-[76rem] mx-auto px-3 py-8 space-y-6">
       {/* — Modals */}
       <AddTransactionModal
         isOpen={addModalOpen}
@@ -114,7 +117,7 @@ export default function Transactions() {
           placeholder="Search merchants..."
           value={searchFilter}
           onChange={handleSearch}
-          className="text-xs bg-transparent border border-gray-800 rounded-md px-3 py-1 text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-600 w-48"
+          className={`${inputClass} w-48`}
         />
 
         {/* Amount */}
@@ -123,7 +126,7 @@ export default function Transactions() {
           placeholder="Amount..."
           value={amountFilter}
           onChange={(e) => setAmountFilter(e.target.value)}
-          className="text-xs bg-transparent border border-gray-800 rounded-md px-3 py-1 text-gray-300 placeholder-gray-600 focus:outline-none focus:border-gray-600 w-28"
+          className={`${inputClass} w-28`}
         />
 
         {/* Date range */}
@@ -133,7 +136,7 @@ export default function Transactions() {
           max={toDate || new Date().toISOString().split('T')[0]}
           onChange={handleDateInput}
           name="from"
-          className="text-xs bg-transparent border border-gray-800 rounded-md px-3 py-1 text-gray-500 focus:outline-none focus:border-gray-600"
+          className={`${inputClass} text-ink-3`}
         />
           <input
             type="date"
@@ -142,16 +145,16 @@ export default function Transactions() {
             min={fromDate ?? undefined}
             onChange={handleDateInput}
             name="to"
-            className="text-xs bg-transparent border border-gray-800 rounded-md px-3 py-1 text-gray-500 focus:outline-none focus:border-gray-600"
+            className={`${inputClass} text-ink-3`}
           />
         {/* Category dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen((o) => !o)}
-            className={`text-xs border rounded-md px-3 py-1 transition-colors ${
+            className={`text-xs border rounded-lg px-3 py-1.5 transition-colors ${
               selectedCategoryIds.size > 0
-                ? 'text-purple-400 border-purple-700 hover:border-purple-500'
-                : 'text-gray-500 border-gray-800 hover:text-gray-300'
+                ? 'text-s1 border-s1/40 hover:border-s1/70'
+                : 'text-ink-3 border-line hover:text-ink-2'
             }`}
           >
             {selectedCategoryIds.size > 0
@@ -160,20 +163,20 @@ export default function Transactions() {
             ▾
           </button>
           {dropdownOpen && (
-            <div className="absolute left-0 top-8 z-50 w-56 bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+            <div className="absolute left-0 top-9 z-50 w-56 bg-card border border-line rounded-xl shadow-xl overflow-hidden">
               <div className="max-h-64 overflow-y-auto">
                 {categoryIds.map((c) => (
                   <label
                     key={c.id}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-800 cursor-pointer"
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-raised cursor-pointer"
                   >
                     <input
                       type="checkbox"
                       checked={selectedCategoryIds.has(c.id)}
                       onChange={() => toggleCategory(c.id)}
-                      className="accent-purple-500"
+                      className="accent-s1"
                     />
-                    <span className="text-xs text-gray-300 truncate">
+                    <span className="text-xs text-ink-2 truncate">
                       {c.name
                         .replace(/_/g, ' ')
                         .toLowerCase()
@@ -183,10 +186,10 @@ export default function Transactions() {
                 ))}
               </div>
               {selectedCategoryIds.size > 0 && (
-                <div className="border-t border-gray-800 px-4 py-2">
+                <div className="border-t border-line px-4 py-2">
                   <button
                     onClick={() => setSelectedCategoryIds(new Set())}
-                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                    className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
                   >
                     Clear all
                   </button>
@@ -206,7 +209,7 @@ export default function Transactions() {
               setToDate(null)
               setSelectedCategoryIds(new Set())
             }}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
           >
             Clear
           </button>
@@ -215,18 +218,25 @@ export default function Transactions() {
         {/* Add transaction */}
         <button
           onClick={() => setAddModalOpen(true)}
-          className="ml-auto text-sm text-blue-500 hover:text-blue-400 cursor-pointer"
+          className="ml-auto text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity"
         >
           + Add Transaction
         </button>
       </div>
 
-      <hr className="border-gray-800" />
+      <hr className="border-line" />
       {/* — Transactions table */}
       <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 180px)' }}>
-        <table className="w-full text-sm">
+        <table className="w-full text-sm table-fixed">
+          <colgroup>
+            <col className="w-[38%]" />
+            <col className="w-[20%]" />
+            <col className="w-[16%]" />
+            <col className="w-[20%]" />
+            <col className="w-[6%]" />
+          </colgroup>
           <thead className="sticky top-0 z-10">
-            <tr className="text-xs text-gray-500 border-b border-gray-800 bg-[#090F1C]/100">
+            <tr className="text-xs text-ink-3 border-b border-line bg-page">
               <th className="text-left px-4 py-3 font-normal">Merchant</th>
               <th className="text-left px-4 py-3 font-normal">Category</th>
               <th className="text-left px-4 py-3 font-normal">Date</th>
@@ -234,17 +244,17 @@ export default function Transactions() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-900">
+          <tbody className="divide-y divide-line">
             {loading && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-gray-600 text-sm">
+                <td colSpan={5} className="px-4 py-12 text-center text-ink-3 text-sm">
                   Loading...
                 </td>
               </tr>
             )}
             {error && (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-red-500 text-sm">
+                <td colSpan={5} className="px-4 py-12 text-center text-bad text-sm">
                   {error}
                 </td>
               </tr>
@@ -258,18 +268,23 @@ export default function Transactions() {
                 .map((t) => (
                   <tr
                     key={t.id}
-                    className="text-gray-300 hover:bg-gray-900/40 transition-colors cursor-pointer group"
+                    className="group text-ink-2 hover:bg-raised/60 transition-colors cursor-pointer"
                     onClick={() => setSelectedTransaction(t)}
                   >
-                    <td className="px-4 py-3">
-                      {t.merchant}
-                      {t.pending && <span className="ml-2 text-xs text-yellow-500">Pending</span>}
+                    <td className="px-4 py-3 text-ink font-medium max-w-0">
+                      <span
+                        className="inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+                        title={t.merchant}
+                      >
+                        {t.merchant}
+                      </span>
+                      {t.pending && <span className="ml-2 text-xs text-warn">Pending</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{t.category}</td>
-                    <td className="px-4 py-3 text-gray-500">{t.date}</td>
+                    <td className="px-4 py-3 text-ink-2">{t.category}</td>
+                    <td className="px-4 py-3 text-ink-3">{t.date}</td>
                     {/* Plaid stores debits as positive — negate for display so debits are red, credits green */}
                     <td
-                      className={`px-4 py-3 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                      className={`px-4 py-3 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-good' : 'text-bad'}`}
                     >
                       {formatAmount(-t.amount)}
                     </td>
@@ -279,7 +294,7 @@ export default function Transactions() {
                           e.stopPropagation()
                           handleDelete(t.id)
                         }}
-                        className="text-gray-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-ink-3 hover:text-bad transition-colors opacity-0 group-hover:opacity-100"
                       >
                         ✕
                       </button>

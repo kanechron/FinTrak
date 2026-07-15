@@ -3,7 +3,6 @@ import {
   PieChart,
   Pie,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -12,21 +11,8 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { type CategorySpending } from '../../api/reports'
+import { CATEGORY_COLORS, tooltipStyle, tooltipTextStyle, axisStyle, gridStroke, selectClass } from './chartTheme'
 
-const COLORS = [
-  '#818cf8',
-  '#34d399',
-  '#f472b6',
-  '#fb923c',
-  '#38bdf8',
-  '#a78bfa',
-  '#facc15',
-  '#4ade80',
-]
-const selectClass =
-  'bg-gray-900 border border-gray-700 rounded-md text-xs text-gray-400 px-2 py-1 focus:outline-none focus:border-gray-500'
-const tooltipStyle = { backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: 8 }
-const tooltipTextStyle = { color: '#e5e7eb' }
 const formatName = (v: string) =>
   v
     .replace(/_/g, ' ')
@@ -37,77 +23,104 @@ const formatAmount = (v: unknown) => `$${(v as number).toFixed(2)}`
 interface Props {
   data: CategorySpending[]
   onSliceClick: (id: string, name: string) => void
+  selectedId?: string
 }
 
-export default function CategorySpendingChart({ data, onSliceClick }: Props) {
-  const [chartType, setChartType] = useState('Pie')
+export default function CategorySpendingChart({ data, onSliceClick, selectedId }: Props) {
+  const [chartType, setChartType] = useState('Donut')
 
-  const coloredData = data.map((item, i) => ({ ...item, fill: COLORS[i % COLORS.length] }))
+  const coloredData = data.map((item, i) => ({ ...item, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+  const total = data.reduce((sum, d) => sum + d.amount, 0)
 
   return (
     <>
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="font-medium">Category Spending</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Spending breakdown by category</p>
+          <h2 className="font-medium text-ink">Category Spending</h2>
+          <p className="text-xs text-ink-3 mt-0.5">Spending breakdown by category</p>
         </div>
         <select
           value={chartType}
           onChange={(e) => setChartType(e.target.value)}
           className={selectClass}
         >
-          <option>Pie</option>
           <option>Donut</option>
+          <option>Pie</option>
           <option>Bar</option>
         </select>
       </div>
       {data.length === 0 ? (
-        <p className="text-center text-gray-500 text-sm py-12">No data for selected period</p>
-      ) : (
+        <p className="text-center text-ink-3 text-sm py-12">No data for selected period</p>
+      ) : chartType === 'Bar' ? (
         <ResponsiveContainer width="100%" height={280}>
-          {chartType === 'Bar' ? (
-            <BarChart data={coloredData} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-              <XAxis
-                dataKey="name"
-                tick={{ fill: '#6b7280', fontSize: 11 }}
-                angle={-35}
-                textAnchor="end"
-                interval={0}
-                tickFormatter={formatName}
-              />
-              <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} tickFormatter={(v) => `$${v}`} />
-              <Tooltip
-                formatter={formatAmount}
-                contentStyle={tooltipStyle}
-                labelStyle={tooltipTextStyle}
-                itemStyle={tooltipTextStyle}
-              />
-              <Bar dataKey="amount" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          ) : (
-            <PieChart>
-              <Pie
-                data={coloredData}
-                dataKey="amount"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={110}
-                innerRadius={chartType === 'Donut' ? 55 : 0}
-                onClick={(data) => onSliceClick(data.payload.id, data.payload.name)}
-                style={{ cursor: 'pointer' }}
-              />
-              <Tooltip
-                formatter={formatAmount}
-                contentStyle={tooltipStyle}
-                labelStyle={tooltipTextStyle}
-                itemStyle={tooltipTextStyle}
-              />
-              <Legend formatter={formatName} />
-            </PieChart>
-          )}
+          <BarChart data={coloredData} margin={{ top: 4, right: 16, left: 0, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+            <XAxis
+              dataKey="name"
+              tick={axisStyle}
+              angle={-35}
+              textAnchor="end"
+              interval={0}
+              tickFormatter={formatName}
+            />
+            <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
+            <Tooltip
+              formatter={formatAmount}
+              contentStyle={tooltipStyle}
+              labelStyle={tooltipTextStyle}
+              itemStyle={tooltipTextStyle}
+            />
+            <Bar dataKey="amount" radius={[4, 4, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
+      ) : (
+        <div className="flex items-center gap-10">
+          <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
+            {chartType === 'Donut' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-[11px] uppercase tracking-wider text-ink-3">Spent</span>
+                <span className="text-lg font-bold text-ink mt-0.5">{formatAmount(total)}</span>
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={coloredData}
+                  dataKey="amount"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={105}
+                  innerRadius={chartType === 'Donut' ? 68 : 0}
+                  onClick={(data) => onSliceClick(data.payload.id, data.payload.name)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <Tooltip
+                  formatter={formatAmount}
+                  contentStyle={tooltipStyle}
+                  labelStyle={tooltipTextStyle}
+                  itemStyle={tooltipTextStyle}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto pr-1">
+            {coloredData.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => onSliceClick(d.id, d.name)}
+                className={`flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-lg transition-colors text-left ${
+                  selectedId === d.id ? 'bg-raised' : 'hover:bg-raised'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.fill }} />
+                <span className="flex-1 min-w-0 truncate text-ink-2">{formatName(d.name)}</span>
+                <span className="text-ink font-semibold tabular-nums">{formatAmount(d.amount)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </>
   )

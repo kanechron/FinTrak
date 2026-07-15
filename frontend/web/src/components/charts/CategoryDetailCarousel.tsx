@@ -1,20 +1,9 @@
 import { useState, useEffect } from 'react'
-import { PieChart, Pie, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Tooltip, ResponsiveContainer } from 'recharts'
 import { getCategoryDetailSpending } from '../../api/reports'
 import type { CategorySpending } from '../../api/reports'
+import { CATEGORY_COLORS, tooltipStyle, tooltipTextStyle } from './chartTheme'
 
-const COLORS = [
-  '#818cf8',
-  '#34d399',
-  '#f472b6',
-  '#fb923c',
-  '#38bdf8',
-  '#a78bfa',
-  '#facc15',
-  '#4ade80',
-]
-const tooltipStyle = { backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: 8 }
-const tooltipTextStyle = { color: '#e5e7eb' }
 const formatName = (v: string) =>
   v
     .replace(/_/g, ' ')
@@ -27,9 +16,10 @@ interface Props {
   from?: string
   to?: string
   onSliceClick: (id: string, name: string) => void
+  selectedId?: string
 }
 
-export default function CategoryDetailCarousel({ categories, from, to, onSliceClick }: Props) {
+export default function CategoryDetailCarousel({ categories, from, to, onSliceClick, selectedId }: Props) {
   const [index, setIndex] = useState(0)
   const [detailCache, setDetailCache] = useState<
     Record<string, { id: string; name: string; amount: number }[]>
@@ -72,30 +62,30 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
     ...(uncategorized > 0.005 ? [{ id: '', name: formatName(current.name), amount: uncategorized }] : []),
   ]
 
-  const coloredData = displayData.map((item, i) => ({ ...item, fill: COLORS[i % COLORS.length] }))
+  const coloredData = displayData.map((item, i) => ({ ...item, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
 
   return (
-    <section className="border border-gray-800 rounded-xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
+    <section>
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="font-medium">{formatName(current.name)}</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Detailed breakdown</p>
+          <h2 className="font-medium text-ink">{formatName(current.name)}</h2>
+          <p className="text-xs text-ink-3 mt-0.5">Detailed breakdown</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-ink-3">
             {index + 1} / {categories.length}
           </span>
           <button
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
             disabled={index === 0}
-            className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             ‹
           </button>
           <button
             onClick={() => setIndex((i) => Math.min(categories.length - 1, i + 1))}
             disabled={index === categories.length - 1}
-            className="w-7 h-7 flex items-center justify-center rounded-md border border-gray-700 text-gray-400 hover:text-white hover:border-gray-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-md border border-line text-ink-3 hover:text-ink hover:border-line-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             ›
           </button>
@@ -103,33 +93,58 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
       </div>
 
       {loading ? (
-        <p className="text-center text-gray-500 text-sm py-12">Loading...</p>
+        <p className="text-center text-ink-3 text-sm py-12">Loading...</p>
       ) : data.length === 0 ? (
-        <p className="text-center text-gray-500 text-sm py-12">No detailed breakdown available.</p>
+        <p className="text-center text-ink-3 text-sm py-12">No detailed breakdown available.</p>
       ) : (
-        <ResponsiveContainer width="100%" height={280}>
-          <PieChart>
-            <Pie
-              data={coloredData}
-              dataKey="amount"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={110}
-              onClick={(data) => {
-                if (data.payload.id) onSliceClick(data.payload.id, data.payload.name)
-              }}
-              style={{ cursor: 'pointer' }}
-            />
-            <Tooltip
-              formatter={formatAmount}
-              contentStyle={tooltipStyle}
-              labelStyle={tooltipTextStyle}
-              itemStyle={tooltipTextStyle}
-            />
-            <Legend formatter={formatName} />
-          </PieChart>
-        </ResponsiveContainer>
+        <div className="flex items-center gap-10">
+          <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-[11px] uppercase tracking-wider text-ink-3">Spent</span>
+              <span className="text-lg font-bold text-ink mt-0.5">{formatAmount(current.amount)}</span>
+            </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={coloredData}
+                  dataKey="amount"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={105}
+                  innerRadius={68}
+                  onClick={(data) => {
+                    if (data.payload.id) onSliceClick(data.payload.id, data.payload.name)
+                  }}
+                  style={{ cursor: 'pointer' }}
+                />
+                <Tooltip
+                  formatter={formatAmount}
+                  contentStyle={tooltipStyle}
+                  labelStyle={tooltipTextStyle}
+                  itemStyle={tooltipTextStyle}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto pr-1">
+            {coloredData.map((d) => (
+              <button
+                key={d.id || d.name}
+                onClick={() => d.id && onSliceClick(d.id, d.name)}
+                disabled={!d.id}
+                className={`flex items-center gap-2.5 text-sm px-2 py-1.5 rounded-lg transition-colors text-left ${
+                  !d.id ? 'cursor-default' : selectedId === d.id ? 'bg-raised' : 'hover:bg-raised'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.fill }} />
+                <span className="flex-1 min-w-0 truncate text-ink-2">{formatName(d.name)}</span>
+                <span className="text-ink font-semibold tabular-nums">{formatAmount(d.amount)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </section>
   )

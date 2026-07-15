@@ -23,7 +23,7 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
   }
 
   return (
-    <section className="col-span-2 border border-gray-800 rounded-xl p-5 space-y-4">
+    <section>
       <AddBudgetModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -40,17 +40,17 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
           }}
         />
       )}
-      <div className="flex items-center justify-between">
-        <h2 className="font-medium">Budgets</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-medium text-ink">Budgets</h2>
         <button
           onClick={() => setAddModalOpen(true)}
-          className="text-md text-blue-500 hover:text-blue-400 cursor-pointer"
+          className="text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity"
         >
           + Add Budget
         </button>
       </div>
       {budgets.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">
+        <p className="text-sm text-ink-3 text-center py-4">
           No budgets yet — add one to get started.
         </p>
       ) : (

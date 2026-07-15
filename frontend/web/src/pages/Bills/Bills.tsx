@@ -27,18 +27,25 @@ function dueDateDiff(bill: Bill): number | null {
   return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 }
 
-function urgencyStripe(diff: number | null): string {
-  if (diff === null) return 'bg-gray-700'
-  if (diff < 0) return 'bg-red-500'
-  if (diff <= 7) return 'bg-yellow-400'
-  return 'bg-gray-700'
+type Urgency = 'overdue' | 'soon' | 'normal'
+
+function urgency(diff: number | null): Urgency {
+  if (diff === null) return 'normal'
+  if (diff < 0) return 'overdue'
+  if (diff <= 7) return 'soon'
+  return 'normal'
 }
 
-function dueDateBadge(diff: number | null): string {
-  if (diff === null) return 'bg-gray-800 text-gray-500'
-  if (diff < 0) return 'bg-red-500/15 text-red-400 border border-red-500/30'
-  if (diff <= 7) return 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/30'
-  return 'bg-gray-800 text-gray-500'
+const stripeClass: Record<Urgency, string> = {
+  overdue: 'bg-bad',
+  soon: 'bg-warn',
+  normal: 'bg-transparent',
+}
+
+const badgeClass: Record<Urgency, string> = {
+  overdue: 'text-bad bg-bad/15',
+  soon: 'text-warn bg-warn/15',
+  normal: 'text-ink-3 bg-raised',
 }
 
 function formatFrequency(f: string): string {
@@ -100,85 +107,84 @@ export default function Bills() {
     const isExpanded = expandedId === bill.id
     const diff = dueDateDiff(bill)
     const label = dueDateLabel(bill)
+    const u = urgency(diff)
     return (
-      <div className="border-b border-gray-800 last:border-0">
+      <div className="border-t border-line first:border-t-0 pl-3.5 relative">
+        <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full ${stripeClass[u]}`} />
         <div
-          className="flex items-stretch hover:bg-gray-900/40 transition-colors cursor-pointer"
+          className="group flex items-center justify-between py-4 pl-3 cursor-pointer hover:bg-raised/50 -mx-3 px-3 rounded-lg transition-colors"
           onClick={() => setSelectedBill(bill)}
         >
-          <div className={`w-1 shrink-0 ${urgencyStripe(diff)}`} />
-          <div className="flex-1 px-5 py-4 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-100 font-semibold">{bill.name}</span>
-                {bill.isAutoPay && (
-                  <span className="text-xs text-blue-400 border border-blue-800 rounded px-1.5 py-0.5">
-                    Auto-pay
-                  </span>
-                )}
-                {bill.isAutoDetected && (
-                  <span className="text-xs text-purple-400 border border-purple-800 rounded px-1.5 py-0.5">
-                    Detected
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {bill.category && <p className="text-xs text-gray-500">{bill.category}</p>}
-                <p className="text-xs text-gray-600">{formatFrequency(bill.frequency)}</p>
-              </div>
+          <div>
+            <div className="flex items-center gap-2 text-sm mb-1">
+              <span className="text-ink font-semibold">{bill.name}</span>
+              {bill.isAutoPay && (
+                <span className="text-[10px] font-semibold text-s1 border border-s1/40 rounded px-1.5 py-0.5">
+                  Auto-pay
+                </span>
+              )}
+              {bill.isAutoDetected && (
+                <span className="text-[10px] font-semibold text-s5 border border-s5/40 rounded px-1.5 py-0.5">
+                  Detected
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-4 text-sm">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${dueDateBadge(diff)}`}>
-                {label}
-              </span>
-              <span className="text-gray-100 font-bold text-base">
-                {formatAmount(-bill.amount)}
-              </span>
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation()
-                  if (isExpanded) {
-                    setExpandedId(null)
-                    return
-                  }
-                  setExpandedId(bill.id)
-                  if (bill.categoryId && !historyCache[bill.id]) {
-                    const txns = await getTransactionsByCategory(bill.categoryId)
-                    setHistoryCache((prev) => ({ ...prev, [bill.id]: txns }))
-                  }
-                }}
-                className="text-gray-600 hover:text-gray-300 transition-colors"
-              >
-                {isExpanded ? '▲' : '▼'}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleDelete(bill.id)
-                }}
-                className="text-gray-600 hover:text-red-400 transition-colors"
-              >
-                ✕
-              </button>
+            <div className="flex items-center gap-3 text-xs text-ink-3">
+              {bill.category && <p>{bill.category}</p>}
+              <p>{formatFrequency(bill.frequency)}</p>
             </div>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${badgeClass[u]}`}>
+              {label}
+            </span>
+            <span className="text-ink font-bold text-base tabular-nums">
+              {formatAmount(-bill.amount)}
+            </span>
+            <button
+              onClick={async (e) => {
+                e.stopPropagation()
+                if (isExpanded) {
+                  setExpandedId(null)
+                  return
+                }
+                setExpandedId(bill.id)
+                if (bill.categoryId && !historyCache[bill.id]) {
+                  const txns = await getTransactionsByCategory(bill.categoryId)
+                  setHistoryCache((prev) => ({ ...prev, [bill.id]: txns }))
+                }
+              }}
+              className="text-ink-3 hover:text-ink-2 transition-colors"
+            >
+              {isExpanded ? '▲' : '▼'}
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDelete(bill.id)
+              }}
+              className="text-ink-3 hover:text-bad transition-colors opacity-0 group-hover:opacity-100"
+            >
+              ✕
+            </button>
           </div>
         </div>
         {isExpanded && (
-          <div className="bg-gray-900/30 border-t border-gray-800/50">
+          <div className="bg-raised/40 rounded-lg mb-2 -mx-3">
             {!bill.categoryId ? (
-              <p className="px-6 py-3 text-xs text-gray-600">
+              <p className="px-6 py-3 text-xs text-ink-3">
                 No category assigned — can't load history.
               </p>
             ) : !historyCache[bill.id] ? (
-              <p className="px-6 py-3 text-xs text-gray-600">Loading...</p>
+              <p className="px-6 py-3 text-xs text-ink-3">Loading...</p>
             ) : historyCache[bill.id].length === 0 ? (
-              <p className="px-6 py-3 text-xs text-gray-600">
+              <p className="px-6 py-3 text-xs text-ink-3">
                 No transactions found for this category.
               </p>
             ) : (
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-gray-600 border-b border-gray-800/50">
+                  <tr className="text-ink-3 border-b border-line">
                     <th className="text-left px-6 py-2 font-normal">Merchant</th>
                     <th className="text-left px-6 py-2 font-normal">Date</th>
                     <th className="text-right px-6 py-2 font-normal">Amount</th>
@@ -186,14 +192,11 @@ export default function Bills() {
                 </thead>
                 <tbody>
                   {historyCache[bill.id].map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-b border-gray-800/30 last:border-0 text-gray-400"
-                    >
+                    <tr key={t.id} className="border-b border-line last:border-0 text-ink-2">
                       <td className="px-6 py-2">{t.merchant}</td>
-                      <td className="px-6 py-2 text-gray-500">{t.date}</td>
+                      <td className="px-6 py-2 text-ink-3">{t.date}</td>
                       <td
-                        className={`px-6 py-2 text-right font-mono ${t.amount < 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                        className={`px-6 py-2 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-good' : 'text-bad'}`}
                       >
                         {formatAmount(-t.amount)}
                       </td>
@@ -210,12 +213,10 @@ export default function Bills() {
 
   function BillSection({ title, items }: { title: string; items: Bill[] }) {
     return (
-      <section className="border border-gray-800 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-800">
-          <h2 className="font-medium">{title}</h2>
-        </div>
+      <section>
+        <h2 className="font-medium text-ink mb-2">{title}</h2>
         {items.length === 0 ? (
-          <div className="px-5 py-12 text-center text-gray-600 text-sm">No bills here yet.</div>
+          <div className="py-12 text-center text-ink-3 text-sm">No bills here yet.</div>
         ) : (
           <div>
             {items.map((b) => (
@@ -228,7 +229,7 @@ export default function Bills() {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-3 py-8 space-y-6">
+    <main className="max-w-[76rem] mx-auto px-3 py-8 space-y-6">
       <AddBillModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -247,55 +248,47 @@ export default function Bills() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Bills</h1>
+        <h1 className="text-xl font-semibold text-ink">Bills</h1>
         <button
           onClick={() => setAddModalOpen(true)}
-          className="text-sm text-blue-500 hover:text-blue-400 cursor-pointer"
+          className="text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity"
         >
           + Add Bill
         </button>
       </div>
 
-      <section className="border border-red-900/40 bg-red-950/20 rounded-xl p-5 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">
-            Est. Monthly Total
-          </p>
-          <p className="text-3xl font-bold tracking-tight text-red-100">
-            {formatAmount(-monthlyTotal)}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {acceptedBills.length} bill{acceptedBills.length !== 1 ? 's' : ''} tracked
-          </p>
-        </div>
+      <section className="rounded-xl bg-bad/[0.08] px-6 py-5">
+        <p className="text-[11px] uppercase tracking-wider text-bad/80 mb-1">Est. Monthly Total</p>
+        <p className="text-4xl font-bold tracking-tight text-bad">{formatAmount(-monthlyTotal)}</p>
+        <p className="text-sm text-ink-3 mt-1">
+          {acceptedBills.length} bill{acceptedBills.length !== 1 ? 's' : ''} tracked
+        </p>
       </section>
 
-      <BillSection title="My Bills" items={acceptedBills} />
+      <div className="pt-4">
+        <BillSection title="My Bills" items={acceptedBills} />
+      </div>
 
-      <section className="border border-gray-800 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-800">
-          <h2 className="font-medium">Auto-Detected</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Recurring patterns found in your transactions
-          </p>
-        </div>
+      <hr className="border-line" />
+
+      <section>
+        <h2 className="font-medium text-ink mb-0.5">Auto-Detected</h2>
+        <p className="text-xs text-ink-3 mb-2">Recurring patterns found in your transactions</p>
         {pendingBills.length === 0 ? (
-          <div className="px-5 py-12 text-center text-gray-600 text-sm">No suggestions found.</div>
+          <div className="py-12 text-center text-ink-3 text-sm">No suggestions found.</div>
         ) : (
           <div>
             {pendingBills.map((bill) => (
               <div
                 key={bill.id}
-                className="border-b border-gray-800 last:border-0 px-5 py-4 flex items-center justify-between hover:bg-gray-900/40 transition-colors"
+                className="border-t border-line first:border-t-0 py-4 flex items-center justify-between"
               >
-                <div className="space-y-0.5">
-                  <span className="text-gray-100 font-semibold text-sm">{bill.name}</span>
-                  <div className="flex items-center gap-3">
-                    {bill.category && <p className="text-xs text-gray-500">{bill.category}</p>}
-                  </div>
+                <div>
+                  <span className="text-ink font-semibold text-sm">{bill.name}</span>
+                  {bill.category && <p className="text-xs text-ink-3 mt-0.5">{bill.category}</p>}
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-gray-100 font-bold text-base">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-ink font-bold text-base tabular-nums">
                     {formatAmount(-bill.amount)}
                   </span>
                   <button
@@ -303,18 +296,18 @@ export default function Bills() {
                       await updateBill(bill.id, { status: 'Accepted' })
                       fetchBills()
                     }}
-                    className="text-emerald-500 hover:text-emerald-400 transition-colors text-lg"
+                    className="text-[11.5px] font-semibold text-good border border-good/45 rounded-full px-3.5 py-1.5 hover:bg-good/15 transition-colors"
                   >
-                    ✓
+                    Confirm
                   </button>
                   <button
                     onClick={async () => {
                       await updateBill(bill.id, { status: 'Declined' })
                       fetchBills()
                     }}
-                    className="text-gray-600 hover:text-red-400 transition-colors"
+                    className="text-[11.5px] font-semibold text-ink-3 border border-line-2 rounded-full px-3.5 py-1.5 hover:text-bad hover:border-bad/45 transition-colors"
                   >
-                    ✕
+                    Deny
                   </button>
                 </div>
               </div>

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { updateBudget, type Budget } from '../../api/budgets'
 import { getCategories, type Category } from '../../api/categories'
+import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
 
 interface Props {
   budget: Budget
@@ -8,6 +9,12 @@ interface Props {
   onClose: () => void
   onSuccess: () => void
 }
+
+const formatName = (name: string) =>
+  name
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase())
 
 export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: Props) {
   const [name, setName] = useState(budget.name)
@@ -18,6 +25,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
   const [isRecurring, setIsRecurring] = useState(budget.isRecurring)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categoryId, setCategoryId] = useState<string | null>(budget.categoryId)
+  const [parentCategoryId, setParentCategoryId] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [error, setError] = useState<string | null>(null)
   const [recurringDay, setRecurringDay] = useState(budget.recurringDate || 'first')
@@ -28,6 +36,57 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
       .then(setCategories)
       .catch(() => {})
   }, [isOpen])
+
+  // Sync state when a different budget is opened
+  useEffect(() => {
+    setName(budget.name)
+    setAmount(budget.amount)
+    setPeriod(budget.period)
+    setStartDate(budget.startDate)
+    setEndDate(budget.endDate || '')
+    setIsRecurring(budget.isRecurring)
+    setCategoryId(budget.categoryId)
+    setRecurringDay(budget.recurringDate || 'first')
+    setError(null)
+  }, [budget])
+
+  // Derive which parent category budget.categoryId belongs to, once categories are loaded
+  useEffect(() => {
+    if (categories.length === 0) return
+    const cat = categories.find((c) => c.id === budget.categoryId)
+    setParentCategoryId(cat ? (cat.detailId ?? cat.id) : null)
+  }, [categories, budget.categoryId])
+
+  const parentCategories = useMemo(
+    () =>
+      categories.filter((c) => c.detailId === null).sort((a, b) => a.name.localeCompare(b.name)),
+    [categories]
+  )
+
+  const childCategories = useMemo(
+    () =>
+      parentCategoryId
+        ? categories
+            .filter((c) => c.detailId === parentCategoryId)
+            .sort((a, b) => a.name.localeCompare(b.name))
+        : [],
+    [categories, parentCategoryId]
+  )
+
+  const selectedParentName = useMemo(
+    () => parentCategories.find((c) => c.id === parentCategoryId)?.name ?? '',
+    [parentCategories, parentCategoryId]
+  )
+
+  function stripParentPrefix(catName: string) {
+    const prefix = selectedParentName + '_'
+    return catName.startsWith(prefix) ? catName.slice(prefix.length) : catName
+  }
+
+  function handleParentChange(id: string | null) {
+    setParentCategoryId(id)
+    setCategoryId(id)
+  }
 
   if (!isOpen) return null
 
@@ -58,22 +117,16 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-medium">Edit Budget</h2>
+    <div className={overlayClass} onClick={onClose}>
+      <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
+        <h2 className={titleClass}>Edit Budget</h2>
 
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Budget Name"
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+          className={inputClass}
         />
 
         <input
@@ -81,14 +134,10 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
           onChange={(e) => setAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Spending Limit"
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+          className={inputClass}
         />
 
-        <select
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
-        >
+        <select value={period} onChange={(e) => setPeriod(e.target.value)} className={inputClass}>
           <option value="Weekly">Weekly</option>
           <option value="Monthly">Monthly</option>
           <option value="Yearly">Yearly</option>
@@ -97,21 +146,21 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
 
         <div className="flex items-center gap-3">
           <div className="flex flex-col gap-1 flex-1">
-            <label className="text-xs text-gray-500">Start Date</label>
+            <label className={labelClass}>Start Date</label>
             <input
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               type="date"
-              className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+              className={inputClass}
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer mt-4">
-            <input
-              type="checkbox"
-              checked={isRecurring}
-              onChange={(e) => setIsRecurring(e.target.checked)}
-              className="w-4 h-4 accent-emerald-500 cursor-pointer"
-            />
+          <label className="flex items-center gap-3 text-sm text-ink-2 cursor-pointer mt-4">
+            <div
+              onClick={() => setIsRecurring((p) => !p)}
+              className={toggleTrackClass(isRecurring)}
+            >
+              <div className={toggleThumbClass(isRecurring)} />
+            </div>
             Recurring
           </label>
         </div>
@@ -125,13 +174,13 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
                 max={28}
                 value={recurringDayCustom}
                 onChange={(e) => setRecurringDayCustom(Number(e.target.value))}
-                className="w-16 p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+                className={`w-16 ${inputClass}`}
               />
             )}
             <select
               value={recurringDay}
               onChange={(e) => setRecurringDay(e.target.value)}
-              className="flex-1 p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+              className={`flex-1 ${inputClass}`}
             >
               {period === 'Weekly' ? (
                 <>
@@ -156,42 +205,53 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
 
         {period === 'Custom' && (
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500">End Date</label>
+            <label className={labelClass}>End Date</label>
             <input
               value={typeof endDate === 'string' ? endDate : ''}
               onChange={(e) => setEndDate(e.target.value)}
               type="date"
-              className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+              className={inputClass}
             />
           </div>
         )}
 
-        <select
-          size={8}
-          value={categoryId || ''}
-          onChange={(e) => setCategoryId(e.target.value || null)}
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
-        >
-          <option value="">All Categories</option>
-          {[...categories]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((c) => (
+        <div className="flex flex-col gap-2">
+          <label className={labelClass}>Category</label>
+          <select
+            value={parentCategoryId ?? ''}
+            onChange={(e) => handleParentChange(e.target.value || null)}
+            className={inputClass}
+          >
+            <option value="">All Categories</option>
+            {parentCategories.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name
-                  .replace(/_/g, ' ')
-                  .toLowerCase()
-                  .replace(/\b\w/g, (char) => char.toUpperCase())}
+                {formatName(c.name)}
               </option>
             ))}
-        </select>
+          </select>
 
-        {error && <p className="text-red-500 text-xs">{error}</p>}
+          {childCategories.length > 0 && (
+            <>
+              <label className={labelClass}>Subcategory</label>
+              <select
+                value={categoryId !== parentCategoryId ? (categoryId ?? '') : ''}
+                onChange={(e) => setCategoryId(e.target.value || parentCategoryId)}
+                className={inputClass}
+              >
+                <option value="">No Subcategory</option>
+                {childCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {formatName(stripParentPrefix(c.name))}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+        </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        {error && <p className={errorClass}>{error}</p>}
+
+        <button onClick={handleSubmit} disabled={isSubmitting} className={primaryButtonClass}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </button>
       </div>

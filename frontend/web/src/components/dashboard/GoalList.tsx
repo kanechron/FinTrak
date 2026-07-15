@@ -62,11 +62,11 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
   }
 
   return (
-    <section className="col-span-2 border border-gray-800 rounded-xl p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-medium">Goals</h2>
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-medium text-ink">Goals</h2>
         <button
-          className="text-md text-blue-500 hover:text-blue-400 cursor-pointer"
+          className="text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity"
           onClick={() => setIsGoalModalOpen(true)}
         >
           + Add Goal
@@ -94,7 +94,7 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
         />
       )}
       {displayGoals.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">
+        <p className="text-sm text-ink-3 text-center py-4">
           No goals yet — add one to get started.
         </p>
       ) : (
@@ -104,12 +104,13 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-4">
-              {displayGoals.map((g) => (
+              {displayGoals.map((g, i) => (
                 <SortableGoal
                   key={g.id}
                   goal={g}
                   onDelete={handleDelete}
                   onClick={() => setSelectedGoal(g)}
+                  colorIndex={i}
                 />
               ))}
             </div>

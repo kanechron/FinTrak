@@ -34,21 +34,21 @@ export default function Settings() {
   const [active, setActive] = useState<Section>('general')
 
   return (
-    <main className="max-w-5xl mx-auto px-3 py-8">
-      <h1 className="text-xl font-semibold mb-6">Settings</h1>
-      <div className="flex gap-6">
-        <nav className="w-44 shrink-0 flex flex-col gap-4">
+    <main className="max-w-[76rem] mx-auto px-3 py-8">
+      <h1 className="text-xl font-semibold text-ink mb-6">Settings</h1>
+      <div className="flex items-start gap-10">
+        <nav className="w-44 shrink-0 flex flex-col">
           {navGroups.map((group, i) => (
-            <div key={i} className="flex flex-col gap-1">
-              {i > 0 && <div className="border-t border-gray-800 mb-2" />}
+            <div key={i} className="flex flex-col gap-0.5">
+              {i > 0 && <div className="border-t border-line my-3" />}
               {group.items.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setActive(s.id)}
-                  className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  className={`text-left px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
                     active === s.id
-                      ? 'bg-gray-800 text-white font-medium'
-                      : 'text-gray-500 hover:text-gray-300 hover:bg-gray-900'
+                      ? 'bg-raised text-ink'
+                      : 'text-ink-3 hover:text-ink-2 hover:bg-raised'
                   }`}
                 >
                   {s.label}
@@ -58,7 +58,7 @@ export default function Settings() {
           ))}
         </nav>
 
-        <div className="flex-1 border border-gray-800 rounded-xl p-6 min-h-96">
+        <div className="flex-1 min-w-0 pl-10 border-l border-line min-h-96">
           {active === 'general' && <General />}
           {active === 'account' && <Account />}
           {active === 'display' && <Display />}

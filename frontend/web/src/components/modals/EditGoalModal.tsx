@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { updateGoal, type Goal } from '../../api/goals'
+import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, chipClass } from './modalTheme'
 
 interface Props {
   goal: Goal
@@ -64,22 +65,16 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-medium">Edit Goal</h2>
+    <div className={overlayClass} onClick={onClose}>
+      <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
+        <h2 className={titleClass}>Edit Goal</h2>
 
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           type="text"
           placeholder="Goal Name"
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+          className={inputClass}
         />
 
         <input
@@ -87,31 +82,27 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
           onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
           type="number"
           placeholder="Target Amount"
-          className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+          className={inputClass}
         />
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500">Target Date</label>
+          <label className={labelClass}>Target Date</label>
           <input
             value={targetDate || ''}
             onChange={(e) => setTargetDate(e.target.value || null)}
             type="date"
-            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-gray-500"
+            className={inputClass}
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs text-gray-500">Linked Accounts</label>
+          <label className={labelClass}>Linked Accounts</label>
           <div className="flex flex-wrap gap-2">
             {accounts.map((a) => (
               <button
                 key={a.id}
                 onClick={() => toggleAccount(a)}
-                className={`py-1 px-2 text-sm rounded transition-colors ${
-                  linkedAccounts.some((acc) => acc.id === a.id)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
+                className={chipClass(linkedAccounts.some((acc) => acc.id === a.id))}
               >
                 {a.name}
               </button>
@@ -119,13 +110,9 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
           </div>
         </div>
 
-        {error && <p className="text-red-500 text-xs">{error}</p>}
+        {error && <p className={errorClass}>{error}</p>}
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button onClick={handleSubmit} disabled={isSubmitting} className={primaryButtonClass}>
           {isSubmitting ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
