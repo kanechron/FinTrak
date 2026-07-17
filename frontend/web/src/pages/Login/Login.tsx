@@ -83,7 +83,7 @@ export default function Login() {
             </button>
           </div>
 
-          {/* <button
+          <button
             onClick={() => aboutRef.current?.scrollIntoView({ behavior: 'smooth' })}
             className="absolute bottom-9 flex flex-col items-center gap-2 text-ink-3 hover:text-ink-2 text-[11px] uppercase tracking-wider cursor-pointer transition-colors"
           >
@@ -97,11 +97,11 @@ export default function Login() {
                 strokeLinejoin="round"
               />
             </svg>
-          </button> */}
+          </button>
         </section>
             
         {/* — About — */}
-        {/* <section
+        <section
           ref={aboutRef}
           className="relative min-h-screen flex flex-col items-center justify-center px-6"
         >
@@ -165,10 +165,10 @@ export default function Login() {
               />
             </svg>
           </button>
-        </section> */}
+        </section>
 
         {/* — Features — */}
-        {/* <section
+        <section
           ref={featuresRef}
           className="min-h-screen flex flex-col items-center justify-center px-6 py-16"
         >
@@ -189,7 +189,7 @@ export default function Login() {
               <span className="text-xs font-medium mt-1.5">More coming soon</span>
             </div>
           </div>
-        </section> */}
+        </section>
       </div>
     </div>
   )
