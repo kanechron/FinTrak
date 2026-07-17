@@ -34,8 +34,21 @@ export function SyncPreview() {
   )
 }
 
+// Describes an SVG arc path (stroked, not filled) between two angles in degrees,
+// measured clockwise from 12 o'clock.
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+}
+
+function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, r, startAngle)
+  const end = polarToCartesian(cx, cy, r, endAngle)
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`
+}
+
 export function ReportsPreview() {
-  const C = 2 * Math.PI * 32
   const segs = [
     { pct: 0.4, color: 'var(--s1)' },
     { pct: 0.25, color: 'var(--s2)' },
@@ -45,22 +58,18 @@ export function ReportsPreview() {
   let cum = 0
   return (
     <Frame>
-      <g transform="rotate(-90 62 75)">
+      <g>
         {segs.map((s, i) => {
-          const seg = s.pct * C
-          const offset = -cum * C
+          const startAngle = cum * 360
+          const endAngle = (cum + s.pct) * 360
           cum += s.pct
           return (
-            <circle
+            <path
               key={i}
-              cx="62"
-              cy="75"
-              r="32"
+              d={arcPath(62, 75, 32, startAngle, endAngle)}
               fill="none"
               stroke={s.color}
               strokeWidth="16"
-              strokeDasharray={`${seg} ${C - seg}`}
-              strokeDashoffset={offset}
             />
           )
         })}
@@ -96,15 +105,71 @@ export function BudgetsPreview() {
   )
 }
 
-export function GoalsPreview() {
+export function ImportPreview() {
+  const rows = [{ name: 56 }, { name: 48 }, { name: 60 }]
+  return (
+    <Frame>
+      {/* statement document with a folded corner */}
+      <path
+        d="M44 40h38l16 16v54a2 2 0 0 1-2 2H44a2 2 0 0 1-2-2V42a2 2 0 0 1 2-2z"
+        fill="var(--raised)"
+        stroke="var(--line)"
+      />
+      <path d="M82 40v16a2 2 0 0 0 2 2h14" fill="none" stroke="var(--line)" />
+      <rect x="49" y="67" width="32" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.7" />
+      <rect x="49" y="78" width="27" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.5" />
+      <rect x="49" y="89" width="30" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.5" />
+
+      {/* flow arrow */}
+      <path
+        d="M110 75h18m0 0l-6-6m6 6l-6 6"
+        stroke="var(--s1)"
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* extracted transactions */}
+      {rows.map((r, i) => (
+        <g key={i} transform={`translate(140, ${46 + i * 26})`}>
+          <rect width={r.name} height="7" rx="3" fill="var(--ink-2)" />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+export function BillsPreview() {
   const rows = [
-    { label: 58, pct: 0.8, color: 'var(--s1)' },
-    { label: 46, pct: 0.4, color: 'var(--s2)' },
+    { name: 50, amt: 34 },
+    { name: 42, amt: 30 },
+    { name: 46, amt: 32 },
   ]
   return (
     <Frame>
       {rows.map((r, i) => (
-        <g key={i} transform={`translate(20, ${34 + i * 44})`}>
+        <g key={i} transform={`translate(20, ${28 + i * 38})`}>
+          <rect width={r.name} height="7" rx="3" fill="var(--ink-2)" />
+          <rect y="11" width={r.amt} height="5" rx="2.5" fill="var(--ink-3)" opacity="0.6" />
+          <rect x="150" y="1" width="32" height="12" rx="6" fill="none" stroke="var(--good)" strokeWidth="1.2" />
+          <rect x="188" y="1" width="24" height="12" rx="6" fill="none" stroke="var(--ink-3)" strokeWidth="1.2" opacity="0.6" />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
+export function GoalsPreview() {
+  const rows = [
+    { label: 58, pct: 0.8, color: 'var(--s1)' },
+    { label: 46, pct: 0.4, color: 'var(--s2)' },
+    { label: 50, pct: 0.6, color: 'var(--s5)' },
+  ]
+  return (
+    <Frame>
+      {rows.map((r, i) => (
+        <g key={i} transform={`translate(31, ${28 + i * 40})`}>
           <circle cx="-8" cy="3.5" r="2" fill="var(--ink-3)" />
           <circle cx="-8" cy="10.5" r="2" fill="var(--ink-3)" />
           <rect x="6" width={r.label} height="7" rx="3" fill="var(--ink-2)" />
@@ -112,8 +177,6 @@ export function GoalsPreview() {
           <rect x="6" y="16" width={180 * r.pct} height="6" rx="3" fill={r.color} />
         </g>
       ))}
-      <circle cx="196" cy="112" r="14" fill="var(--good)" opacity="0.15" />
-      <path d="M190 112l4 4 8-8" stroke="var(--good)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" transform="translate(0,0)" />
     </Frame>
   )
 }
