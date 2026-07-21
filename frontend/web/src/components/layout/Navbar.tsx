@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { usePlaidLink } from 'react-plaid-link'
 import { getAccounts } from '../../api/accounts'
-import { logout } from '../../api/auth'
+import { logout, deactivateAccount, deleteAccount } from '../../api/auth'
 import ReloadPage from '../../utils/ReloadPage'
+import { overlayClass, cardClass, titleClass } from '../modals/modalTheme'
 
 const tabs = [
   { label: 'Dashboard', path: '/' },
@@ -47,6 +48,7 @@ export default function Navbar() {
   const [status, setStatus] = useState<Status>('idle')
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
@@ -58,9 +60,33 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  useEffect(() => {
+    if (!confirmOpen) return
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [confirmOpen])
+
   async function handleLogout() {
     try {
       await logout()
+    } finally {
+      window.location.href = '/login'
+    }
+  }
+
+  async function handleDeactivation() {
+    try {
+      await deactivateAccount()
+    } finally {
+      window.location.href = '/login'
+    }
+  }
+
+  async function handleDeletion() {
+    try {
+      await deleteAccount()
     } finally {
       window.location.href = '/login'
     }
@@ -171,6 +197,15 @@ export default function Navbar() {
               </button>
               <div className="border-t border-line my-1" />
               <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  setConfirmOpen(true)
+                }}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] text-bad hover:bg-bad/10 transition-colors"
+              >
+                Manage Account
+              </button>
+              <button
                 onClick={handleLogout}
                 className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] text-bad hover:bg-raised transition-colors"
               >
@@ -180,6 +215,46 @@ export default function Navbar() {
           )}
         </div>
       </div>
+
+      {confirmOpen && (
+        <div className={overlayClass} onClick={() => setConfirmOpen(false)}>
+          <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
+            <h2 className={titleClass}>Leaving FinTrak?</h2>
+            <p className="text-sm text-ink-2">
+              <span className="font-semibold text-ink">Deactivate</span> signs you out and hides your data. You can pick up where you left off by logging back in later.
+            </p>
+            <p className="text-sm text-ink-2">
+              <span className="font-semibold text-ink">Delete</span> permanently removes your account and all associated data — transactions, budgets, bills, and goals. This can't be undone.
+            </p>
+            <div className="flex flex-col gap-2 mt-2">
+              <button
+                onClick={() => {
+                  setConfirmOpen(false)
+                  handleDeactivation()
+                }}
+                className="w-full text-sm font-semibold text-ink border border-line-2 rounded-lg py-2.5 hover:border-ink-3 transition-colors"
+              >
+                Deactivate Account
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmOpen(false)
+                  handleDeletion()
+                }}
+                className="w-full text-sm font-semibold text-white bg-bad rounded-lg py-2.5 hover:opacity-90 transition-opacity"
+              >
+                Delete Account
+              </button>
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="w-full text-sm font-semibold text-ink-2 py-1 hover:text-ink transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
