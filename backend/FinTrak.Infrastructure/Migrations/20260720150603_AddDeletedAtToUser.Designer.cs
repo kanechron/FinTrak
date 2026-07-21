@@ -3,6 +3,7 @@ using System;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinTrak.Infrastructure.Migrations
 {
     [DbContext(typeof(FinTrakDbContext))]
-    partial class FinTrakDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260720150603_AddDeletedAtToUser")]
+    partial class AddDeletedAtToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -229,9 +232,6 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DetailId");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
 
                     b.ToTable("Categories");
                 });

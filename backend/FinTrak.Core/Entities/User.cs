@@ -22,5 +22,7 @@ namespace FinTrak.Core.Entities
 
         /// <summary>When the user last authenticated.</summary>
         public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? DeletedAt { get; set; } = null;
     }
 }
