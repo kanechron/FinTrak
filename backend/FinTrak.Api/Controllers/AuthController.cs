@@ -147,16 +147,7 @@ namespace FinTrak.Api.Controllers
             // GoogleJsonWebSignature.ValidateAsync handles all cryptographic verification.
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken);
 
-            var user = await _db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.GoogleId == payload.Subject);
-
-            //If user has previously deactivated their account, route to reactivation regardless of
-            //whether they clicked "Sign in" or "Create an account" — checked before the state-specific
-            //branches below so neither one short-circuits past it.
-            if (user != null && user.DeletedAt != null)
-            {
-                HttpContext.Session.SetString("reactivate_user_id", user.Id.ToString());
-                return Redirect((Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "https://localhost:5173") + "/login?error=account_deactivated");
-            }
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.GoogleId == payload.Subject);
 
             //Redirect user based on "state" field from Query
 

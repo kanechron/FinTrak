@@ -52,12 +52,10 @@ export default function SortableGoal({ goal, onDelete, onClick, colorIndex = 0 }
             </button>
           </div>
         </div>
-        {goal.linkedAccounts.length > 0 ? (
+        {goal.linkedAccounts.length > 0 && (
           <div className="text-xs text-ink-3 mb-2">
             {goal.linkedAccounts.map((a) => `${a.name} ••••${a.mask}`).join(' · ')}
           </div>
-        ) : (
-          <div className="text-xs text-warn mb-2">Link an account to track progress</div>
         )}
         <ProgressBar value={goal.currentAmount} max={goal.targetAmount!} color={color} />
       </div>

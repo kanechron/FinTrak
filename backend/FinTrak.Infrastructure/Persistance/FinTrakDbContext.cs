@@ -41,7 +41,6 @@ namespace FinTrak.Infrastructure.Persistance
             .UsingEntity(j => j.ToTable("GoalAccounts"));
             modelBuilder.Entity<Bill>().HasQueryFilter(b => b.DeletedAt == null);
             modelBuilder.Entity<Invite>().HasQueryFilter(i => i.UsedAt == null);
-            modelBuilder.Entity<User>().HasQueryFilter(u => u.DeletedAt == null);
 
             // Unique indexes
             modelBuilder.Entity<User>().HasIndex(u => u.GoogleId).IsUnique();

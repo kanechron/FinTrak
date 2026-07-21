@@ -100,7 +100,6 @@ builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
 builder.Services.AddScoped<IBillDetectionService, BillDetectionService>();
 builder.Services.AddScoped<IExportService, ExportService>();
-builder.Services.AddScoped<IAccountManagementService, DeleteUserAccountService>();
 
 
 
@@ -115,7 +114,6 @@ builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
 builder.Services.AddScoped<IGoalRepository, GoalRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<IAccountReactivationRepository, UserRepostory>();
 
 
 

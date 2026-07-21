@@ -12,12 +12,6 @@
 - [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 - [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
 - [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
-- [ ] **Remove Categories column** — dashboard transactions table (RecentTransactions.tsx) shows a Categories column that shouldn't be there
-- [ ] **De-normalize merchant names** — normalized names are stored all-lowercase; convert to Title Case for display
-
-## Bills
-- [ ] **Manual bill status bug** — manually created bills are auto-set to Pending; should default to Accepted
-- [ ] **Add Bill modal category list** — shows all categories in one flat dropdown; split into parent/subcategory lists like the Transactions modal
 
 ## Reports
 - [x] **Clickable chart segments** — clicking a category slice or bar navigates to the transactions that make it up

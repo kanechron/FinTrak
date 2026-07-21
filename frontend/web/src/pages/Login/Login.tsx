@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ImportPreview, ReportsPreview, BillsPreview, GoalsPreview } from './FeaturePreviews'
-import { reactivateAccount } from '../../api/auth'
 
 const features = [
   {
@@ -32,8 +31,6 @@ export default function Login() {
   const error = searchParams.get('error')
   const aboutRef = useRef<HTMLDivElement>(null)
   const featuresRef = useRef<HTMLDivElement>(null)
-  const [reactivating, setReactivating] = useState(false)
-  const [reactivateError, setReactivateError] = useState<string | null>(null)
 
   // Redirects the browser to the backend login endpoint which kicks off Google OAuth.
   // The backend handles the full PKCE flow and redirects back to the frontend on success.
@@ -43,18 +40,6 @@ export default function Login() {
 
   function handleRegister() {
     window.location.href = '/api/auth/register'
-  }
-
-  async function handleReactivate() {
-    setReactivating(true)
-    setReactivateError(null)
-    try {
-      await reactivateAccount()
-      window.location.href = '/'
-    } catch {
-      setReactivateError('Could not reactivate your account. Please try logging in again.')
-      setReactivating(false)
-    }
   }
 
   const handleCopy = async () => {
@@ -77,45 +62,25 @@ export default function Login() {
           <div className="w-80 flex flex-col items-center">
             <span className="text-xl font-semibold tracking-tight text-ink mb-7">FinTrak</span>
             <p className="text-sm text-ink-2 text-center mb-6">Sign in to access your dashboard</p>
-            {error && error !== 'account_deactivated' && (
+            {error && (
               <p className="text-sm text-bad text-center mb-4">
                 {error === 'no_account' && 'No account found. Please sign up.'}
                 {error === 'account_exists' && 'You already have an account. Please sign in.'}
               </p>
             )}
 
-            {error === 'account_deactivated' ? (
-              <>
-                <p className="text-sm text-ink-2 text-center mb-4">
-                  This account was deactivated. Reactivate it to pick up right where you left off.
-                </p>
-                {reactivateError && (
-                  <p className="text-sm text-bad text-center mb-4">{reactivateError}</p>
-                )}
-                <button
-                  onClick={handleReactivate}
-                  disabled={reactivating}
-                  className="w-full bg-s1 text-white font-semibold py-2.5 rounded-xl text-sm hover:opacity-90 cursor-pointer transition-opacity mb-2.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {reactivating ? 'Reactivating...' : 'Reactivate Account'}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleLogin}
-                  className="w-full bg-s1 text-white font-semibold py-2.5 rounded-xl text-sm hover:opacity-90 cursor-pointer transition-opacity mb-2.5"
-                >
-                  Sign in with Google
-                </button>
-                <button
-                  onClick={handleRegister}
-                  className="w-full bg-transparent text-ink-2 font-semibold py-2.5 rounded-xl text-sm border border-line-2 hover:text-ink hover:border-ink-3 cursor-pointer transition-colors"
-                >
-                  Create an account
-                </button>
-              </>
-            )}
+            <button
+              onClick={handleLogin}
+              className="w-full bg-s1 text-white font-semibold py-2.5 rounded-xl text-sm hover:opacity-90 cursor-pointer transition-opacity mb-2.5"
+            >
+              Sign in with Google
+            </button>
+            <button
+              onClick={handleRegister}
+              className="w-full bg-transparent text-ink-2 font-semibold py-2.5 rounded-xl text-sm border border-line-2 hover:text-ink hover:border-ink-3 cursor-pointer transition-colors"
+            >
+              Create an account
+            </button>
           </div>
 
           <button
