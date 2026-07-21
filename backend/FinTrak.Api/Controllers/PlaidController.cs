@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using FinTrak.Api.Utilities;
 using FinTrak.Infrastructure.Persistance;
 using System.Security.Claims;
 using Going.Plaid;
@@ -91,7 +92,7 @@ namespace FinTrak.Api.Controllers
 
             var institutionName = itemResponse.Item.InstitutionId ?? "Unknown Institution";
 
-            // If this PlaidItem already exists, don't create a duplicate
+            // If this already exists, don't create a duplicate
             var existingItem = await _db.PlaidItems
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.PlaidItemId == exchangeResponse.ItemId);
@@ -402,6 +403,47 @@ namespace FinTrak.Api.Controllers
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Lists the user's connected banks (Plaid items).
+        /// </summary>
+        [HttpGet("items")]
+        public async Task<IActionResult> GetItems(CancellationToken ct)
+        {
+            var items = await _db.PlaidItems
+                .Where(p => p.UserId == GetUserId())
+                .Select(p => new { id = p.Id, institutionName = p.InstitutionName, status = p.Status.ToString() })
+                .ToListAsync(ct);
+
+            return Ok(items);
+        }
+
+        /// <summary>
+        /// Unlinks a connected bank. Revokes the Plaid access token (tolerating an
+        /// already-revoked item) and soft-deletes the PlaidItem and its Accounts.
+        /// </summary>
+        [HttpDelete("unlink/{plaidItemId}")]
+        public async Task<IActionResult> UnlinkItem(Guid plaidItemId, [FromServices] PlaidClient plaid, CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var item = await _db.PlaidItems.FirstOrDefaultAsync(p => p.Id == plaidItemId && p.UserId == userId, ct);
+            if (item == null) return NotFound(new { error = "Bank connection not found" });
+
+            await PlaidRevocation.RevokeItemAsync(plaid, item.AccessToken);
+
+            await _db.Accounts
+                .Where(a => a.PlaidItemId == item.Id && a.DeletedAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(a => a.DeletedAt, DateTime.UtcNow), ct);
+
+            await _db.SyncQueue
+                .Where(s => s.PlaidItemId == item.Id)
+                .ExecuteDeleteAsync(ct);
+
+            item.DeletedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+
+            return Ok();
         }
 
         [HttpPost("webhook")]
