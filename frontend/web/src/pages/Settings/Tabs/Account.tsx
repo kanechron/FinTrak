@@ -34,7 +34,6 @@ export default function Account() {
 
   return (
     <div>
-      <h2 className="font-semibold text-[15px] text-ink mb-2">Account</h2>
       <p className="text-[13px] text-ink-3 mb-5">Manage your connected banks.</p>
 
       {loading && <p className="text-[13px] text-ink-3">Loading...</p>}

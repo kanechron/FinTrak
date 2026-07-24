@@ -40,15 +40,7 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
           }}
         />
       )}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-medium text-ink">Budgets</h2>
-        <button
-          onClick={() => setAddModalOpen(true)}
-          className="text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity"
-        >
-          + Add Budget
-        </button>
-      </div>
+      <h2 className="font-medium text-ink mb-4">Budgets</h2>
       {budgets.length === 0 ? (
         <p className="text-sm text-ink-3 text-center py-4">
           No budgets yet — add one to get started.
@@ -65,6 +57,12 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
           ))}
         </div>
       )}
+      <button
+        onClick={() => setAddModalOpen(true)}
+        className="w-full text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity mt-5 pt-4 border-t border-line"
+      >
+        + Add Budget
+      </button>
     </section>
   )
 }

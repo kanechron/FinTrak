@@ -17,8 +17,6 @@ export default function General() {
 
   return (
     <div>
-      <h2 className="font-semibold text-[15px] text-ink mb-5">General</h2>
-
       <p className="text-[13.5px] font-semibold text-ink mb-1">Import Bank Statement</p>
       <p className="text-[12.5px] text-ink-3 mb-4 max-w-md">
         Upload a PDF bank statement to import transactions automatically.

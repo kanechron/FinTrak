@@ -5,6 +5,7 @@ import { getAccounts } from '../../api/accounts'
 import { logout, deactivateAccount, deleteAccount } from '../../api/auth'
 import ReloadPage from '../../utils/ReloadPage'
 import { overlayClass, cardClass, titleClass } from '../modals/modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 const tabs = [
   { label: 'Dashboard', path: '/' },
@@ -49,24 +50,21 @@ export default function Navbar() {
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [navOpen, setNavOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const navRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+      if (navRef.current && !navRef.current.contains(e.target as Node)) setNavOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  useEffect(() => {
-    if (!confirmOpen) return
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [confirmOpen])
+  useBodyScrollLock(confirmOpen)
 
   async function handleLogout() {
     try {
@@ -156,10 +154,39 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-[9999] bg-page border-b border-line h-14 flex items-center justify-between px-6">
+    <header className="sticky top-0 z-[9999] bg-page border-b border-line h-14 flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-6">
-        <span className="font-semibold text-[14px] tracking-tight text-ink">FinTrak</span>
-        <nav className="flex items-center gap-1">
+        <div ref={navRef}>
+          <button
+            onClick={() => setNavOpen((prev) => !prev)}
+            className="md:hidden -ml-1.5 p-1.5 text-ink-2 hover:text-ink transition-colors"
+            aria-label="Toggle navigation"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M3 5.5H17M3 10H17M3 14.5H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+          {navOpen && (
+            <nav className="md:hidden fixed top-14 left-0 right-0 bg-page border-b border-line shadow-xl flex flex-col p-2">
+              {tabs.map((tab) => (
+                <NavLink
+                  key={tab.path}
+                  to={tab.path}
+                  end={tab.path === '/'}
+                  onClick={() => setNavOpen(false)}
+                  className={({ isActive }) =>
+                    `px-3.5 py-2.5 rounded-lg text-[13.5px] font-semibold transition-colors ${
+                      isActive ? 'text-ink bg-raised' : 'text-ink-2 hover:bg-raised'
+                    }`
+                  }
+                >
+                  {tab.label}
+                </NavLink>
+              ))}
+            </nav>
+          )}
+        </div>
+        <nav className="hidden md:flex items-center gap-1">
           {tabs.map((tab) => (
             <NavLink key={tab.path} to={tab.path} end={tab.path === '/'} className={tabClass}>
               {tab.label}
@@ -195,6 +222,13 @@ export default function Navbar() {
               >
                 Settings
               </button>
+              <a
+                href="mailto:dowjames0903@gmail.com?subject=FinTrak%20Feedback%20%2F%20Bug%20Report"
+                onClick={() => setMenuOpen(false)}
+                className="block w-full text-left px-3 py-2.5 rounded-lg text-[13px] text-ink-2 hover:bg-raised hover:text-ink transition-colors"
+              >
+                Contact / Report a Bug
+              </a>
               <div className="border-t border-line my-1" />
               <button
                 onClick={() => {

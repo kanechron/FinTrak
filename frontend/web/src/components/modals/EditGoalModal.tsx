@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { updateGoal, type Goal } from '../../api/goals'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, chipClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   goal: Goal
@@ -19,6 +20,8 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useBodyScrollLock(isOpen)
 
   // Sync state when a different goal is opened
   useEffect(() => {
@@ -64,33 +67,51 @@ export default function EditGoalModal({ goal, isOpen, onClose, onSuccess, accoun
     }
   }
 
+  const today = new Date().toISOString().split('T')[0]
+
   return (
     <div className={overlayClass} onClick={onClose}>
       <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
-        <h2 className={titleClass}>Edit Goal</h2>
-
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          type="text"
-          placeholder="Goal Name"
-          className={inputClass}
-        />
-
-        <input
-          value={targetAmount ?? ''}
-          onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
-          type="number"
-          placeholder="Target Amount"
-          className={inputClass}
-        />
+        <div className="flex items-center justify-between">
+          <h2 className={titleClass}>Edit Goal</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-ink-3 hover:text-ink transition-colors text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelClass}>Target Date</label>
+          <label className={labelClass}>Goal Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            type="text"
+            placeholder="Goal Name"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Target Amount</label>
+          <input
+            value={targetAmount ?? ''}
+            onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
+            type="number"
+            placeholder="Target Amount"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Target Date (optional)</label>
           <input
             value={targetDate || ''}
             onChange={(e) => setTargetDate(e.target.value || null)}
             type="date"
+            min={today}
             className={inputClass}
           />
         </div>
