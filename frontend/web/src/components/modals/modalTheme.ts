@@ -1,11 +1,14 @@
 // Shared styling for all Add/Edit modals so they follow the same design tokens
 // and toggle-switch/chip patterns instead of each modal re-implementing its own.
 
+// Below sm: the card docks to the bottom of the screen as a full-width sheet
+// (rounded top corners only, no side/bottom margin). At sm: and up it's the
+// original centered dialog.
 export const overlayClass =
-  'fixed inset-0 bg-black/60 z-50 flex items-center justify-center cursor-pointer'
+  'fixed inset-0 h-dvh bg-black/60 z-50 flex items-end sm:items-center justify-center cursor-pointer'
 
 export function cardClass(maxWidth: 'max-w-md' | 'max-w-xl' = 'max-w-md') {
-  return `bg-card border border-line rounded-xl p-6 w-full ${maxWidth} flex flex-col gap-4 cursor-default`
+  return `bg-card border border-line rounded-t-2xl sm:rounded-xl p-6 w-full ${maxWidth} max-h-[85vh] sm:max-h-none overflow-y-auto flex flex-col gap-4 cursor-default`
 }
 
 export const titleClass = 'text-lg font-semibold text-ink'

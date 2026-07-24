@@ -54,7 +54,9 @@ namespace FinTrak.Api.Controllers
                 Products = [Going.Plaid.Entity.Products.Transactions],
                 Language = Going.Plaid.Entity.Language.English,
                 CountryCodes = [Going.Plaid.Entity.CountryCode.Us],
-                Webhook = "https://fintrak.org/api/plaid/webhook"
+                Webhook = "https://fintrak.org/api/plaid/webhook",
+                Transactions = new Going.Plaid.Entity.LinkTokenTransactions {DaysRequested = 730}
+
             });
 
             if (response.Error != null)
@@ -91,7 +93,7 @@ namespace FinTrak.Api.Controllers
                 });
 
             var institutionName = itemResponse.Item.InstitutionId ?? "Unknown Institution";
-
+ 
             // If this already exists, don't create a duplicate
             var existingItem = await _db.PlaidItems
                 .IgnoreQueryFilters()
@@ -220,7 +222,7 @@ namespace FinTrak.Api.Controllers
                 var incomingTransactionIds = response.Added.Select(t => t.TransactionId).ToList();
                 var existingTransactionsList = await _db.Transactions
                 .IgnoreQueryFilters()
-                .Where(trans => incomingTransactionIds.Contains(trans.PlaidTransactionId))
+                .Where(trans => trans.UserId == userId && incomingTransactionIds.Contains(trans.PlaidTransactionId))
                 .ToListAsync(ct);
 
             var existingTransactions = existingTransactionsList
@@ -230,7 +232,7 @@ namespace FinTrak.Api.Controllers
 
                 var incomingAccountIds = response.Added.Select(t => t.AccountId).ToList();
                 var accounts = await _db.Accounts
-                    .Where(a => incomingAccountIds.Contains(a.PlaidAccountId))
+                    .Where(a => a.UserId == userId && incomingAccountIds.Contains(a.PlaidAccountId))
                     .ToDictionaryAsync(a => a.PlaidAccountId, ct);
 
 
@@ -306,7 +308,7 @@ namespace FinTrak.Api.Controllers
 
                 var modifiedIds = response.Modified.Select(t => t.TransactionId).ToList();
                 var existingModified = await _db.Transactions
-                    .Where(t => modifiedIds.Contains(t.PlaidTransactionId))
+                    .Where(t => t.UserId == userId && modifiedIds.Contains(t.PlaidTransactionId))
                     .ToDictionaryAsync(t => t.PlaidTransactionId!);
 
 
@@ -326,7 +328,7 @@ namespace FinTrak.Api.Controllers
 
                 var removedIds = response.Removed.Select(t => t.TransactionId).ToList();
                 var existingRemoved = await _db.Transactions
-                    .Where(t => removedIds.Contains(t.PlaidTransactionId))
+                    .Where(t => t.UserId == userId && removedIds.Contains(t.PlaidTransactionId))
                     .ToDictionaryAsync(t => t.PlaidTransactionId!);
 
                 // Handle removed transactions
@@ -362,7 +364,7 @@ namespace FinTrak.Api.Controllers
             {
                 var balanceAccountIds = balanceResponse.Accounts.Select(a => a.AccountId).ToList();
                 var existingBalanceAccounts = await _db.Accounts
-                    .Where(a => balanceAccountIds.Contains(a.PlaidAccountId))
+                    .Where(a => a.UserId == userId && balanceAccountIds.Contains(a.PlaidAccountId))
                     .ToDictionaryAsync(a => a.PlaidAccountId);
 
                 foreach (var a in balanceResponse.Accounts)

@@ -12,12 +12,14 @@
 - [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 - [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
 - [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
-- [ ] **Remove Categories column** — dashboard transactions table (RecentTransactions.tsx) shows a Categories column that shouldn't be there
+- [x] **Remove Categories column** — dashboard transactions table (RecentTransactions.tsx) shows a Categories column that shouldn't be there
 - [ ] **De-normalize merchant names** — normalized names are stored all-lowercase; convert to Title Case for display
 
 ## Bills
 - [ ] **Manual bill status bug** — manually created bills are auto-set to Pending; should default to Accepted
 - [ ] **Add Bill modal category list** — shows all categories in one flat dropdown; split into parent/subcategory lists like the Transactions modal
+- [ ] **Bill history match logic** — the dropdown arrow on a bill shows matching transactions by category (getTransactionsByCategory); rework to match by the bill's NAME and AMOUNT instead
+- [ ] **Bill history quick-hide** — when the bill history dropdown is expanded, add a quick collapse button at the bottom of the transaction list so users don't have to scroll back up to the 3-dot menu to hide it
 
 ## Reports
 - [x] **Clickable chart segments** — clicking a category slice or bar navigates to the transactions that make it up
@@ -32,6 +34,7 @@
 - [ ] **Transaction page size** — configurable limit for how many transactions load at once
 
 ## UX
+- [ ] **Apply-on-submit filters** — Transactions/Reports filters currently re-fetch on every keystroke/toggle; require a button push to apply so filter changes don't hammer the server
 - [ ] **Error pages** — dedicated 404, 500, and auth-error pages/components
 - [ ] **UI redesign** — navigation overhaul and visual refresh; evaluate light mode or theme toggle
 - [ ] **Loading skeletons** — replace blank states during fetch with skeleton loaders

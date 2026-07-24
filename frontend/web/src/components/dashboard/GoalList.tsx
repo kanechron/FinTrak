@@ -7,7 +7,8 @@ import SortableGoal from './SortableGoal'
 import {
   DndContext,
   closestCenter,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -32,7 +33,13 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
     setLocalGoals(goals ?? [])
   }, [goals])
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  // Separate mouse/touch sensors (rather than PointerSensor) so touch gets its own
+  // activation constraint: a short delay + movement tolerance before a drag starts,
+  // so a tap-and-scroll on the handle isn't immediately hijacked as a drag.
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  )
 
   // Fall back to prop data before the first fetch completes
   const displayGoals = localGoals.length > 0 ? localGoals : (goals ?? [])
@@ -63,14 +70,11 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-baseline justify-between mb-4">
         <h2 className="font-medium text-ink">Goals</h2>
-        <button
-          className="text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity"
-          onClick={() => setIsGoalModalOpen(true)}
-        >
-          + Add Goal
-        </button>
+        {displayGoals.length > 1 && (
+          <span className="text-xs text-ink-3">Drag to reorder by priority</span>
+        )}
       </div>
       <AddGoalModal
         isOpen={isGoalModalOpen}
@@ -103,7 +107,7 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
             items={displayGoals.map((g) => g.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-4">
+            <div className="space-y-7">
               {displayGoals.map((g, i) => (
                 <SortableGoal
                   key={g.id}
@@ -117,6 +121,12 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
           </SortableContext>
         </DndContext>
       )}
+      <button
+        onClick={() => setIsGoalModalOpen(true)}
+        className="w-full text-sm font-semibold text-s1 hover:opacity-80 cursor-pointer transition-opacity mt-5 pt-4 border-t border-line"
+      >
+        + Add Goal
+      </button>
     </section>
   )
 }

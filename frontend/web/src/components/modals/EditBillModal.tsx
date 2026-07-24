@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { updateBill, type Bill } from '../../api/bills'
 import { getCategories, type Category } from '../../api/categories'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   bill: Bill
@@ -39,6 +40,8 @@ export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Prop
     setCategoryId(bill.categoryId)
     setError(null)
   }, [bill])
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 
@@ -82,7 +85,16 @@ export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Prop
   return (
     <div className={overlayClass} onClick={onClose}>
       <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
-        <h2 className={titleClass}>Edit Bill</h2>
+        <div className="flex items-center justify-between">
+          <h2 className={titleClass}>Edit Bill</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-ink-3 hover:text-ink transition-colors text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
 
         <input
           value={name}

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   LineChart,
   Line,
@@ -12,7 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import { tooltipStyle, tooltipTextStyle, axisStyle, gridStroke, selectClass } from './chartTheme'
+import { tooltipStyle, tooltipTextStyle, axisStyle, gridStroke } from './chartTheme'
 
 export interface MonthlySpending {
   year: number
@@ -27,30 +26,14 @@ function formatMonth(year: number, month: number) {
 interface Props {
   data: MonthlySpending[]
   onPointClick: (year: number, month: number) => void
+  chartType: string
 }
 
-export default function MonthlySpendingChart({ data, onPointClick }: Props) {
-  const [chartType, setChartType] = useState('Line')
-
+export default function MonthlySpendingChart({ data, onPointClick, chartType }: Props) {
   const chartData = data.map((d) => ({ ...d, label: formatMonth(d.year, d.month) }))
 
   return (
     <>
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h2 className="font-medium text-ink">Monthly Spending</h2>
-          <p className="text-xs text-ink-3 mt-0.5">Total spend over selected period</p>
-        </div>
-        <select
-          value={chartType}
-          onChange={(e) => setChartType(e.target.value)}
-          className={selectClass}
-        >
-          <option>Line</option>
-          <option>Area</option>
-          <option>Bar</option>
-        </select>
-      </div>
       {chartData.length === 0 ? (
         <p className="text-center text-ink-3 text-sm py-12">No data for selected period</p>
       ) : (

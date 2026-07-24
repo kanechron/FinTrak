@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { addBill } from '../../api/bills'
 import { getCategories, type Category } from '../../api/categories'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   isOpen: boolean
@@ -27,6 +28,8 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
         .then(setCategories)
         .catch(() => {})
   }, [isOpen])
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 
@@ -83,7 +86,16 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   return (
     <div className={overlayClass} onClick={onClose}>
       <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
-        <h2 className={titleClass}>Add Bill</h2>
+        <div className="flex items-center justify-between">
+          <h2 className={titleClass}>Add Bill</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-ink-3 hover:text-ink transition-colors text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
 
         <input
           value={name}
