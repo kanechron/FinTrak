@@ -68,13 +68,13 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-page text-ink">
-      <div className="h-screen overflow-y-auto no-scrollbar">
+    <div className="min-h-dvh bg-page text-ink">
+      <div className="h-dvh overflow-y-auto no-scrollbar">
         {/* — Sign in — */}
         <section
-          className="relative min-h-screen flex flex-col items-center justify-center px-6"
+          className="relative min-h-dvh flex flex-col items-center justify-center px-6"
         >
-          <div className="w-80 flex flex-col items-center">
+          <div className="w-full max-w-80 flex flex-col items-center">
             <span className="text-xl font-semibold tracking-tight text-ink mb-7">FinTrak</span>
             <p className="text-sm text-ink-2 text-center mb-6">Sign in to access your dashboard</p>
             {error && error !== 'account_deactivated' && (
@@ -138,7 +138,7 @@ export default function Login() {
         {/* — About — */}
         <section
           ref={aboutRef}
-          className="relative min-h-screen flex flex-col items-center justify-center px-6"
+          className="relative min-h-dvh flex flex-col items-center justify-center px-6"
         >
           <div className="w-full max-w-lg flex flex-col items-center">
             <p className="text-[11px] uppercase tracking-wider text-ink-3 mb-8">About</p>
@@ -205,10 +205,10 @@ export default function Login() {
         {/* — Features — */}
         <section
           ref={featuresRef}
-          className="min-h-screen flex flex-col items-center justify-center px-6 py-16"
+          className="min-h-dvh flex flex-col items-center justify-center px-6 py-16"
         >
           <p className="text-[11px] uppercase tracking-wider text-ink-3 mb-8">Features</p>
-          <div className="w-full max-w-2xl grid grid-cols-2 gap-8">
+          <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
             {features.map((f) => {
               const Preview = f.preview
               return (
@@ -219,7 +219,7 @@ export default function Login() {
                 </div>
               )
             })}
-            <div className="col-span-2 flex flex-col items-center justify-center border border-dashed border-line-2 rounded-xl text-ink-3 py-10">
+            <div className="sm:col-span-2 flex flex-col items-center justify-center border border-dashed border-line-2 rounded-xl text-ink-3 py-10">
               <span className="text-2xl leading-none">+</span>
               <span className="text-xs font-medium mt-1.5">More coming soon</span>
             </div>

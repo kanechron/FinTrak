@@ -17,9 +17,10 @@ interface Props {
   to?: string
   onSliceClick: (id: string, name: string) => void
   selectedId?: string
+  onClose: () => void
 }
 
-export default function CategoryDetailCarousel({ categories, from, to, onSliceClick, selectedId }: Props) {
+export default function CategoryDetailCarousel({ categories, from, to, onSliceClick, selectedId, onClose }: Props) {
   const [index, setIndex] = useState(0)
   const [detailCache, setDetailCache] = useState<
     Record<string, { id: string; name: string; amount: number }[]>
@@ -89,6 +90,13 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
           >
             ›
           </button>
+          <button
+            onClick={onClose}
+            aria-label="Close detailed breakdown"
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-ink-2 text-lg hover:bg-raised transition-colors ml-1"
+          >
+            ✕
+          </button>
         </div>
       </div>
 
@@ -97,7 +105,7 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
       ) : data.length === 0 ? (
         <p className="text-center text-ink-3 text-sm py-12">No detailed breakdown available.</p>
       ) : (
-        <div className="flex items-center gap-10">
+        <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
           <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[11px] uppercase tracking-wider text-ink-3">Spent</span>
@@ -128,7 +136,7 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
             </ResponsiveContainer>
           </div>
 
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto pr-1">
+          <div className="w-full sm:flex-1 sm:min-w-0 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto pr-1">
             {coloredData.map((d) => (
               <button
                 key={d.id || d.name}

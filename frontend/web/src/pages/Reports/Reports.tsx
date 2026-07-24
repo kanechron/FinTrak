@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   getCategorySpending,
   getMonthlySpending,
@@ -18,6 +18,7 @@ import MonthlySpendingChart, {
 import BudgetPerformanceChart from '../../components/charts/BudgetPerformanceChart'
 import CashFlowChart from '../../components/charts/CashFlowChart'
 import CategoryDetailCarousel from '../../components/charts/CategoryDetailCarousel'
+import { FilterIcon, KebabIcon } from '../../components/common/icons'
 
 function isoDate(d: Date): string {
   return d.toISOString().split('T')[0]
@@ -46,14 +47,15 @@ export default function Reports() {
 
   // — UI state
   const [error, setError] = useState<string | null>(null)
-  const [exportOpen, setExportOpen] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState<string | null>(null)
+  const [catChartType, setCatChartType] = useState('Donut')
+  const [monthlyChartType, setMonthlyChartType] = useState('Line')
 
   // — Filters
   const [fromDate, setFromDate] = useState(defaultFrom())
   const [toDate, setToDate] = useState(isoDate(new Date()))
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set())
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // — Panel filters
   const [sortField, setSortField] = useState<'amount' | 'name' | 'date'>('date')
@@ -114,12 +116,10 @@ export default function Reports() {
       .catch(() => {})
   }, [])
 
-  // — Close category dropdown and export menus on outside click
+  // — Close section menus on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
-        setDropdownOpen(false)
-      if (!(e.target as Element).closest('[data-export-dropdown]')) setExportOpen(null)
+      if (!(e.target as Element).closest('[data-report-menu]')) setMenuOpen(null)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -178,7 +178,7 @@ export default function Reports() {
     if (to) params.set('to', to)
     params.set('format', format)
     window.location.href = `/api/reports/${endpoint}?${params.toString()}`
-    setExportOpen(null)
+    setMenuOpen(null)
   }
 
   function toggleCategory(id: string) {
@@ -189,62 +189,144 @@ export default function Reports() {
     })
   }
 
-  const exportBtnClass =
-    'text-xs border border-line rounded-lg px-3 py-1 text-ink-3 hover:text-ink-2 hover:border-line-2 transition-colors'
-  const exportMenuClass =
-    'absolute right-0 top-8 z-50 w-36 bg-card border border-line rounded-xl shadow-xl overflow-hidden'
-  const exportItemClass = 'w-full text-left px-4 py-2.5 text-xs text-ink-2 hover:bg-raised transition-colors'
+  const menuItemClass = 'w-full text-left px-4 py-2.5 text-xs text-ink-2 hover:bg-raised transition-colors'
+
+  function ReportMenu({
+    id,
+    chartTypeOptions,
+    chartType,
+    onChartTypeChange,
+    exportEndpoint,
+  }: {
+    id: string
+    chartTypeOptions?: string[]
+    chartType?: string
+    onChartTypeChange?: (v: string) => void
+    exportEndpoint: string
+  }) {
+    return (
+      <div className="relative" data-report-menu>
+        <button
+          onClick={() => setMenuOpen((o) => (o === id ? null : id))}
+          aria-label="More options"
+          className="text-ink-3 hover:text-ink-2 transition-colors p-1"
+        >
+          <KebabIcon />
+        </button>
+        {menuOpen === id && (
+          <div className="absolute right-0 top-8 z-50 w-40 bg-card border border-line rounded-xl shadow-xl overflow-hidden">
+            {chartTypeOptions && (
+              <>
+                <p className="px-4 pt-2.5 pb-1 text-[10px] uppercase tracking-wider text-ink-3">
+                  View as
+                </p>
+                {chartTypeOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                      onChartTypeChange?.(opt)
+                      setMenuOpen(null)
+                    }}
+                    className={`${menuItemClass} flex items-center justify-between`}
+                  >
+                    {opt}
+                    {chartType === opt && <span className="text-s1">✓</span>}
+                  </button>
+                ))}
+                <div className="border-t border-line my-1" />
+              </>
+            )}
+            <button
+              onClick={() => handleExport('csv', exportEndpoint)}
+              className={menuItemClass}
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => handleExport('xlsx', exportEndpoint)}
+              className={menuItemClass}
+            >
+              Export Excel
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
-    <div className="flex h-[calc(100vh-56px)] overflow-hidden">
-      <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar px-6 py-8">
+    <div className="flex h-[calc(100dvh-56px)] overflow-hidden">
+      <main className="flex-1 min-w-0 overflow-y-auto no-scrollbar px-4 sm:px-6 py-8">
         <div className="max-w-[76rem] mx-auto space-y-8">
         <h1 className="text-xl font-semibold text-ink">Reports</h1>
         {error && <p className="text-bad text-sm">{error}</p>}
 
-        {/* — Filter bar: date range + category multi-select */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-ink-3 uppercase tracking-wider mr-1">From</span>
-          <input
-            type="date"
-            value={fromDate}
-            max={toDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="text-xs bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 focus:outline-none focus:border-line-2"
-          />
-          <span className="text-xs text-ink-3 uppercase tracking-wider mr-1">To</span>
-          <input
-            type="date"
-            value={toDate}
-            min={fromDate}
-            max={isoDate(new Date())}
-            onChange={(e) => setToDate(e.target.value)}
-            className="text-xs bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 focus:outline-none focus:border-line-2"
-          />
-          <div className="h-4 w-px bg-line mx-2" />
+        {/* — Filter bar: filter toggle */}
+        <div className="flex items-center justify-end gap-3">
+          <button
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-label="Toggle filters"
+            className={`relative flex items-center justify-center border rounded-lg p-1.5 transition-colors ${
+              selectedCategoryIds.size > 0
+                ? 'text-s1 border-s1/40 hover:border-s1/70'
+                : 'text-ink-3 border-line hover:text-ink-2'
+            }`}
+          >
+            <FilterIcon />
+            {selectedCategoryIds.size > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-s1 text-white text-[10px] font-semibold flex items-center justify-center">
+                {selectedCategoryIds.size}
+              </span>
+            )}
+          </button>
+        </div>
 
-          {/* Category multi-select dropdown */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen((o) => !o)}
-              className={`text-xs border rounded-lg px-3 py-1 transition-colors ${
-                selectedCategoryIds.size > 0
-                  ? 'text-s1 border-s1/40 hover:border-s1/70'
-                  : 'text-ink-3 border-line hover:text-ink-2'
-              }`}
-            >
-              {selectedCategoryIds.size > 0
-                ? `Categories (${selectedCategoryIds.size})`
-                : 'Categories'}{' '}
-              ▾
-            </button>
-            {dropdownOpen && categorySpending.length > 0 && (
-              <div className="absolute left-0 top-8 z-50 w-56 bg-card border border-line rounded-xl shadow-xl overflow-hidden">
-                <div className="max-h-64 overflow-y-auto">
+        {/* — Expanded filters, inline below the filter toggle */}
+        {filtersOpen && (
+          <div className="bg-raised rounded-xl p-4 space-y-4">
+            {/* Date range */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-ink-3">Date range</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={fromDate}
+                  max={toDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="text-xs bg-card border border-line rounded-lg px-3 py-1.5 text-ink-2 focus:outline-none focus:border-line-2"
+                />
+                <input
+                  type="date"
+                  value={toDate}
+                  min={fromDate}
+                  max={isoDate(new Date())}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="text-xs bg-card border border-line rounded-lg px-3 py-1.5 text-ink-2 focus:outline-none focus:border-line-2"
+                />
+              </div>
+            </div>
+
+            {/* Categories */}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-ink-3">Categories</label>
+                {selectedCategoryIds.size > 0 && (
+                  <button
+                    onClick={() => setSelectedCategoryIds(new Set())}
+                    className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              {categorySpending.length === 0 ? (
+                <p className="text-xs text-ink-3">No categories in this date range.</p>
+              ) : (
+                <div className="max-h-48 overflow-y-auto border border-line rounded-lg bg-card">
                   {categorySpending.map((c) => (
                     <label
                       key={c.id}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-raised cursor-pointer"
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-raised cursor-pointer"
                     >
                       <input
                         type="checkbox"
@@ -258,56 +340,33 @@ export default function Reports() {
                     </label>
                   ))}
                 </div>
-                {selectedCategoryIds.size > 0 && (
-                  <div className="border-t border-line px-4 py-2">
-                    <button
-                      onClick={() => setSelectedCategoryIds(new Set())}
-                      className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <hr className="border-line" />
 
         {/* — Category Spending chart */}
         <section>
-          <div className="flex items-center justify-between mb-1">
-            <div />
-            <div className="relative" data-export-dropdown>
-              <button
-                onClick={() => setExportOpen((o) => (o === 'cat' ? null : 'cat'))}
-                className={exportBtnClass}
-              >
-                Export ▾
-              </button>
-              {exportOpen === 'cat' && (
-                <div className={exportMenuClass}>
-                  <button
-                    onClick={() => handleExport('csv', 'category-spending')}
-                    className={exportItemClass}
-                  >
-                    CSV
-                  </button>
-                  <button
-                    onClick={() => handleExport('xlsx', 'category-spending')}
-                    className={exportItemClass}
-                  >
-                    Excel
-                  </button>
-                </div>
-              )}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="font-medium text-ink">Category Spending</h2>
+              <p className="text-xs text-ink-3 mt-0.5">Spending breakdown by category</p>
             </div>
+            <ReportMenu
+              id="cat"
+              chartTypeOptions={['Donut', 'Pie', 'Bar']}
+              chartType={catChartType}
+              onChartTypeChange={setCatChartType}
+              exportEndpoint="category-spending"
+            />
           </div>
           <CategorySpendingChart
             data={categorySpending}
             onSliceClick={handleSliceClick}
             selectedId={clickedCategory?.id}
+            chartType={catChartType}
           />
         </section>
 
@@ -319,6 +378,7 @@ export default function Reports() {
             to={to}
             onSliceClick={handleDetailedSliceClick}
             selectedId={clickedCategory?.id}
+            onClose={() => setSelectedCategoryIds(new Set())}
           />
         )}
 
@@ -326,39 +386,30 @@ export default function Reports() {
 
         {/* — Monthly Spending chart */}
         <section>
-          <div className="flex justify-end mb-1">
-            <div className="relative" data-export-dropdown>
-              <button
-                onClick={() => setExportOpen((o) => (o === 'monthly' ? null : 'monthly'))}
-                className={exportBtnClass}
-              >
-                Export ▾
-              </button>
-              {exportOpen === 'monthly' && (
-                <div className={exportMenuClass}>
-                  <button
-                    onClick={() => handleExport('csv', 'monthly-spending')}
-                    className={exportItemClass}
-                  >
-                    CSV
-                  </button>
-                  <button
-                    onClick={() => handleExport('xlsx', 'monthly-spending')}
-                    className={exportItemClass}
-                  >
-                    Excel
-                  </button>
-                </div>
-              )}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="font-medium text-ink">Monthly Spending</h2>
+              <p className="text-xs text-ink-3 mt-0.5">Total spend over selected period</p>
             </div>
+            <ReportMenu
+              id="monthly"
+              chartTypeOptions={['Line', 'Area', 'Bar']}
+              chartType={monthlyChartType}
+              onChartTypeChange={setMonthlyChartType}
+              exportEndpoint="monthly-spending"
+            />
           </div>
-          <MonthlySpendingChart data={monthlySpending} onPointClick={handleMonthClick} />
+          <MonthlySpendingChart
+            data={monthlySpending}
+            onPointClick={handleMonthClick}
+            chartType={monthlyChartType}
+          />
         </section>
 
         <hr className="border-line" />
 
         {/* — Budget Performance + Cash Flow side by side */}
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <section>
             <div className="mb-3">
               <h2 className="font-medium text-ink">Budget Performance</h2>
@@ -373,30 +424,7 @@ export default function Reports() {
                 <h2 className="font-medium text-ink">Income vs Expenses</h2>
                 <p className="text-xs text-ink-3 mt-0.5">Net cash flow per month</p>
               </div>
-              <div className="relative" data-export-dropdown>
-                <button
-                  onClick={() => setExportOpen((o) => (o === 'cashflow' ? null : 'cashflow'))}
-                  className={exportBtnClass}
-                >
-                  Export ▾
-                </button>
-                {exportOpen === 'cashflow' && (
-                  <div className={exportMenuClass}>
-                    <button
-                      onClick={() => handleExport('csv', 'cash-flow')}
-                      className={exportItemClass}
-                    >
-                      CSV
-                    </button>
-                    <button
-                      onClick={() => handleExport('xlsx', 'cash-flow')}
-                      className={exportItemClass}
-                    >
-                      Excel
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ReportMenu id="cashflow" exportEndpoint="cash-flow" />
             </div>
             <CashFlowChart data={cashFlow} onPointClick={handleCashFlowClick} />
           </section>
@@ -404,10 +432,10 @@ export default function Reports() {
         </div>
       </main>
 
-      {/* — Category transactions inline panel */}
+      {/* — Category transactions panel: full-screen overlay below sm:, sliding side column at sm: and up */}
       <div
-        className={`flex-none border-l border-line flex flex-col overflow-hidden transition-all duration-300 ${
-          clickedCategory ? 'w-[420px]' : 'w-0'
+        className={`${clickedCategory ? 'fixed inset-0 h-dvh z-[10000] flex' : 'hidden'} sm:flex sm:static sm:h-auto sm:z-auto flex-col overflow-hidden bg-page sm:flex-none sm:border-l sm:border-line transition-all duration-300 ${
+          clickedCategory ? 'sm:w-[420px]' : 'sm:w-0'
         }`}
       >
         {clickedCategory && (
@@ -422,7 +450,8 @@ export default function Reports() {
               </div>
               <button
                 onClick={() => setClickedCategory(null)}
-                className="text-ink-3 hover:text-ink-2 transition-colors mt-0.5"
+                aria-label="Close"
+                className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-ink-2 text-lg hover:bg-raised transition-colors"
               >
                 ✕
               </button>

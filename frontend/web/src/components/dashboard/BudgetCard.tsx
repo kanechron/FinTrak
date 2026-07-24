@@ -1,5 +1,7 @@
 import ProgressBar from '../common/ProgressBar'
+import RowMenu from '../common/RowMenu'
 import { formatDate } from '../../utils/formatDate'
+import { formatAmount } from '../../utils/format'
 import { type Budget } from '../../api/budgets'
 
 interface Props {
@@ -18,7 +20,7 @@ export default function BudgetCard({ budget: b, onDelete, onClick }: Props) {
   }[status]
 
   return (
-    <div onClick={onClick} className="group cursor-pointer">
+    <div className="-mx-2.5 -my-2 px-2.5 py-2 rounded-lg hover:bg-raised transition-colors">
       <div className="flex items-center justify-between text-sm mb-1.5">
         <div className="flex items-center gap-2">
           <span className="text-ink font-medium">{b.name}</span>
@@ -28,21 +30,17 @@ export default function BudgetCard({ budget: b, onDelete, onClick }: Props) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-ink-2 tabular-nums">
-            ${b.spent.toFixed(2)} / ${b.amount.toFixed(2)}
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${chipClass}`}>
+            {formatAmount(b.spent)} / {formatAmount(b.amount)}
           </span>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${chipClass}`}>{pct}%</span>
-          {/* stopPropagation prevents the card's onClick from firing when deleting */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(b.id)
-            }}
-            className="text-ink-3 hover:text-bad transition-colors text-sm opacity-0 group-hover:opacity-100"
-          >
-            ✕
-          </button>
+          <RowMenu
+            ariaLabel="Budget options"
+            actions={[
+              { label: 'Edit', onClick: onClick },
+              { label: 'Delete', onClick: () => onDelete(b.id), danger: true },
+            ]}
+          />
         </div>
       </div>
       {b.category && (

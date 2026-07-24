@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { addTransaction } from '../../api/transactions'
 import { getCategories, type Category } from '../../api/categories'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   isOpen: boolean
@@ -62,6 +63,8 @@ export default function AddTransactionModal({ isOpen, onClose, onSuccess }: Prop
     setParentCategoryId(id)
     setCategoryDetailedId(null)
   }
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

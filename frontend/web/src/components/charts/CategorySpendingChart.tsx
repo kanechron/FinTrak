@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   PieChart,
   Pie,
@@ -11,7 +10,7 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { type CategorySpending } from '../../api/reports'
-import { CATEGORY_COLORS, tooltipStyle, tooltipTextStyle, axisStyle, gridStroke, selectClass } from './chartTheme'
+import { CATEGORY_COLORS, tooltipStyle, tooltipTextStyle, axisStyle, gridStroke } from './chartTheme'
 
 const formatName = (v: string) =>
   v
@@ -24,31 +23,15 @@ interface Props {
   data: CategorySpending[]
   onSliceClick: (id: string, name: string) => void
   selectedId?: string
+  chartType: string
 }
 
-export default function CategorySpendingChart({ data, onSliceClick, selectedId }: Props) {
-  const [chartType, setChartType] = useState('Donut')
-
+export default function CategorySpendingChart({ data, onSliceClick, selectedId, chartType }: Props) {
   const coloredData = data.map((item, i) => ({ ...item, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
   const total = data.reduce((sum, d) => sum + d.amount, 0)
 
   return (
     <>
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h2 className="font-medium text-ink">Category Spending</h2>
-          <p className="text-xs text-ink-3 mt-0.5">Spending breakdown by category</p>
-        </div>
-        <select
-          value={chartType}
-          onChange={(e) => setChartType(e.target.value)}
-          className={selectClass}
-        >
-          <option>Donut</option>
-          <option>Pie</option>
-          <option>Bar</option>
-        </select>
-      </div>
       {data.length === 0 ? (
         <p className="text-center text-ink-3 text-sm py-12">No data for selected period</p>
       ) : chartType === 'Bar' ? (
@@ -74,7 +57,7 @@ export default function CategorySpendingChart({ data, onSliceClick, selectedId }
           </BarChart>
         </ResponsiveContainer>
       ) : (
-        <div className="flex items-center gap-10">
+        <div className="flex flex-col sm:flex-row sm:items-center items-center gap-6 sm:gap-10">
           <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
             {chartType === 'Donut' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -105,7 +88,7 @@ export default function CategorySpendingChart({ data, onSliceClick, selectedId }
             </ResponsiveContainer>
           </div>
 
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto pr-1">
+          <div className="w-full sm:flex-1 sm:min-w-0 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto pr-1">
             {coloredData.map((d) => (
               <button
                 key={d.id}

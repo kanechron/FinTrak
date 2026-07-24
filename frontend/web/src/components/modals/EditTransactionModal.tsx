@@ -6,6 +6,7 @@ import {
 } from '../../api/transactions'
 import { getCategories, type Category } from '../../api/categories'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, checkboxClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   transaction: Transaction
@@ -80,6 +81,8 @@ export default function EditTransactionModal({ transaction, isOpen, onClose, onS
     setParentCategoryId(id)
     setCategoryDetailedId(null)
   }
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 

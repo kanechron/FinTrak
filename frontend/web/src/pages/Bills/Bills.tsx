@@ -4,6 +4,7 @@ import { formatAmount } from '../../utils/format'
 import AddBillModal from '../../components/modals/AddBillModal'
 import EditBillModal from '../../components/modals/EditBillModal'
 import { getTransactionsByCategory, type Transaction } from '../../api/transactions'
+import RowMenu from '../../components/common/RowMenu'
 
 function dueDateLabel(bill: Bill): string {
   if (!bill.nextDueDate) return '—'
@@ -40,12 +41,6 @@ const stripeClass: Record<Urgency, string> = {
   overdue: 'bg-bad',
   soon: 'bg-warn',
   normal: 'bg-transparent',
-}
-
-const badgeClass: Record<Urgency, string> = {
-  overdue: 'text-bad bg-bad/15',
-  soon: 'text-warn bg-warn/15',
-  normal: 'text-ink-3 bg-raised',
 }
 
 function formatFrequency(f: string): string {
@@ -108,65 +103,55 @@ export default function Bills() {
     const diff = dueDateDiff(bill)
     const label = dueDateLabel(bill)
     const u = urgency(diff)
+
+    async function toggleExpanded() {
+      if (isExpanded) {
+        setExpandedId(null)
+        return
+      }
+      setExpandedId(bill.id)
+      if (bill.categoryId && !historyCache[bill.id]) {
+        const txns = await getTransactionsByCategory(bill.categoryId)
+        setHistoryCache((prev) => ({ ...prev, [bill.id]: txns }))
+      }
+    }
+
     return (
       <div className="border-t border-line first:border-t-0 pl-3.5 relative">
         <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full ${stripeClass[u]}`} />
-        <div
-          className="group flex items-center justify-between py-4 pl-3 cursor-pointer hover:bg-raised/50 -mx-3 px-3 rounded-lg transition-colors"
-          onClick={() => setSelectedBill(bill)}
-        >
-          <div>
-            <div className="flex items-center gap-2 text-sm mb-1">
-              <span className="text-ink font-semibold">{bill.name}</span>
-              {bill.isAutoPay && (
-                <span className="text-[10px] font-semibold text-s1 border border-s1/40 rounded px-1.5 py-0.5">
-                  Auto-pay
-                </span>
-              )}
-              {bill.isAutoDetected && (
-                <span className="text-[10px] font-semibold text-s5 border border-s5/40 rounded px-1.5 py-0.5">
-                  Detected
-                </span>
-              )}
+        <div className="py-4 pl-3 -mx-3 px-3 rounded-lg hover:bg-raised transition-colors">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2 text-sm mb-1">
+                <span className="text-ink font-semibold">{bill.name}</span>
+                {bill.isAutoPay && (
+                  <span className="text-[10px] font-semibold text-s1 border border-s1/40 rounded px-1.5 py-0.5">
+                    Auto-pay
+                  </span>
+                )}
+                {bill.isAutoDetected && (
+                  <span className="text-[10px] font-semibold text-s5 border border-s5/40 rounded px-1.5 py-0.5">
+                    Detected
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-ink-3">
+                {formatFrequency(bill.frequency)} · {label}
+              </p>
             </div>
-            <div className="flex items-center gap-3 text-xs text-ink-3">
-              {bill.category && <p>{bill.category}</p>}
-              <p>{formatFrequency(bill.frequency)}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-ink font-bold text-base tabular-nums">
+                {formatAmount(-bill.amount)}
+              </span>
+              <RowMenu
+                ariaLabel="Bill options"
+                actions={[
+                  { label: isExpanded ? 'Hide History' : 'Show History', onClick: toggleExpanded },
+                  { label: 'Edit', onClick: () => setSelectedBill(bill) },
+                  { label: 'Delete', onClick: () => handleDelete(bill.id), danger: true },
+                ]}
+              />
             </div>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${badgeClass[u]}`}>
-              {label}
-            </span>
-            <span className="text-ink font-bold text-base tabular-nums">
-              {formatAmount(-bill.amount)}
-            </span>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation()
-                if (isExpanded) {
-                  setExpandedId(null)
-                  return
-                }
-                setExpandedId(bill.id)
-                if (bill.categoryId && !historyCache[bill.id]) {
-                  const txns = await getTransactionsByCategory(bill.categoryId)
-                  setHistoryCache((prev) => ({ ...prev, [bill.id]: txns }))
-                }
-              }}
-              className="text-ink-3 hover:text-ink-2 transition-colors"
-            >
-              {isExpanded ? '▲' : '▼'}
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDelete(bill.id)
-              }}
-              className="text-ink-3 hover:text-bad transition-colors opacity-0 group-hover:opacity-100"
-            >
-              ✕
-            </button>
           </div>
         </div>
         {isExpanded && (
@@ -182,18 +167,18 @@ export default function Bills() {
                 No transactions found for this category.
               </p>
             ) : (
-              <table className="w-full text-xs">
+              <table className="w-full text-xs table-fixed">
                 <thead>
                   <tr className="text-ink-3 border-b border-line">
-                    <th className="text-left px-6 py-2 font-normal">Merchant</th>
-                    <th className="text-left px-6 py-2 font-normal">Date</th>
-                    <th className="text-right px-6 py-2 font-normal">Amount</th>
+                    <th className="text-left px-6 py-2 font-normal w-1/2">Merchant</th>
+                    <th className="text-left px-6 py-2 font-normal w-1/4">Date</th>
+                    <th className="text-right px-6 py-2 font-normal w-1/4">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {historyCache[bill.id].map((t) => (
                     <tr key={t.id} className="border-b border-line last:border-0 text-ink-2">
-                      <td className="px-6 py-2">{t.merchant}</td>
+                      <td className="px-6 py-2 truncate" title={t.merchant}>{t.merchant}</td>
                       <td className="px-6 py-2 text-ink-3">{t.date}</td>
                       <td
                         className={`px-6 py-2 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-good' : 'text-bad'}`}
@@ -281,13 +266,13 @@ export default function Bills() {
             {pendingBills.map((bill) => (
               <div
                 key={bill.id}
-                className="border-t border-line first:border-t-0 py-4 flex items-center justify-between"
+                className="border-t border-line first:border-t-0 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
               >
                 <div>
                   <span className="text-ink font-semibold text-sm">{bill.name}</span>
                   {bill.category && <p className="text-xs text-ink-3 mt-0.5">{bill.category}</p>}
                 </div>
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center justify-between sm:justify-end gap-3 text-sm">
                   <span className="text-ink font-bold text-base tabular-nums">
                     {formatAmount(-bill.amount)}
                   </span>

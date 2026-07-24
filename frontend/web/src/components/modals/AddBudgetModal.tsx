@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { addBudget } from '../../api/budgets'
 import { getCategories, type Category } from '../../api/categories'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   isOpen: boolean
@@ -67,6 +68,8 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }: Props) {
     setCategoryId(id)
   }
 
+  useBodyScrollLock(isOpen)
+
   if (!isOpen) return null
 
   async function handleSubmit() {
@@ -100,28 +103,37 @@ export default function AddBudgetModal({ isOpen, onClose, onSuccess }: Props) {
       <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
         <h2 className={titleClass}>Add Budget</h2>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          type="text"
-          placeholder="Budget Name"
-          className={inputClass}
-        />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Budget Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            type="text"
+            placeholder="Budget Name"
+            className={inputClass}
+          />
+        </div>
 
-        <input
-          value={amount ?? ''}
-          onChange={(e) => setAmount(e.target.value === '' ? null : Number(e.target.value))}
-          type="number"
-          placeholder="Spending Limit"
-          className={inputClass}
-        />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Spending Limit</label>
+          <input
+            value={amount ?? ''}
+            onChange={(e) => setAmount(e.target.value === '' ? null : Number(e.target.value))}
+            type="number"
+            placeholder="Spending Limit"
+            className={inputClass}
+          />
+        </div>
 
-        <select value={period} onChange={(e) => setPeriod(e.target.value)} className={inputClass}>
-          <option value="Weekly">Weekly</option>
-          <option value="Monthly">Monthly</option>
-          <option value="Yearly">Yearly</option>
-          <option value="Custom">Custom</option>
-        </select>
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Period</label>
+          <select value={period} onChange={(e) => setPeriod(e.target.value)} className={inputClass}>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Yearly">Yearly</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
 
         <div className="flex items-center gap-3">
           <div className="flex flex-col gap-1 flex-1">

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { addGoal } from '../../api/goals'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, chipClass } from './modalTheme'
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
   isOpen: boolean
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function AddGoalModal({ isOpen, onClose, onSuccess, accounts }: Props) {
+  const today = new Date().toISOString().split('T')[0]
   const [name, setName] = useState('')
   const [targetAmount, setTargetAmount] = useState<number | null>(null)
   const [targetDate, setTargetDate] = useState<string | null>(null)
@@ -17,6 +19,8 @@ export default function AddGoalModal({ isOpen, onClose, onSuccess, accounts }: P
   const priority = 0
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useBodyScrollLock(isOpen)
 
   if (!isOpen) return null
 
@@ -56,21 +60,27 @@ export default function AddGoalModal({ isOpen, onClose, onSuccess, accounts }: P
       <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
         <h2 className={titleClass}>Add New Goal</h2>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          type="text"
-          placeholder="Goal Name"
-          className={inputClass}
-        />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Goal Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            type="text"
+            placeholder="Goal Name"
+            className={inputClass}
+          />
+        </div>
 
-        <input
-          value={targetAmount ?? ''}
-          onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
-          type="number"
-          placeholder="Target Amount"
-          className={inputClass}
-        />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Target Amount</label>
+          <input
+            value={targetAmount ?? ''}
+            onChange={(e) => setTargetAmount(e.target.value === '' ? null : Number(e.target.value))}
+            type="number"
+            placeholder="Target Amount"
+            className={inputClass}
+          />
+        </div>
 
         <div className="flex flex-col gap-1">
           <label className={labelClass}>Target Date</label>
@@ -78,6 +88,7 @@ export default function AddGoalModal({ isOpen, onClose, onSuccess, accounts }: P
             value={targetDate || ''}
             onChange={(e) => setTargetDate(e.target.value || null)}
             type="date"
+            min={today}
             className={inputClass}
           />
         </div>

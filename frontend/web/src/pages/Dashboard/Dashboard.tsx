@@ -78,9 +78,11 @@ export default function Dashboard() {
 
       <hr className="border-line my-12" />
 
-      <div className="grid grid-cols-2 gap-14">
-        <RecentTransactions transactions={transactions} />
-        <div className="pl-14 border-l border-line">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
+        <div className="order-2 md:order-1">
+          <RecentTransactions transactions={transactions} />
+        </div>
+        <div className="order-1 pb-10 border-b border-line md:order-2 md:pb-0 md:pl-14 md:border-b-0 md:border-l">
           <BudgetList budgets={budgets} onBudgetAdded={fetchBudgets} />
         </div>
       </div>
