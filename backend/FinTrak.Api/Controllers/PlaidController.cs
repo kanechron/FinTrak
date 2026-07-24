@@ -237,20 +237,14 @@ namespace FinTrak.Api.Controllers
                     .ToDictionaryAsync(a => a.PlaidAccountId, ct);
 
 
-                // Handle added transactions
-                foreach (var t in response.Added)
+                (Category? category, Category? categoryDetailed) ResolveCategories(string? name, Going.Plaid.Entity.PersonalFinanceCategory? personalFinanceCategory)
                 {
-
-                    existingTransactions.TryGetValue(t.TransactionId!, out var existing);
-
-                    accounts.TryGetValue(t.AccountId!, out var account);
-
-                    var categoryName = t.Name?.ToLower().Contains("deposit") == true
+                    var categoryName = name?.ToLower().Contains("deposit") == true
                         ? "INCOME"
-                        : t.PersonalFinanceCategory?.Primary ?? string.Empty;
-                    var detailedCategoryName = t.Name?.ToLower().Contains("deposit") == true
+                        : personalFinanceCategory?.Primary ?? string.Empty;
+                    var detailedCategoryName = name?.ToLower().Contains("deposit") == true
                         ? string.Empty
-                        : t.PersonalFinanceCategory?.Detailed ?? string.Empty;
+                        : personalFinanceCategory?.Detailed ?? string.Empty;
 
                     Category? category = null;
                     if (!string.IsNullOrEmpty(categoryName))
@@ -273,6 +267,19 @@ namespace FinTrak.Api.Controllers
                             categoryCache[detailedCategoryName] = categoryDetailed;
                         }
                     }
+
+                    return (category, categoryDetailed);
+                }
+
+                // Handle added transactions
+                foreach (var t in response.Added)
+                {
+
+                    existingTransactions.TryGetValue(t.TransactionId!, out var existing);
+
+                    accounts.TryGetValue(t.AccountId!, out var account);
+
+                    var (category, categoryDetailed) = ResolveCategories(t.Name, t.PersonalFinanceCategory);
 
                     if (existing != null)
                     {
@@ -320,10 +327,14 @@ namespace FinTrak.Api.Controllers
 
                     if (existing == null) continue;
 
+                    var (category, categoryDetailed) = ResolveCategories(t.Name, t.PersonalFinanceCategory);
+
                     existing.Amount = t.Amount;
                     existing.IsPending = t.Pending!.Value;
                     existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
                     existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
+                    existing.CategoryId = category?.Id;
+                    existing.CategoryDetailedId = categoryDetailed?.Id;
                 }
 
 
