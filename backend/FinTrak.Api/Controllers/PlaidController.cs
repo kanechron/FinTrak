@@ -10,6 +10,8 @@ using System.Text.RegularExpressions;
 using FinTrak.Core.Utilities;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json.Serialization;
+using FinTrak.Core.Interfaces;
+using FinTrak.Infrastructure.Services;
 
 namespace FinTrak.Api.Controllers
 {
@@ -24,14 +26,11 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("plaid")]
     [Authorize]
-    public class PlaidController : ControllerBase
+    public class PlaidController(FinTrakDbContext db, ISyncRaceControlService sync) : ControllerBase
     {
-        private readonly FinTrakDbContext _db;
+        private readonly FinTrakDbContext _db = db;
+        private readonly ISyncRaceControlService _sync = sync;
 
-        public PlaidController(FinTrakDbContext db)
-        {
-            _db = db;
-        }
 
         private Guid GetUserId() =>
             Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -175,6 +174,7 @@ namespace FinTrak.Api.Controllers
         [EnableRateLimiting("expensive")]
         public async Task<IActionResult> Sync([FromServices] PlaidClient plaid, CancellationToken ct)
         {
+            
             var userId = GetUserId();
             var items = await _db.PlaidItems
                 .Where(p => p.UserId == userId)
@@ -186,6 +186,7 @@ namespace FinTrak.Api.Controllers
 
             foreach (var item in items)
             {
+                using var _ = await _sync.AcquireAsync(item.Id, ct);
                 await SyncItemAsync(item, plaid, categoryCache, ct);
             }
 
@@ -472,6 +473,7 @@ namespace FinTrak.Api.Controllers
 
             var categoryCache = (await _db.Categories.ToListAsync(ct))
                 .ToDictionary(c => c.Name, c => c);
+            using var _ = await _sync.AcquireAsync(item!.Id, ct);
             await SyncItemAsync(item!, plaid, categoryCache, ct);
 
             return Ok();
