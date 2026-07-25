@@ -102,6 +102,7 @@ builder.Services.AddScoped<IBillDetectionService, BillDetectionService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IAccountManagementService, DeleteUserAccountService>();
 
+builder.Services.AddSingleton<ISyncRaceControlService, SyncRaceControlService>();
 
 
 
@@ -116,7 +117,6 @@ builder.Services.AddScoped<IGoalRepository, GoalRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IAccountReactivationRepository, UserRepostory>();
-
 
 
 // -------------------------------------------------------------------------
