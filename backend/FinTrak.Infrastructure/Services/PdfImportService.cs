@@ -78,7 +78,9 @@ namespace FinTrak.Infrastructure.Services
             if (imported == null || imported.Count == 0)
                 return 0;
 
-            var categoryCache = (await _db.Categories.ToListAsync()).ToDictionary(c => c.Name, c => c);
+            var categoryCache = (await _db.Categories.ToListAsync())
+                .GroupBy(c => c.Name)
+                .ToDictionary(g => g.Key, g => g.First());
 
             foreach (var t in imported)
             {

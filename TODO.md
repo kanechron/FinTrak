@@ -1,6 +1,7 @@
 # FinTrak — TODO
 
 ## Bugs / Stability
+- [x] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
 - [ ] **Retire the per-PlaidItem SemaphoreSlim sync lock** — added to fix a race condition where overlapping sync triggers (manual click + webhook, or two rapid manual clicks) for the same PlaidItem could both read the same stale cursor and double-insert transactions. This lock only coordinates within a single process/container. It silently stops working the moment sync is triggered from outside the main backend process — e.g. a scheduled auto-sync moved to its own worker/container, a queue consumer, or horizontal scaling to multiple backend replicas. If any of that happens, replace it with a DB-level mechanism (Postgres advisory lock, or an atomic claim via conditional UPDATE on PlaidItems) that's visible across processes.
 
 
