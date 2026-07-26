@@ -11,12 +11,12 @@ const features = [
   },
   {
     title: 'Visual Reports',
-    desc: 'Spending broken down by category, month, and cash flow — all interactive.',
+    desc: 'Spending broken down by category, month, and cash flow, all interactive.',
     preview: ReportsPreview,
   },
   {
     title: 'Auto-Detected Bills',
-    desc: 'Recurring charges are spotted automatically — just confirm or deny each one.',
+    desc: 'Recurring charges are spotted automatically, just confirm or deny each one.',
     preview: BillsPreview,
   },
   {
@@ -134,7 +134,7 @@ export default function Login() {
             </svg>
           </button>
         </section>
-
+            
         {/* — About — */}
         <section
           ref={aboutRef}
