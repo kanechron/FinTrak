@@ -1,19 +1,15 @@
 # FinTrak — TODO
 
 ## Bugs / Stability
-- [x] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
 - [ ] **Retire the per-PlaidItem SemaphoreSlim sync lock** — added to fix a race condition where overlapping sync triggers (manual click + webhook, or two rapid manual clicks) for the same PlaidItem could both read the same stale cursor and double-insert transactions. This lock only coordinates within a single process/container. It silently stops working the moment sync is triggered from outside the main backend process — e.g. a scheduled auto-sync moved to its own worker/container, a queue consumer, or horizontal scaling to multiple backend replicas. If any of that happens, replace it with a DB-level mechanism (Postgres advisory lock, or an atomic claim via conditional UPDATE on PlaidItems) that's visible across processes.
 
 
  
 ## Transactions
-- [x] **Search & filter** — filter by name, category, amount, date, or any metric
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
-- [x] **Separate categories** — all categories appear in the same dropdown under the Add Transaction modal
 - [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 - [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
 - [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
-- [x] **Remove Categories column** — dashboard transactions table (RecentTransactions.tsx) shows a Categories column that shouldn't be there
 - [ ] **De-normalize merchant names** — normalized names are stored all-lowercase; convert to Title Case for display
 
 ## Bills
@@ -23,7 +19,6 @@
 - [ ] **Bill history quick-hide** — when the bill history dropdown is expanded, add a quick collapse button at the bottom of the transaction list so users don't have to scroll back up to the 3-dot menu to hide it
 
 ## Reports
-- [x] **Clickable chart segments** — clicking a category slice or bar navigates to the transactions that make it up
 - [ ] **Projected monthly outcome** — estimated income (detected from pay period frequency) minus confirmed bills; designed to give a directional picture of future financial health, not exact figures
 - [ ] **Date range picker** — let users scope reports to a custom date range
 - [ ] **Net worth snapshot** — account balances (assets) minus outstanding bills (liabilities)
