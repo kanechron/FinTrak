@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { getTransactions, type Transaction } from '../../api/transactions'
 import { formatAmount } from '../../utils/format'
 import { truncate } from '../../utils/truncate'
-import EditTransactionModal from '../../components/modals/EditTransactionModal'
+// import EditTransactionModal from '../../components/modals/EditTransactionModal' — edit temporarily disabled
 import { getParentCategories, type Category } from '../../api/categories'
 import { FilterIcon } from '../../components/common/icons'
 
@@ -14,7 +14,7 @@ export default function Transactions() {
   // — UI state
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  // const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null) — edit temporarily disabled
 
   // — Filters
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set())

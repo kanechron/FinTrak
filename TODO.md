@@ -43,7 +43,8 @@
 
 ## Testing
 - [ ] **Integration tests** — xUnit + `WebApplicationFactory`; cover PDF import dedup logic and Plaid sync at minimum
-- [ ] **CI pipeline** — GitHub Actions workflow that builds and runs tests on every push to `main`
+- [x] **CI pipeline** — GitHub Actions workflow that builds and runs tests on every push to `main`
+- [ ] **Frontend lint cleanup** — ~23 pre-existing ESLint errors across Reports.tsx, Transactions.tsx, Welcome.tsx (unused vars, `react-hooks/set-state-in-effect`, `react-hooks/static-components`); lint currently runs in CI as non-blocking (`continue-on-error`) until this is cleared, then it should become a hard gate
 
 ## Platform
 - [ ] **Mobile web** — responsive/mobile-optimized version of the web app

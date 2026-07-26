@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Code-coverage collector, currently unused: run `dotnet test --collect:"XPlat Code Coverage"` to actually generate a report -->
+    <!-- Code coverage collector, currently unused: run "dotnet test" with the collect flag set to XPlat Code Coverage to actually generate a report -->
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
