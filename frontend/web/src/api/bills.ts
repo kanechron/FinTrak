@@ -1,8 +1,10 @@
 import { api } from './client'
+import { type Transaction } from './transactions'
 
 export interface Bill {
   id: string
   name: string
+  displayName: string
   amount: number
   frequency: string
   dueDay: number | null
@@ -25,8 +27,14 @@ export interface TransactionGroup {
   categoryId: string | null
 }
 
+
+
 export function getBills(): Promise<Bill[]> {
   return api.get<Bill[]>('/bills/get-bills')
+}
+
+export function getBillsHistory(id: string): Promise<Transaction[]> {
+  return api.get<Transaction[]>(`/bills/get-bills-history?billId=${id}`)
 }
 
 // export function getSuggestions(): Promise<TransactionGroup[][]> {

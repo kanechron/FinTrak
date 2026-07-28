@@ -299,7 +299,7 @@ namespace FinTrak.Api.Controllers
                             AccountId = account?.Id ?? Guid.Empty,
                             PlaidTransactionId = t.TransactionId,
                             Amount = t.Amount,
-                            MerchantNameNormalized = t.Name.NormalizeName(),
+                            MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName(),
                             MerchantNameRaw = t.Name ?? string.Empty,
                             MerchantName = t.MerchantName ?? t.Name ?? string.Empty,
                             Date = t.AuthorizedDate ?? t.Date,

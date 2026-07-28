@@ -4,7 +4,8 @@
 
 >**Status & License**  
 ![Status](https://img.shields.io/badge/Status-Alpha-orange?style=for-the-badge)  
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)  
+![CI](https://github.com/kanechron/FinTrak/actions/workflows/ci.yml/badge.svg)
 
 >**Platform**  
 ![Web](https://img.shields.io/badge/Web-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
@@ -22,6 +23,8 @@ With the economy so volatile it's difficult to reliably track money, but it's ev
 
 It was also built out of a desire to own the stack entirely. Most finance apps send your data to third-party servers without full transparency. With FinTrak, your financial data stays on infrastructure you control. Beyond the personal use case, it's been an exercise in real-world app deployment and backend architecture; designed to be something worth maintaining, not just a demo.
 
+> **Disclaimer:** FinTrak is a personal project, not a financial advisory tool. Data shown is for informational purposes only and should not be taken as financial advice.
+
 ## Features
 
 - **Automatic bank sync** via Plaid — transactions, balances, and accounts stay current with cursor-based incremental sync
@@ -33,6 +36,7 @@ It was also built out of a desire to own the stack entirely. Most finance apps s
 - **PDF bank statement import** — upload a PDF and Claude Haiku extracts and imports transactions automatically
 - **Google OAuth** — PKCE flow, HTTP-only cookie auth, silent token refresh
 - **Inactivity logout** — automatic session timeout after 30 minutes of inactivity
+- **Mobile-responsive UI** — full mobile web experience across every page, with touch-friendly navigation, bottom-sheet modals, and inline-expanding filters
 
 ## Tech Stack
 
@@ -43,7 +47,7 @@ It was also built out of a desire to own the stack entirely. Most finance apps s
 | Database | PostgreSQL, EF migrations |
 | Auth | Google OAuth 2.0 (PKCE flow), HTTP-only cookie sessions |
 | Bank data | Plaid API (production) |
-| AI/ML | FuzzySharp (merchant name matching), Claude Haiku (PDF import + low-confidence fallback) |
+| AI/ML | Claude Haiku (PDF bank statement import) |
 | Export | MiniExcel (CSV + XLSX) |
 | Logging | Serilog |
 | Drag & drop | @dnd-kit |
@@ -59,6 +63,8 @@ It was also built out of a desire to own the stack entirely. Most finance apps s
 - **Health checks** — `/health` endpoint backed by a live Npgsql probe; wired to Docker Compose `healthcheck` for container self-healing
 - **Silent refresh middleware** — transparently renews expired auth cookies using stored refresh tokens, no user interaction required
 - **Error handling middleware** — all unhandled exceptions return structured JSON; model binding errors surface field-level detail
+- **Per-item sync locking** — a keyed semaphore prevents overlapping sync triggers (manual sync + webhook, or rapid repeat syncs) for the same bank connection from racing and double-inserting transactions
+- **CI pipeline** — GitHub Actions builds and runs the test suite on every push and pull request against `main`
 
 ## Running Locally
 
@@ -89,6 +95,12 @@ It was also built out of a desire to own the stack entirely. Most finance apps s
    ```
 7. Open `https://localhost:5173`
 
+### Running Tests
+
+```
+dotnet test backend/FinTrak.Tests/FinTrak.Tests.csproj
+```
+
 ### Docker (production-style)
 
 ```
@@ -103,14 +115,11 @@ Alpha — core features are functional with real bank data (NFCU production conn
 
 The ultimate purpose of FinTrak is on-the-go financial awareness. The next major additions planned are:
 
-- **Mobile web** — responsive layout optimized for phone browsers
 - **iOS app** — React Native port for the App Store
 - **Configurable settings** — per-user preferences (transaction page size, inactivity timeout, etc.)
 - **In-app email** — share reports, graphs, and exports directly from the app
-- **Transaction search & filter** — filter by merchant, category, amount, date range
 - **Rules engine** — automatically categorize transactions by merchant name
-- **Integration tests** — xUnit + WebApplicationFactory
-- **CI pipeline** — GitHub Actions on push to main
+- **Integration tests** — xUnit + WebApplicationFactory, covering PDF import and Plaid sync end-to-end
 
 ---
 

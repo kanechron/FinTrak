@@ -39,6 +39,7 @@ namespace FinTrak.Core.BackgroundServices
                             {
                                 UserId = userId,
                                 Name = group.MerchantName,
+                                DisplayName = group.MerchantName,
                                 Amount = group.Amounts.FirstOrDefault() ?? 0m,
                                 Status = BillStatus.Pending
                             }; 
