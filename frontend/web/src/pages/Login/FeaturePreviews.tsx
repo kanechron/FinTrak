@@ -6,7 +6,15 @@ import type { ReactNode } from 'react'
 function Frame({ children }: { children: ReactNode }) {
   return (
     <svg viewBox="0 0 240 150" className="w-full h-auto">
-      <rect x="0.5" y="0.5" width="239" height="149" rx="12" fill="var(--card)" stroke="var(--line)" />
+      <rect
+        x="0.5"
+        y="0.5"
+        width="239"
+        height="149"
+        rx="12"
+        fill="var(--card)"
+        stroke="var(--line)"
+      />
       {children}
     </svg>
   )
@@ -21,13 +29,27 @@ export function SyncPreview() {
   return (
     <Frame>
       <circle cx="24" cy="26" r="9" fill="var(--s1)" />
-      <path d="M20 26a4 4 0 0 1 7-2.6M28 26a4 4 0 0 1-7 2.6" stroke="white" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <path
+        d="M20 26a4 4 0 0 1 7-2.6M28 26a4 4 0 0 1-7 2.6"
+        stroke="white"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinecap="round"
+      />
       <rect x="40" y="21" width="70" height="6" rx="3" fill="var(--ink-3)" />
       {rows.map((r, i) => (
         <g key={i} transform={`translate(20, ${52 + i * 26})`}>
           <rect x="0" y="0" width={r.name} height="7" rx="3" fill="var(--ink-2)" />
           <rect x="0" y="11" width={r.meta} height="5" rx="2.5" fill="var(--ink-3)" opacity="0.6" />
-          <rect x={200 - r.bal - 20} y="2" width={r.bal} height="8" rx="4" fill={r.color} opacity="0.8" />
+          <rect
+            x={200 - r.bal - 20}
+            y="2"
+            width={r.bal}
+            height="8"
+            rx="4"
+            fill={r.color}
+            opacity="0.8"
+          />
         </g>
       ))}
     </Frame>
@@ -78,7 +100,15 @@ export function ReportsPreview() {
         {segs.map((s, i) => (
           <g key={i} transform={`translate(0, ${i * 22})`}>
             <rect width="8" height="8" rx="2" fill={s.color} />
-            <rect x="14" y="1.5" width={70 - i * 8} height="5" rx="2.5" fill="var(--ink-3)" opacity="0.7" />
+            <rect
+              x="14"
+              y="1.5"
+              width={70 - i * 8}
+              height="5"
+              rx="2.5"
+              fill="var(--ink-3)"
+              opacity="0.7"
+            />
           </g>
         ))}
       </g>
@@ -152,8 +182,27 @@ export function BillsPreview() {
         <g key={i} transform={`translate(20, ${28 + i * 38})`}>
           <rect width={r.name} height="7" rx="3" fill="var(--ink-2)" />
           <rect y="11" width={r.amt} height="5" rx="2.5" fill="var(--ink-3)" opacity="0.6" />
-          <rect x="150" y="1" width="32" height="12" rx="6" fill="none" stroke="var(--good)" strokeWidth="1.2" />
-          <rect x="188" y="1" width="24" height="12" rx="6" fill="none" stroke="var(--ink-3)" strokeWidth="1.2" opacity="0.6" />
+          <rect
+            x="150"
+            y="1"
+            width="32"
+            height="12"
+            rx="6"
+            fill="none"
+            stroke="var(--good)"
+            strokeWidth="1.2"
+          />
+          <rect
+            x="188"
+            y="1"
+            width="24"
+            height="12"
+            rx="6"
+            fill="none"
+            stroke="var(--ink-3)"
+            strokeWidth="1.2"
+            opacity="0.6"
+          />
         </g>
       ))}
     </Frame>

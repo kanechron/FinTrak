@@ -22,6 +22,3 @@ export const axisStyle = { fill: 'var(--ink-3)', fontSize: 11 }
 export const gridStroke = 'var(--grid)'
 export const baselineStroke = 'var(--base)'
 export const legendStyle = { fontSize: 11, color: 'var(--ink-3)' }
-
-export const selectClass =
-  'bg-card border border-line rounded-lg text-xs text-ink-2 px-2 py-1 focus:outline-none focus:border-line-2'

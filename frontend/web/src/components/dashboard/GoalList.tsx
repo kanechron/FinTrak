@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { updateGoal, type Goal } from '../../api/goals'
 import { deleteGoal } from '../../api/goals'
-import AddGoalModal from '../modals/AddGoalModal'
-import EditGoalModal from '../modals/EditGoalModal'
+import GoalFormModal from '../modals/GoalFormModal'
 import SortableGoal from './SortableGoal'
 import {
   DndContext,
@@ -38,7 +37,7 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
   // so a tap-and-scroll on the handle isn't immediately hijacked as a drag.
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   )
 
   // Fall back to prop data before the first fetch completes
@@ -76,27 +75,20 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
           <span className="text-xs text-ink-3">Drag to reorder by priority</span>
         )}
       </div>
-      <AddGoalModal
-        isOpen={isGoalModalOpen}
-        onClose={() => setIsGoalModalOpen(false)}
+      <GoalFormModal
+        isOpen={isGoalModalOpen || !!selectedGoal}
+        goal={selectedGoal ?? undefined}
+        onClose={() => {
+          setIsGoalModalOpen(false)
+          setSelectedGoal(null)
+        }}
         onSuccess={() => {
           setIsGoalModalOpen(false)
+          setSelectedGoal(null)
           onGoalAdded()
         }}
         accounts={accounts}
       />
-      {selectedGoal && (
-        <EditGoalModal
-          goal={selectedGoal}
-          isOpen={!!selectedGoal}
-          onClose={() => setSelectedGoal(null)}
-          onSuccess={() => {
-            setSelectedGoal(null)
-            onGoalAdded()
-          }}
-          accounts={accounts}
-        />
-      )}
       {displayGoals.length === 0 ? (
         <p className="text-sm text-ink-3 text-center py-4">
           No goals yet — add one to get started.

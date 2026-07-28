@@ -59,11 +59,11 @@ export default function Login() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText('contact@fintrak.org');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText('contact@fintrak.org')
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy!', err);
+      console.error('Failed to copy!', err)
     }
   }
 
@@ -71,9 +71,7 @@ export default function Login() {
     <div className="min-h-dvh bg-page text-ink">
       <div className="h-dvh overflow-y-auto no-scrollbar">
         {/* — Sign in — */}
-        <section
-          className="relative min-h-dvh flex flex-col items-center justify-center px-6"
-        >
+        <section className="relative min-h-dvh flex flex-col items-center justify-center px-6">
           <div className="w-full max-w-80 flex flex-col items-center">
             <span className="text-xl font-semibold tracking-tight text-ink mb-7">FinTrak</span>
             <p className="text-sm text-ink-2 text-center mb-6">Sign in to access your dashboard</p>
@@ -134,7 +132,7 @@ export default function Login() {
             </svg>
           </button>
         </section>
-            
+
         {/* — About — */}
         <section
           ref={aboutRef}
@@ -145,10 +143,16 @@ export default function Login() {
 
             <div className="flex flex-col gap-4">
               <p className="text-[13.5px] leading-relaxed text-ink-2">
-                It's rare that we directly interact with our money anymore. Between credit and electronic payments, spending has lost its weight, and with it, the awareness that comes from physically parting with our cash. FinTrak keeps track of where it actually goes: every transaction laid out, trends in how you spend, and goals or limits you set to stay on track.
+                It's rare that we directly interact with our money anymore. Between credit and
+                electronic payments, spending has lost its weight, and with it, the awareness that
+                comes from physically parting with our cash. FinTrak keeps track of where it
+                actually goes: every transaction laid out, trends in how you spend, and goals or
+                limits you set to stay on track.
               </p>
               <p className="text-[13.5px] leading-relaxed text-ink-2">
-                Built around knowing exactly where your data comes from and where it's going, FinTrak is regularly receiving new features and refinements, all in order to give you the clearest possible picture of your spending.
+                Built around knowing exactly where your data comes from and where it's going,
+                FinTrak is regularly receiving new features and refinements, all in order to give
+                you the clearest possible picture of your spending.
               </p>
             </div>
 
@@ -162,25 +166,23 @@ export default function Login() {
                 </span>
               ))}
             </div>
-            
+
             <p className="text-xs font-medium text-s3 bg-s3/15 text-center mt-5 max-w-sm rounded-full px-4 py-2">
               Interested in contributing? Reach out, or visit the GitHub repo for more information.
             </p>
 
             <div className="flex justify-center gap-3 mt-4">
               <a
-                
                 href="https://github.com/kanechron/FinTrak"
                 className="text-xs font-semibold text-ink-2 border border-line-2 rounded-full px-4 py-1.5 hover:text-ink hover:border-ink-3 transition-colors"
               >
                 GitHub
               </a>
               <button
-                
                 onClick={handleCopy}
                 className="text-xs font-semibold text-ink-2 border border-line-2 rounded-full px-4 py-1.5 hover:text-ink hover:border-ink-3 transition-colors"
               >
-                {copied ? "Copied to clipboard" : "Email"}
+                {copied ? 'Copied to clipboard' : 'Email'}
               </button>
             </div>
           </div>

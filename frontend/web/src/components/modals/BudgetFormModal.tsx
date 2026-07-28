@@ -1,14 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
-import { updateBudget, type Budget } from '../../api/budgets'
+import { addBudget, updateBudget, type Budget } from '../../api/budgets'
 import { getCategories, type Category } from '../../api/categories'
-import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
+import {
+  overlayClass,
+  cardClass,
+  titleClass,
+  labelClass,
+  errorClass,
+  inputClass,
+  primaryButtonClass,
+  toggleTrackClass,
+  toggleThumbClass,
+} from './modalTheme'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
 interface Props {
-  budget: Budget
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  budget?: Budget
 }
 
 const formatName = (name: string) =>
@@ -17,46 +27,63 @@ const formatName = (name: string) =>
     .toLowerCase()
     .replace(/\b\w/g, (ch) => ch.toUpperCase())
 
-export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: Props) {
-  const [name, setName] = useState(budget.name)
-  const [amount, setAmount] = useState<number | null>(budget.amount)
-  const [period, setPeriod] = useState(budget.period)
-  const [startDate, setStartDate] = useState(budget.startDate)
-  const [endDate, setEndDate] = useState(budget.endDate || '')
-  const [isRecurring, setIsRecurring] = useState(budget.isRecurring)
+export default function BudgetFormModal({ isOpen, onClose, onSuccess, budget }: Props) {
+  const isEdit = !!budget
+
+  const [name, setName] = useState(budget?.name ?? '')
+  const [amount, setAmount] = useState<number | null>(budget?.amount ?? null)
+  const [period, setPeriod] = useState(budget?.period ?? 'Monthly')
+  const [startDate, setStartDate] = useState(budget?.startDate ?? '')
+  const [endDate, setEndDate] = useState(budget?.endDate || '')
+  const [isRecurring, setIsRecurring] = useState(budget?.isRecurring ?? false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [categoryId, setCategoryId] = useState<string | null>(budget.categoryId)
+  const [categoryId, setCategoryId] = useState<string | null>(budget?.categoryId ?? null)
   const [parentCategoryId, setParentCategoryId] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [recurringDay, setRecurringDay] = useState(budget.recurringDate || 'first')
+  const [recurringDay, setRecurringDay] = useState(budget?.recurringDate || 'first')
   const [recurringDayCustom, setRecurringDayCustom] = useState<number>(1)
 
   useEffect(() => {
+    if (!isOpen) return
     getCategories()
       .then(setCategories)
       .catch(() => {})
   }, [isOpen])
 
-  // Sync state when a different budget is opened
+  // Resync fields every time the modal opens, so closing without saving never leaves
+  // stale text for the next open — whether that's a fresh Add or reopening the same Edit.
   useEffect(() => {
-    setName(budget.name)
-    setAmount(budget.amount)
-    setPeriod(budget.period)
-    setStartDate(budget.startDate)
-    setEndDate(budget.endDate || '')
-    setIsRecurring(budget.isRecurring)
-    setCategoryId(budget.categoryId)
-    setRecurringDay(budget.recurringDate || 'first')
+    if (!isOpen) return
+    if (budget) {
+      setName(budget.name)
+      setAmount(budget.amount)
+      setPeriod(budget.period)
+      setStartDate(budget.startDate)
+      setEndDate(budget.endDate || '')
+      setIsRecurring(budget.isRecurring)
+      setCategoryId(budget.categoryId)
+      setRecurringDay(budget.recurringDate || 'first')
+    } else {
+      setName('')
+      setAmount(null)
+      setPeriod('Monthly')
+      setStartDate('')
+      setEndDate('')
+      setIsRecurring(false)
+      setCategoryId(null)
+      setParentCategoryId(null)
+      setRecurringDay('first')
+    }
     setError(null)
-  }, [budget])
+  }, [isOpen, budget])
 
   // Derive which parent category budget.categoryId belongs to, once categories are loaded
   useEffect(() => {
-    if (categories.length === 0) return
+    if (!budget || categories.length === 0) return
     const cat = categories.find((c) => c.id === budget.categoryId)
     setParentCategoryId(cat ? (cat.detailId ?? cat.id) : null)
-  }, [categories, budget.categoryId])
+  }, [categories, budget])
 
   const parentCategories = useMemo(
     () =>
@@ -93,27 +120,33 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
 
   if (!isOpen) return null
 
-  const handleSubmit = async () => {
+  async function handleSubmit() {
     if (!name || !amount || amount <= 0 || !startDate) {
       setError('Name, amount, and start date are required.')
       return
     }
     setIsSubmitting(true)
+    setError(null)
     try {
-      await updateBudget(budget.id, {
+      const payload = {
         name,
-        amount: amount!,
+        amount,
         period,
         startDate,
         endDate: period === 'Custom' ? endDate : null,
         isRecurring,
         categoryId,
         recurringDate: isRecurring ? recurringDay : null,
-      })
+      }
+      if (isEdit) {
+        await updateBudget(budget.id, payload)
+      } else {
+        await addBudget(payload)
+      }
       onSuccess()
       onClose()
     } catch {
-      setError('Failed to update budget.')
+      setError(isEdit ? 'Failed to update budget.' : 'Failed to save budget.')
     } finally {
       setIsSubmitting(false)
     }
@@ -122,16 +155,20 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
   return (
     <div className={overlayClass} onClick={onClose}>
       <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h2 className={titleClass}>Edit Budget</h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="text-ink-3 hover:text-ink transition-colors text-lg leading-none"
-          >
-            ✕
-          </button>
-        </div>
+        {isEdit ? (
+          <div className="flex items-center justify-between">
+            <h2 className={titleClass}>Edit Budget</h2>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="text-ink-3 hover:text-ink transition-colors text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <h2 className={titleClass}>Add Budget</h2>
+        )}
 
         <div className="flex flex-col gap-1">
           <label className={labelClass}>Budget Name</label>
@@ -198,6 +235,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
                 className={`w-16 ${inputClass}`}
               />
             )}
+
             <select
               value={recurringDay}
               onChange={(e) => setRecurringDay(e.target.value)}
@@ -228,7 +266,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
           <div className="flex flex-col gap-1">
             <label className={labelClass}>End Date</label>
             <input
-              value={typeof endDate === 'string' ? endDate : ''}
+              value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               type="date"
               className={inputClass}
@@ -273,7 +311,7 @@ export default function EditBudgetModal({ budget, isOpen, onClose, onSuccess }: 
         {error && <p className={errorClass}>{error}</p>}
 
         <button onClick={handleSubmit} disabled={isSubmitting} className={primaryButtonClass}>
-          {isSubmitting ? 'Saving...' : 'Save Changes'}
+          {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Budget'}
         </button>
       </div>
     </div>

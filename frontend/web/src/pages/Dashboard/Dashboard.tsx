@@ -1,5 +1,4 @@
 import BalanceCard from '../../components/dashboard/BalanceCard'
-// import ProgressWidget from '../../components/dashboard/ProgressWidget'
 import RecentTransactions from '../../components/dashboard/RecentTransactions'
 import BudgetList from '../../components/dashboard/BudgetList'
 import GoalList from '../../components/dashboard/GoalList'
@@ -41,6 +40,9 @@ export default function Dashboard() {
     fetchData()
   }, [])
 
+  // Accounts exist but no transactions usually means the bank was just linked and the
+  // initial historical sync hasn't run (or completed) yet — trigger it automatically
+  // once on load rather than showing an empty dashboard until the user hits Sync manually.
   useEffect(() => {
     if (!loaded) return
     if (accounts.length > 0 && transactions.length === 0) {
@@ -60,6 +62,8 @@ export default function Dashboard() {
     setBudgets(budgets)
   }
 
+  // Credit card / loan balances are negative (debt) and shouldn't reduce "available balance" —
+  // only positive (asset) balances count toward this total.
   const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
   if (error)
     return (

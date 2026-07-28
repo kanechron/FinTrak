@@ -20,7 +20,14 @@ interface Props {
   onClose: () => void
 }
 
-export default function CategoryDetailCarousel({ categories, from, to, onSliceClick, selectedId, onClose }: Props) {
+export default function CategoryDetailCarousel({
+  categories,
+  from,
+  to,
+  onSliceClick,
+  selectedId,
+  onClose,
+}: Props) {
   const [index, setIndex] = useState(0)
   const [detailCache, setDetailCache] = useState<
     Record<string, { id: string; name: string; amount: number }[]>
@@ -52,18 +59,30 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
   const current = categories[index]
   const data = detailCache[current?.id] ?? []
 
+  // Detailed subcategories don't always sum to the parent category's total — some
+  // transactions only ever get a parent category assigned, never a detailed one. The gap
+  // is shown as a synthetic "uncategorized" slice with id: '' (a sentinel, not a real
+  // category — the click handlers below check for it and refuse to navigate on it).
+  // 0.005 is a rounding-tolerance floor so cents-level float drift doesn't show a phantom sliver.
   const detailTotal = data.reduce((sum, d) => sum + d.amount, 0)
   const uncategorized = current.amount - detailTotal
 
   const displayData = [
+    // Detailed category names are stored as "PARENT_CHILD" (e.g. "FOOD_AND_DRINK_RESTAURANT") —
+    // strip the parent's prefix so the legend/tooltip shows just "Restaurant".
     ...data.map((d) => ({
       ...d,
       name: d.name.startsWith(current.name + '_') ? d.name.slice(current.name.length + 1) : d.name,
     })),
-    ...(uncategorized > 0.005 ? [{ id: '', name: formatName(current.name), amount: uncategorized }] : []),
+    ...(uncategorized > 0.005
+      ? [{ id: '', name: formatName(current.name), amount: uncategorized }]
+      : []),
   ]
 
-  const coloredData = displayData.map((item, i) => ({ ...item, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+  const coloredData = displayData.map((item, i) => ({
+    ...item,
+    fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+  }))
 
   return (
     <section>
@@ -109,7 +128,9 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
           <div className="relative shrink-0" style={{ width: 220, height: 220 }}>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[11px] uppercase tracking-wider text-ink-3">Spent</span>
-              <span className="text-lg font-bold text-ink mt-0.5">{formatAmount(current.amount)}</span>
+              <span className="text-lg font-bold text-ink mt-0.5">
+                {formatAmount(current.amount)}
+              </span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -148,7 +169,9 @@ export default function CategoryDetailCarousel({ categories, from, to, onSliceCl
               >
                 <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.fill }} />
                 <span className="flex-1 min-w-0 truncate text-ink-2">{formatName(d.name)}</span>
-                <span className="text-ink font-semibold tabular-nums">{formatAmount(d.amount)}</span>
+                <span className="text-ink font-semibold tabular-nums">
+                  {formatAmount(d.amount)}
+                </span>
               </button>
             ))}
           </div>
