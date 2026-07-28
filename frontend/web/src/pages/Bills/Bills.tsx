@@ -28,8 +28,6 @@ function BillSection({
   )
 }
 
-
-
 export default function Bills() {
   const [acceptedBills, setAcceptedBills] = useState<Bill[]>([])
   const [pendingBills, setPendingBills] = useState<Bill[]>([])
