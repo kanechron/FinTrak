@@ -27,6 +27,13 @@ namespace FinTrak.Api.Controllers
             return Ok(_mapper.Map<List<BillDto>>(bills));
         }
 
+        [HttpGet("get-bills-history")]
+        public async Task<IActionResult> GetBillsHistory([FromQuery] Guid billId)
+        {
+         var billHistory = await _repo.GetBillHistoryAsync(GetUserId(), billId);
+         return Ok(_mapper.Map<List<TransactionDto>>(billHistory));
+        }
+
         [HttpPost("add-bill")]
         public async Task<IActionResult> AddBill([FromBody] Bill bill, CancellationToken cancellationToken)
         {
@@ -38,6 +45,7 @@ namespace FinTrak.Api.Controllers
             {
                 UserId = GetUserId(),
                 Name = bill.Name,
+                DisplayName = bill.DisplayName,
                 Amount = bill.Amount,
                 CategoryId = bill.CategoryId,
                 Frequency = bill.Frequency,
@@ -45,7 +53,9 @@ namespace FinTrak.Api.Controllers
                 CustomDate = bill.CustomDate,
                 LastPaidDate = bill.LastPaidDate,
                 IsAutoPay = bill.IsAutoPay,
-                Status = bill.Status
+                // Manually-added bills are always Accepted — Pending is reserved for auto-detected suggestions
+                // awaiting confirmation (see BillsAutoDetectService), which don't go through this endpoint.
+                Status = BillStatus.Accepted
             };
             
             await _repo.AddAsync(newBill, cancellationToken);
@@ -60,6 +70,7 @@ namespace FinTrak.Api.Controllers
             if (existingBill.UserId != GetUserId()) return Forbid();
 
             existingBill.Name = !string.IsNullOrEmpty(updatedBill.Name) ? updatedBill.Name : existingBill.Name;
+            existingBill.DisplayName = !string.IsNullOrEmpty(updatedBill.DisplayName) ? updatedBill.DisplayName : existingBill.DisplayName;
             existingBill.Amount = updatedBill.Amount != 0 ? updatedBill.Amount : existingBill.Amount;
             existingBill.CategoryId = updatedBill.CategoryId != Guid.Empty ? updatedBill.CategoryId : existingBill.CategoryId;
             existingBill.Frequency = updatedBill.Frequency != 0 ? updatedBill.Frequency : existingBill.Frequency;

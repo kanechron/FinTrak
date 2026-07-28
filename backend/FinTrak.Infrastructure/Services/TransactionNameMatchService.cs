@@ -24,6 +24,5 @@ public class TransactionNameMatchService : ITransactionNameMatchService
                 .ExecuteUpdateAsync(t => t.SetProperty(x => x.CategoryId, request.CategoryId), cancellationToken);
             return updated;  
         }
-        // public record ApplyCategoryRequest(string MerchantName, Guid? CategoryId);
 }
 

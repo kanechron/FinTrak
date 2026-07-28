@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { addBill } from '../../api/bills'
 import { getCategories, type Category } from '../../api/categories'
+import { getTransactions, type Transaction } from '../../api/transactions'
+import { formatAmount } from '../../utils/format'
 import { overlayClass, cardClass, titleClass, labelClass, errorClass, inputClass, primaryButtonClass, toggleTrackClass, toggleThumbClass } from './modalTheme'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
 
@@ -11,7 +13,12 @@ interface Props {
 }
 
 export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
-  const [name, setName] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [matchedTransaction, setMatchedTransaction] = useState<Transaction | null>(null)
+  const [manualMode, setManualMode] = useState(false)
+  const [manualName, setManualName] = useState('')
   const [amount, setAmount] = useState<number | null>(null)
   const [frequency, setFrequency] = useState('Monthly')
   const [dueDay, setDueDay] = useState<number | null>(null)
@@ -23,10 +30,14 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (isOpen)
+    if (isOpen) {
       getCategories()
         .then(setCategories)
         .catch(() => {})
+      getTransactions()
+        .then(setTransactions)
+        .catch(() => {})
+    }
   }, [isOpen])
 
   useBodyScrollLock(isOpen)
@@ -36,9 +47,41 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   const showDueDay = ['Monthly', 'Quarterly', 'Yearly'].includes(frequency)
   const showCustomDate = frequency === 'Custom'
 
+  const searchResults =
+    !matchedTransaction && searchQuery.trim().length > 0
+      ? transactions
+          .filter((t) => t.merchant.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+          .slice(0, 8)
+      : []
+
+  function selectTransaction(t: Transaction) {
+    setMatchedTransaction(t)
+    setSearchQuery('')
+    setAmount(Math.abs(t.amount))
+  }
+
+  function clearMatch() {
+    setMatchedTransaction(null)
+    setSearchQuery('')
+  }
+
+  const matchName = manualMode ? manualName.trim() : matchedTransaction?.merchant ?? ''
+
   async function handleSubmit() {
-    if (!name || !amount || amount <= 0) {
-      setError('Name and amount are required.')
+    if (!displayName.trim()) {
+      setError('A display name is required.')
+      return
+    }
+    if (!matchName) {
+      setError(
+        manualMode
+          ? 'Enter a merchant name to match transactions against.'
+          : 'Select a transaction to match this bill against, or enter one manually.'
+      )
+      return
+    }
+    if (!amount || amount <= 0) {
+      setError('Amount is required.')
       return
     }
     if (showDueDay && !dueDay) {
@@ -53,7 +96,8 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
     setError(null)
     try {
       await addBill({
-        name,
+        name: matchName,
+        displayName: displayName.trim(),
         amount: amount!,
         frequency,
         dueDay: showDueDay ? dueDay : null,
@@ -73,7 +117,11 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
   }
 
   function resetForm() {
-    setName('')
+    setDisplayName('')
+    setSearchQuery('')
+    setMatchedTransaction(null)
+    setManualMode(false)
+    setManualName('')
     setAmount(null)
     setFrequency('Monthly')
     setDueDay(null)
@@ -97,13 +145,79 @@ export default function AddBillModal({ isOpen, onClose, onSuccess }: Props) {
           </button>
         </div>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          type="text"
-          placeholder="Bill Name"
-          className={inputClass}
-        />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Display Name</label>
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            type="text"
+            placeholder="e.g. Rent"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between">
+            <label className={labelClass}>Match Transaction</label>
+            <button
+              type="button"
+              onClick={() => {
+                setManualMode((m) => !m)
+                clearMatch()
+              }}
+              className="text-xs text-ink-3 hover:text-ink-2 transition-colors"
+            >
+              {manualMode ? 'Search transactions instead' : "Can't find it? Enter manually"}
+            </button>
+          </div>
+
+          {manualMode ? (
+            <input
+              value={manualName}
+              onChange={(e) => setManualName(e.target.value)}
+              type="text"
+              placeholder="Merchant name as it appears on your bank statement"
+              className={inputClass}
+            />
+          ) : matchedTransaction ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-raised px-3 py-2">
+              <span className="text-sm text-ink truncate">{matchedTransaction.merchant}</span>
+              <button
+                type="button"
+                onClick={clearMatch}
+                aria-label="Clear matched transaction"
+                className="text-ink-3 hover:text-ink transition-colors text-xs shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                type="text"
+                placeholder="Search your transactions..."
+                className={inputClass}
+              />
+              {searchResults.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-line bg-card shadow-xl">
+                  {searchResults.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => selectTransaction(t)}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-raised transition-colors"
+                    >
+                      <span className="truncate text-ink-2">{t.merchant}</span>
+                      <span className="text-ink-3 tabular-nums shrink-0">{formatAmount(-t.amount)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         <input
           value={amount ?? ''}
