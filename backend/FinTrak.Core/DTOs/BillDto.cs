@@ -6,6 +6,7 @@ namespace FinTrak.Core.DTOs
     {
         public Guid Id { get; init; }
         public string Name { get; init; } = "";
+        public string DisplayName { get; init; } = "";
         public decimal Amount { get; init; }
         public Guid? CategoryId { get; init; }
         public string? Category { get; init; }

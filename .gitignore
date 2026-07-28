@@ -4,6 +4,7 @@ node_modules/
 .cloudflared/cert.pem
 
 # Claude Code local settings
+.claude
 .claude/settings.local.json
 CLAUDE.md
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { getBills, deleteBill, type Bill, updateBill } from '../../api/bills'
+import { getBills, getBillsHistory, deleteBill, type Bill, updateBill } from '../../api/bills'
 import { formatAmount } from '../../utils/format'
 import AddBillModal from '../../components/modals/AddBillModal'
 import EditBillModal from '../../components/modals/EditBillModal'
-import { getTransactionsByCategory, type Transaction } from '../../api/transactions'
+import type { Transaction } from '../../api/transactions'
 import RowMenu from '../../components/common/RowMenu'
 
 function dueDateLabel(bill: Bill): string {
@@ -69,6 +69,8 @@ function monthlyEquivalent(bill: Bill): number {
   }
 }
 
+
+
 export default function Bills() {
   const [acceptedBills, setAcceptedBills] = useState<Bill[]>([])
   const [pendingBills, setPendingBills] = useState<Bill[]>([])
@@ -110,8 +112,8 @@ export default function Bills() {
         return
       }
       setExpandedId(bill.id)
-      if (bill.categoryId && !historyCache[bill.id]) {
-        const txns = await getTransactionsByCategory(bill.categoryId)
+      if (!historyCache[bill.id]) {
+        const txns = await getBillsHistory(bill.id)
         setHistoryCache((prev) => ({ ...prev, [bill.id]: txns }))
       }
     }
@@ -123,7 +125,7 @@ export default function Bills() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <div className="flex items-center gap-2 text-sm mb-1">
-                <span className="text-ink font-semibold">{bill.name}</span>
+                <span className="text-ink font-semibold">{bill.displayName}</span>
                 {bill.isAutoPay && (
                   <span className="text-[10px] font-semibold text-s1 border border-s1/40 rounded px-1.5 py-0.5">
                     Auto-pay
@@ -156,15 +158,11 @@ export default function Bills() {
         </div>
         {isExpanded && (
           <div className="bg-raised/40 rounded-lg mb-2 -mx-3">
-            {!bill.categoryId ? (
-              <p className="px-6 py-3 text-xs text-ink-3">
-                No category assigned — can't load history.
-              </p>
-            ) : !historyCache[bill.id] ? (
+            {!historyCache[bill.id] ? (
               <p className="px-6 py-3 text-xs text-ink-3">Loading...</p>
             ) : historyCache[bill.id].length === 0 ? (
               <p className="px-6 py-3 text-xs text-ink-3">
-                No transactions found for this category.
+                No matching transactions found — this bill may no longer be active.
               </p>
             ) : (
               <table className="w-full text-xs table-fixed">
@@ -190,6 +188,12 @@ export default function Bills() {
                 </tbody>
               </table>
             )}
+            <button
+              onClick={() => setExpandedId(null)}
+              className="w-full text-center text-xs text-ink-3 hover:text-ink-2 border-t border-line py-2 transition-colors"
+            >
+              Hide
+            </button>
           </div>
         )}
       </div>
@@ -269,7 +273,7 @@ export default function Bills() {
                 className="border-t border-line first:border-t-0 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
               >
                 <div>
-                  <span className="text-ink font-semibold text-sm">{bill.name}</span>
+                  <span className="text-ink font-semibold text-sm">{bill.displayName}</span>
                   {bill.category && <p className="text-xs text-ink-3 mt-0.5">{bill.category}</p>}
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-3 text-sm">

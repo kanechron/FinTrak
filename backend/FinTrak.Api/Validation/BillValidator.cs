@@ -8,8 +8,12 @@ public class BillValidator : AbstractValidator<Bill>
     public BillValidator()
     {
         RuleFor(b => b.Name)
-            .NotEmpty().WithMessage("Bill name is required.")
+            .NotEmpty().WithMessage("A matching transaction is required.")
             .MaximumLength(200).WithMessage("Bill name cannot exceed 200 characters.");
+
+        RuleFor(b => b.DisplayName)
+            .NotEmpty().WithMessage("Bill display name is required.")
+            .MaximumLength(200).WithMessage("Bill display name cannot exceed 200 characters.");
 
         RuleFor(b => b.Amount)
             .GreaterThan(0).WithMessage("Amount must be greater than zero.");

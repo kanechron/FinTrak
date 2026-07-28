@@ -13,6 +13,7 @@ interface Props {
 
 export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Props) {
   const [name, setName] = useState(bill.name)
+  const [displayName, setDisplayName] = useState(bill.displayName)
   const [amount, setAmount] = useState<number | null>(bill.amount)
   const [frequency, setFrequency] = useState(bill.frequency)
   const [dueDay, setDueDay] = useState<number | null>(bill.dueDay)
@@ -32,6 +33,7 @@ export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Prop
 
   useEffect(() => {
     setName(bill.name)
+    setDisplayName(bill.displayName)
     setAmount(bill.amount)
     setFrequency(bill.frequency)
     setDueDay(bill.dueDay)
@@ -49,8 +51,8 @@ export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Prop
   const showCustomDate = frequency === 'Custom'
 
   async function handleSubmit() {
-    if (!name || !amount || amount <= 0) {
-      setError('Name and amount are required.')
+    if (!name || !displayName || !amount || amount <= 0) {
+      setError('Display name, matching name, and amount are required.')
       return
     }
     if (showDueDay && !dueDay) {
@@ -66,6 +68,7 @@ export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Prop
     try {
       await updateBill(bill.id, {
         name,
+        displayName,
         amount: amount!,
         frequency,
         dueDay: showDueDay ? dueDay : null,
@@ -96,13 +99,27 @@ export default function EditBillModal({ bill, isOpen, onClose, onSuccess }: Prop
           </button>
         </div>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          type="text"
-          placeholder="Bill Name"
-          className={inputClass}
-        />
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Display Name</label>
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            type="text"
+            placeholder="e.g. Rent"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Match Transaction Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            type="text"
+            placeholder="Merchant name as it appears on your bank statement"
+            className={inputClass}
+          />
+        </div>
 
         <input
           value={amount ?? ''}

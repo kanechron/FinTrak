@@ -11,8 +11,15 @@ namespace FinTrak.Core.Entities
         /// <summary>The user this bill belongs to.</summary>
         public Guid UserId { get; set; } = Guid.Empty;
 
-        /// <summary>Display name for the bill, e.g. "Netflix" or "Rent".</summary>
+        /// <summary>
+        /// Merchant name used to match this bill against transaction history (trigram similarity).
+        /// For manually-added bills, this comes from a transaction the user selected at creation time —
+        /// not typed freely — since matching depends on it resembling Plaid's actual MerchantName.
+        /// </summary>
         public string Name { get; set; } = string.Empty;
+
+        /// <summary>User-facing label for the bill, e.g. "Rent" or "Netflix". Shown in the UI instead of Name.</summary>
+        public string DisplayName { get; set; } = string.Empty;
 
         /// <summary>Expected payment amount.</summary>
         public decimal Amount { get; set; } = 0m;
