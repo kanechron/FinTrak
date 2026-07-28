@@ -48,7 +48,10 @@ export default function RecentTransactions({ transactions }: Props) {
           {visible.map((t) => (
             <tr key={t.id} className="text-ink-2">
               <td className="py-2.5 text-ink font-medium max-w-0">
-                <span className="inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap align-bottom" title={t.merchant}>
+                <span
+                  className="inline-block max-w-full overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+                  title={t.merchant}
+                >
                   {truncate(t.merchant, 22)}
                 </span>
                 {t.pending && <span className="ml-2 text-xs text-warn">Pending</span>}

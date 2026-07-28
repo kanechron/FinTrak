@@ -27,7 +27,9 @@ export default function BalanceCard({ availableBalance, accounts }: Props) {
                 {a.type} · {a.last4}
               </p>
             </div>
-            <p className={`text-lg font-semibold tabular-nums ${a.balance < 0 ? 'text-bad' : 'text-ink'}`}>
+            <p
+              className={`text-lg font-semibold tabular-nums ${a.balance < 0 ? 'text-bad' : 'text-ink'}`}
+            >
               {formatAmount(a.balance)}
             </p>
           </div>

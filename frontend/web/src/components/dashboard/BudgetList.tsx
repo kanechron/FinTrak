@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { deleteBudget, type Budget } from '../../api/budgets'
-import AddBudgetModal from '../modals/AddBudgetModal'
-import EditBudgetModal from '../modals/EditBudgetModal'
+import BudgetFormModal from '../modals/BudgetFormModal'
 import BudgetCard from './BudgetCard'
 
 interface Props {
@@ -24,22 +23,19 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
 
   return (
     <section>
-      <AddBudgetModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSuccess={onBudgetAdded}
+      <BudgetFormModal
+        isOpen={addModalOpen || !!selectedBudget}
+        budget={selectedBudget ?? undefined}
+        onClose={() => {
+          setAddModalOpen(false)
+          setSelectedBudget(null)
+        }}
+        onSuccess={() => {
+          setAddModalOpen(false)
+          setSelectedBudget(null)
+          onBudgetAdded()
+        }}
       />
-      {selectedBudget && (
-        <EditBudgetModal
-          budget={selectedBudget}
-          isOpen={!!selectedBudget}
-          onClose={() => setSelectedBudget(null)}
-          onSuccess={() => {
-            setSelectedBudget(null)
-            onBudgetAdded()
-          }}
-        />
-      )}
       <h2 className="font-medium text-ink mb-4">Budgets</h2>
       {budgets.length === 0 ? (
         <p className="text-sm text-ink-3 text-center py-4">

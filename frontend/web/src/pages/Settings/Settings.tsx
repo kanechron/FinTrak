@@ -64,7 +64,9 @@ export default function Settings() {
         </div>
       )}
       <div className="flex items-start gap-10">
-        <nav className={`${mobileOpen ? 'hidden' : 'flex'} sm:flex w-full sm:w-44 shrink-0 flex-col`}>
+        <nav
+          className={`${mobileOpen ? 'hidden' : 'flex'} sm:flex w-full sm:w-44 shrink-0 flex-col`}
+        >
           {navGroups.map((group, i) => (
             <div key={i} className="flex flex-col gap-0.5">
               {i > 0 && <div className="border-t border-line my-3" />}

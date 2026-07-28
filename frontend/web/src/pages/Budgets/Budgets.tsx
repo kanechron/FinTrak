@@ -3,8 +3,7 @@ import { getBudgets, deleteBudget, type Budget } from '../../api/budgets'
 import { getAccounts, type Account } from '../../api/accounts'
 import BalanceCard from '../../components/dashboard/BalanceCard'
 import BudgetCard from '../../components/dashboard/BudgetCard'
-import AddBudgetModal from '../../components/modals/AddBudgetModal'
-import EditBudgetModal from '../../components/modals/EditBudgetModal'
+import BudgetFormModal from '../../components/modals/BudgetFormModal'
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState<Budget[]>([])
@@ -19,6 +18,8 @@ export default function Budgets() {
     getAccounts().then(setAccounts)
   }, [])
 
+  // Credit card / loan balances are negative (debt) and shouldn't reduce "available balance" —
+  // only positive (asset) balances count toward this total.
   const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
 
   const handleDelete = async (id: string) => {
@@ -32,22 +33,19 @@ export default function Budgets() {
 
   return (
     <main className="max-w-[76rem] mx-auto px-3 py-8">
-      <AddBudgetModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSuccess={fetchBudgets}
+      <BudgetFormModal
+        isOpen={addModalOpen || !!selectedBudget}
+        budget={selectedBudget ?? undefined}
+        onClose={() => {
+          setAddModalOpen(false)
+          setSelectedBudget(null)
+        }}
+        onSuccess={() => {
+          setAddModalOpen(false)
+          setSelectedBudget(null)
+          fetchBudgets()
+        }}
       />
-      {selectedBudget && (
-        <EditBudgetModal
-          budget={selectedBudget}
-          isOpen={!!selectedBudget}
-          onClose={() => setSelectedBudget(null)}
-          onSuccess={() => {
-            setSelectedBudget(null)
-            fetchBudgets()
-          }}
-        />
-      )}
 
       <BalanceCard availableBalance={availableBalance} accounts={accounts} />
 

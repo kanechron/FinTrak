@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { getTransactions, type Transaction } from '../../api/transactions'
 import { formatAmount } from '../../utils/format'
 import { truncate } from '../../utils/truncate'
-// import EditTransactionModal from '../../components/modals/EditTransactionModal' — edit temporarily disabled
+// import TransactionFormModal from '../../components/modals/TransactionFormModal' — edit temporarily disabled
 import { getParentCategories, type Category } from '../../api/categories'
 import { FilterIcon } from '../../components/common/icons'
 
@@ -19,8 +19,8 @@ export default function Transactions() {
   // — Filters
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [searchFilter, setSearchFilter] = useState("")
-  const [amountFilter, setAmountFilter] = useState("")
+  const [searchFilter, setSearchFilter] = useState('')
+  const [amountFilter, setAmountFilter] = useState('')
   const [fromDate, setFromDate] = useState<string | null>(null)
   const [toDate, setToDate] = useState<string | null>(null)
 
@@ -58,16 +58,19 @@ export default function Transactions() {
   }
 
   function handleDateInput(e: React.ChangeEvent<HTMLInputElement>) {
-    if(e.target.name === "from") setFromDate(e.target.value || null)
-    if(e.target.name === "to") setToDate(e.target.value || null)
-    fetchTransactions()
+    if (e.target.name === 'from') setFromDate(e.target.value || null)
+    if (e.target.name === 'to') setToDate(e.target.value || null)
   }
 
+  // Debounced refetch on date change. Deliberately doesn't fetch directly from
+  // handleDateInput — fromDate/toDate there would still be this render's stale
+  // values (state setters don't update synchronously), so this effect is the only
+  // correct place to react to the actual new date range.
   useEffect(() => {
-      const handler = setTimeout(() => {
-        fetchTransactions()
-      }, 750)
-      return () => clearTimeout(handler)
+    const handler = setTimeout(() => {
+      fetchTransactions()
+    }, 750)
+    return () => clearTimeout(handler)
   }, [fromDate, toDate])
 
   const inputClass =
@@ -80,17 +83,15 @@ export default function Transactions() {
     <main className="max-w-[76rem] mx-auto px-3 py-8 space-y-6">
       {/* — Modals */}
       {/* Edit transaction temporarily disabled
-      {selectedTransaction && (
-        <EditTransactionModal
-          transaction={selectedTransaction}
-          isOpen={!!selectedTransaction}
-          onClose={() => setSelectedTransaction(null)}
-          onSuccess={() => {
-            setSelectedTransaction(null)
-            fetchTransactions()
-          }}
-        />
-      )}
+      <TransactionFormModal
+        isOpen={!!selectedTransaction}
+        transaction={selectedTransaction ?? undefined}
+        onClose={() => setSelectedTransaction(null)}
+        onSuccess={() => {
+          setSelectedTransaction(null)
+          fetchTransactions()
+        }}
+      />
       */}
 
       {/* — Filters */}
@@ -160,7 +161,7 @@ export default function Transactions() {
             <div className="flex items-center gap-2">
               <input
                 type="date"
-                value={fromDate || ""}
+                value={fromDate || ''}
                 max={toDate || new Date().toISOString().split('T')[0]}
                 onChange={handleDateInput}
                 name="from"
@@ -168,7 +169,7 @@ export default function Transactions() {
               />
               <input
                 type="date"
-                value={toDate || ""}
+                value={toDate || ''}
                 max={new Date().toISOString().split('T')[0]}
                 min={fromDate ?? undefined}
                 onChange={handleDateInput}
@@ -222,11 +223,15 @@ export default function Transactions() {
         {loading && <p className="px-1 py-12 text-center text-ink-3 text-sm">Loading...</p>}
         {error && <p className="px-1 py-12 text-center text-bad text-sm">{error}</p>}
         {!loading && !error && (
+          // Date range is filtered server-side (fetchTransactions passes from/to to the API);
+          // category/search/amount are filtered client-side against the already-fetched list.
           <div className="divide-y divide-line">
             {transactions
-              .filter(t => selectedCategoryIds.size === 0 || selectedCategoryIds.has(t.categoryId!))
-              .filter(t => t.merchant.toLowerCase().includes(searchFilter.toLowerCase()))
-              .filter(t => amountFilter === '' || Math.abs(t.amount) === parseFloat(amountFilter))
+              .filter(
+                (t) => selectedCategoryIds.size === 0 || selectedCategoryIds.has(t.categoryId!)
+              )
+              .filter((t) => t.merchant.toLowerCase().includes(searchFilter.toLowerCase()))
+              .filter((t) => amountFilter === '' || Math.abs(t.amount) === parseFloat(amountFilter))
               .map((t) => (
                 <div
                   key={t.id}
@@ -253,7 +258,6 @@ export default function Transactions() {
           </div>
         )}
       </div>
-
     </main>
   )
 }

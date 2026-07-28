@@ -74,7 +74,12 @@ export default function MonthlySpendingChart({ data, onPointClick, chartType }: 
                 stroke="var(--s1)"
                 fill="var(--s1)"
                 fillOpacity={0.15}
-                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: ((_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month)) as any }}
+                activeDot={{
+                  r: 5,
+                  style: { cursor: 'pointer' },
+                  onClick: ((_: unknown, p: { payload: MonthlySpending }) =>
+                    onPointClick(p.payload.year, p.payload.month)) as any,
+                }}
               />
             </AreaChart>
           ) : (
@@ -94,7 +99,12 @@ export default function MonthlySpendingChart({ data, onPointClick, chartType }: 
                 stroke="var(--s1)"
                 strokeWidth={2}
                 dot={{ fill: 'var(--s1)', r: 3 }}
-                activeDot={{ r: 5, style: { cursor: 'pointer' }, onClick: ((_: unknown, p: { payload: MonthlySpending }) => onPointClick(p.payload.year, p.payload.month)) as any }}
+                activeDot={{
+                  r: 5,
+                  style: { cursor: 'pointer' },
+                  onClick: ((_: unknown, p: { payload: MonthlySpending }) =>
+                    onPointClick(p.payload.year, p.payload.month)) as any,
+                }}
               />
             </LineChart>
           )}
