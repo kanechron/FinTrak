@@ -18,17 +18,6 @@ export interface Bill {
   status: string
 }
 
-export interface TransactionGroup {
-  merchantName: string
-  count: number
-  amounts: (number | null)[]
-  dates: (string | null)[]
-  category: string | null
-  categoryId: string | null
-}
-
-
-
 export function getBills(): Promise<Bill[]> {
   return api.get<Bill[]>('/bills/get-bills')
 }
@@ -36,10 +25,6 @@ export function getBills(): Promise<Bill[]> {
 export function getBillsHistory(id: string): Promise<Transaction[]> {
   return api.get<Transaction[]>(`/bills/get-bills-history?billId=${id}`)
 }
-
-// export function getSuggestions(): Promise<TransactionGroup[][]> {
-//   return api.get<TransactionGroup[][]>('/bills/get-suggestions')
-// }
 
 export function addBill(
   bill: Partial<Omit<Bill, 'id' | 'category' | 'nextDueDate' | 'isAutoDetected'>>
@@ -53,8 +38,4 @@ export function updateBill(id: string, bill: Partial<Omit<Bill, 'id'>>): Promise
 
 export function deleteBill(id: string): Promise<void> {
   return api.delete(`/bills/delete-bill/${id}`)
-}
-
-export function markBillPaid(id: string): Promise<void> {
-  return api.post(`/bills/mark-paid/${id}`, {})
 }

@@ -19,6 +19,8 @@ export default function Goals() {
     fetchGoals()
   }, [])
 
+  // Credit card / loan balances are negative (debt) and shouldn't reduce "available to
+  // allocate" toward goals — only positive (asset) balances count toward this total.
   const availableBalance = accounts.reduce((sum, a) => sum + (a.balance < 0 ? 0 : a.balance), 0)
 
   return (

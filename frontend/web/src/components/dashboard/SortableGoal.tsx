@@ -27,6 +27,9 @@ export default function SortableGoal({ goal, onDelete, onClick, colorIndex = 0 }
   const color = GOAL_COLORS[colorIndex % GOAL_COLORS.length]
 
   return (
+    // The whole card is the drag surface (no separate handle) — this only works cleanly
+    // because GoalList's sensors require a distance/delay before a drag activates, so a
+    // plain click still reaches the Edit/Delete menu and progress bar underneath.
     <div
       ref={setNodeRef}
       style={style}

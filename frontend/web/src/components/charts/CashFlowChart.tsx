@@ -32,6 +32,9 @@ export default function CashFlowChart({ data, onPointClick }: Props) {
     return <p className="text-center text-ink-3 text-sm py-12">No data for selected period</p>
   }
 
+  // Where the "$0" line falls as a percentage of the chart's vertical range (0 = top, 100 = bottom).
+  // Used below as a hard gradient stop so the line renders green above zero and red below it,
+  // instead of one flat color regardless of sign.
   const values = chartData.map((d) => d.net)
   const min = Math.min(...values, 0)
   const max = Math.max(...values, 0)

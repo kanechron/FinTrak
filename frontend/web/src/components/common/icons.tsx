@@ -50,7 +50,12 @@ export function PencilIcon({ className }: IconProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path d="M7.75 3.25L10.75 6.25" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <path
+        d="M7.75 3.25L10.75 6.25"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }

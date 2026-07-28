@@ -66,7 +66,8 @@ export default function Account() {
           <div className={cardClass()} onClick={(e) => e.stopPropagation()}>
             <h2 className={titleClass}>Unlink {pendingUnlink.institutionName}?</h2>
             <p className="text-sm text-ink-2">
-              This removes the connection and its accounts from FinTrak. Existing transactions are kept. You can reconnect this bank later via Sync.
+              This removes the connection and its accounts from FinTrak. Existing transactions are
+              kept. You can reconnect this bank later via Sync.
             </p>
             <div className="flex gap-2 mt-2">
               <button

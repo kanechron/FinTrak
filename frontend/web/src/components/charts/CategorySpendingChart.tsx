@@ -10,7 +10,13 @@ import {
   CartesianGrid,
 } from 'recharts'
 import { type CategorySpending } from '../../api/reports'
-import { CATEGORY_COLORS, tooltipStyle, tooltipTextStyle, axisStyle, gridStroke } from './chartTheme'
+import {
+  CATEGORY_COLORS,
+  tooltipStyle,
+  tooltipTextStyle,
+  axisStyle,
+  gridStroke,
+} from './chartTheme'
 
 const formatName = (v: string) =>
   v
@@ -26,8 +32,16 @@ interface Props {
   chartType: string
 }
 
-export default function CategorySpendingChart({ data, onSliceClick, selectedId, chartType }: Props) {
-  const coloredData = data.map((item, i) => ({ ...item, fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }))
+export default function CategorySpendingChart({
+  data,
+  onSliceClick,
+  selectedId,
+  chartType,
+}: Props) {
+  const coloredData = data.map((item, i) => ({
+    ...item,
+    fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+  }))
   const total = data.reduce((sum, d) => sum + d.amount, 0)
 
   return (
@@ -99,7 +113,9 @@ export default function CategorySpendingChart({ data, onSliceClick, selectedId, 
               >
                 <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: d.fill }} />
                 <span className="flex-1 min-w-0 truncate text-ink-2">{formatName(d.name)}</span>
-                <span className="text-ink font-semibold tabular-nums">{formatAmount(d.amount)}</span>
+                <span className="text-ink font-semibold tabular-nums">
+                  {formatAmount(d.amount)}
+                </span>
               </button>
             ))}
           </div>

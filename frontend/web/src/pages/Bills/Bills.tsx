@@ -1,75 +1,32 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { getBills, getBillsHistory, deleteBill, type Bill, updateBill } from '../../api/bills'
 import { formatAmount } from '../../utils/format'
-import AddBillModal from '../../components/modals/AddBillModal'
-import EditBillModal from '../../components/modals/EditBillModal'
+import BillFormModal from '../../components/modals/BillFormModal'
 import type { Transaction } from '../../api/transactions'
-import RowMenu from '../../components/common/RowMenu'
+import BillRow from './BillRow'
+import PendingBillRow from './PendingBillRow'
+import { monthlyEquivalent } from './billHelpers'
 
-function dueDateLabel(bill: Bill): string {
-  if (!bill.nextDueDate) return '—'
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const due = new Date(bill.nextDueDate)
-  due.setHours(0, 0, 0, 0)
-  const diff = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff < 0) return `Overdue by ${Math.abs(diff)}d`
-  if (diff === 0) return 'Due today'
-  if (diff === 1) return 'Due tomorrow'
-  return `Due in ${diff}d`
+function BillSection({
+  title,
+  items,
+  renderItem,
+}: {
+  title: string
+  items: Bill[]
+  renderItem: (b: Bill) => ReactNode
+}) {
+  return (
+    <section>
+      <h2 className="font-medium text-ink mb-2">{title}</h2>
+      {items.length === 0 ? (
+        <div className="py-12 text-center text-ink-3 text-sm">No bills here yet.</div>
+      ) : (
+        <div>{items.map(renderItem)}</div>
+      )}
+    </section>
+  )
 }
-
-function dueDateDiff(bill: Bill): number | null {
-  if (!bill.nextDueDate) return null
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const due = new Date(bill.nextDueDate)
-  due.setHours(0, 0, 0, 0)
-  return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-}
-
-type Urgency = 'overdue' | 'soon' | 'normal'
-
-function urgency(diff: number | null): Urgency {
-  if (diff === null) return 'normal'
-  if (diff < 0) return 'overdue'
-  if (diff <= 7) return 'soon'
-  return 'normal'
-}
-
-const stripeClass: Record<Urgency, string> = {
-  overdue: 'bg-bad',
-  soon: 'bg-warn',
-  normal: 'bg-transparent',
-}
-
-function formatFrequency(f: string): string {
-  switch (f) {
-    case 'BiWeekly':
-      return 'Bi-Weekly'
-    default:
-      return f
-  }
-}
-
-function monthlyEquivalent(bill: Bill): number {
-  switch (bill.frequency) {
-    case 'Weekly':
-      return bill.amount * 4.33
-    case 'BiWeekly':
-      return bill.amount * 2.17
-    case 'Monthly':
-      return bill.amount
-    case 'Quarterly':
-      return bill.amount / 3
-    case 'Yearly':
-      return bill.amount / 12
-    default:
-      return bill.amount
-  }
-}
-
-
 
 export default function Bills() {
   const [acceptedBills, setAcceptedBills] = useState<Bill[]>([])
@@ -100,141 +57,36 @@ export default function Bills() {
     }
   }
 
-  function BillRow({ bill }: { bill: Bill }) {
-    const isExpanded = expandedId === bill.id
-    const diff = dueDateDiff(bill)
-    const label = dueDateLabel(bill)
-    const u = urgency(diff)
-
-    async function toggleExpanded() {
-      if (isExpanded) {
-        setExpandedId(null)
-        return
-      }
-      setExpandedId(bill.id)
-      if (!historyCache[bill.id]) {
-        const txns = await getBillsHistory(bill.id)
-        setHistoryCache((prev) => ({ ...prev, [bill.id]: txns }))
-      }
+  // Only one bill can be expanded at a time (a single expandedId, not a per-row flag).
+  // History is fetched once per bill and cached for the rest of the page's lifetime,
+  // so collapsing and re-expanding the same bill doesn't refetch.
+  async function toggleExpand(billId: string) {
+    if (expandedId === billId) {
+      setExpandedId(null)
+      return
     }
-
-    return (
-      <div className="border-t border-line first:border-t-0 pl-3.5 relative">
-        <span className={`absolute left-0 top-3.5 bottom-3.5 w-[3px] rounded-full ${stripeClass[u]}`} />
-        <div className="py-4 pl-3 -mx-3 px-3 rounded-lg hover:bg-raised transition-colors">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2 text-sm mb-1">
-                <span className="text-ink font-semibold">{bill.displayName}</span>
-                {bill.isAutoPay && (
-                  <span className="text-[10px] font-semibold text-s1 border border-s1/40 rounded px-1.5 py-0.5">
-                    Auto-pay
-                  </span>
-                )}
-                {bill.isAutoDetected && (
-                  <span className="text-[10px] font-semibold text-s5 border border-s5/40 rounded px-1.5 py-0.5">
-                    Detected
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-ink-3">
-                {formatFrequency(bill.frequency)} · {label}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-ink font-bold text-base tabular-nums">
-                {formatAmount(-bill.amount)}
-              </span>
-              <RowMenu
-                ariaLabel="Bill options"
-                actions={[
-                  { label: isExpanded ? 'Hide History' : 'Show History', onClick: toggleExpanded },
-                  { label: 'Edit', onClick: () => setSelectedBill(bill) },
-                  { label: 'Delete', onClick: () => handleDelete(bill.id), danger: true },
-                ]}
-              />
-            </div>
-          </div>
-        </div>
-        {isExpanded && (
-          <div className="bg-raised/40 rounded-lg mb-2 -mx-3">
-            {!historyCache[bill.id] ? (
-              <p className="px-6 py-3 text-xs text-ink-3">Loading...</p>
-            ) : historyCache[bill.id].length === 0 ? (
-              <p className="px-6 py-3 text-xs text-ink-3">
-                No matching transactions found — this bill may no longer be active.
-              </p>
-            ) : (
-              <table className="w-full text-xs table-fixed">
-                <thead>
-                  <tr className="text-ink-3 border-b border-line">
-                    <th className="text-left px-6 py-2 font-normal w-1/2">Merchant</th>
-                    <th className="text-left px-6 py-2 font-normal w-1/4">Date</th>
-                    <th className="text-right px-6 py-2 font-normal w-1/4">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyCache[bill.id].map((t) => (
-                    <tr key={t.id} className="border-b border-line last:border-0 text-ink-2">
-                      <td className="px-6 py-2 truncate" title={t.merchant}>{t.merchant}</td>
-                      <td className="px-6 py-2 text-ink-3">{t.date}</td>
-                      <td
-                        className={`px-6 py-2 text-right font-mono tabular-nums ${t.amount < 0 ? 'text-good' : 'text-bad'}`}
-                      >
-                        {formatAmount(-t.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            <button
-              onClick={() => setExpandedId(null)}
-              className="w-full text-center text-xs text-ink-3 hover:text-ink-2 border-t border-line py-2 transition-colors"
-            >
-              Hide
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  function BillSection({ title, items }: { title: string; items: Bill[] }) {
-    return (
-      <section>
-        <h2 className="font-medium text-ink mb-2">{title}</h2>
-        {items.length === 0 ? (
-          <div className="py-12 text-center text-ink-3 text-sm">No bills here yet.</div>
-        ) : (
-          <div>
-            {items.map((b) => (
-              <BillRow key={b.id} bill={b} />
-            ))}
-          </div>
-        )}
-      </section>
-    )
+    setExpandedId(billId)
+    if (!historyCache[billId]) {
+      const txns = await getBillsHistory(billId)
+      setHistoryCache((prev) => ({ ...prev, [billId]: txns }))
+    }
   }
 
   return (
     <main className="max-w-[76rem] mx-auto px-3 py-8 space-y-6">
-      <AddBillModal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSuccess={fetchBills}
+      <BillFormModal
+        isOpen={addModalOpen || !!selectedBill}
+        bill={selectedBill ?? undefined}
+        onClose={() => {
+          setAddModalOpen(false)
+          setSelectedBill(null)
+        }}
+        onSuccess={() => {
+          setAddModalOpen(false)
+          setSelectedBill(null)
+          fetchBills()
+        }}
       />
-      {selectedBill && (
-        <EditBillModal
-          bill={selectedBill}
-          isOpen={!!selectedBill}
-          onClose={() => setSelectedBill(null)}
-          onSuccess={() => {
-            setSelectedBill(null)
-            fetchBills()
-          }}
-        />
-      )}
 
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-ink">Bills</h1>
@@ -255,7 +107,21 @@ export default function Bills() {
       </section>
 
       <div className="pt-4">
-        <BillSection title="My Bills" items={acceptedBills} />
+        <BillSection
+          title="My Bills"
+          items={acceptedBills}
+          renderItem={(b) => (
+            <BillRow
+              key={b.id}
+              bill={b}
+              isExpanded={expandedId === b.id}
+              history={historyCache[b.id]}
+              onToggleExpand={() => toggleExpand(b.id)}
+              onEdit={() => setSelectedBill(b)}
+              onDelete={() => handleDelete(b.id)}
+            />
+          )}
+        />
       </div>
 
       <hr className="border-line" />
@@ -268,38 +134,18 @@ export default function Bills() {
         ) : (
           <div>
             {pendingBills.map((bill) => (
-              <div
+              <PendingBillRow
                 key={bill.id}
-                className="border-t border-line first:border-t-0 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-              >
-                <div>
-                  <span className="text-ink font-semibold text-sm">{bill.displayName}</span>
-                  {bill.category && <p className="text-xs text-ink-3 mt-0.5">{bill.category}</p>}
-                </div>
-                <div className="flex items-center justify-between sm:justify-end gap-3 text-sm">
-                  <span className="text-ink font-bold text-base tabular-nums">
-                    {formatAmount(-bill.amount)}
-                  </span>
-                  <button
-                    onClick={async () => {
-                      await updateBill(bill.id, { status: 'Accepted' })
-                      fetchBills()
-                    }}
-                    className="text-[11.5px] font-semibold text-good border border-good/45 rounded-full px-3.5 py-1.5 hover:bg-good/15 transition-colors"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await updateBill(bill.id, { status: 'Declined' })
-                      fetchBills()
-                    }}
-                    className="text-[11.5px] font-semibold text-ink-3 border border-line-2 rounded-full px-3.5 py-1.5 hover:text-bad hover:border-bad/45 transition-colors"
-                  >
-                    Deny
-                  </button>
-                </div>
-              </div>
+                bill={bill}
+                onConfirm={async () => {
+                  await updateBill(bill.id, { status: 'Accepted' })
+                  fetchBills()
+                }}
+                onDeny={async () => {
+                  await updateBill(bill.id, { status: 'Declined' })
+                  fetchBills()
+                }}
+              />
             ))}
           </div>
         )}
