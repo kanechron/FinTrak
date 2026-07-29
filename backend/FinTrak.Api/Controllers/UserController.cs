@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Anthropic.SDK.Messaging;
 using FinTrak.Api.Utilities;
 using FinTrak.Core.Interfaces;
 using Going.Plaid;
@@ -7,14 +6,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace FinTrak.Api.Controllers
 {
-    [ApiController]
-    [Route("[controller]")]
-    [Authorize]
-    public class UserController(IAccountManagementService repo, IAccountReactivationRepository actv, ILogger<UserController> logger) : ControllerBase
+    public class UserController(IAccountManagementService repo, IAccountReactivationRepository actv, ILogger<UserController> logger) : ApiBaseController
     {
         private readonly IAccountManagementService _repo = repo;
         private readonly IAccountReactivationRepository _actv = actv;
@@ -38,7 +33,7 @@ namespace FinTrak.Api.Controllers
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 Response.Cookies.Delete("fintrak_uid");
             }
-            else return StatusCode(404, new {error = "Account deletion not completed"});
+            else throw new InvalidOperationException("Account deletion did not complete.");
 
             return Ok();
         }
@@ -55,13 +50,13 @@ namespace FinTrak.Api.Controllers
                 await PlaidRevocation.RevokeItemAsync(plaid, item);
             };
             var result = await _repo.DeactivateAccount(userId);
-            
+
             if(result)
             {
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 Response.Cookies.Delete("fintrak_uid");
             }
-            else return StatusCode(404, new {error = "Account deletion not completed"});
+            else throw new InvalidOperationException("Account deactivation did not complete.");
 
             return Ok();
         }
@@ -118,9 +113,5 @@ namespace FinTrak.Api.Controllers
             }
 
         }
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
-
-    
 }

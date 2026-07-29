@@ -14,7 +14,7 @@ namespace FinTrak.Api.Middleware
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
-                await WriteError(context, HttpStatusCode.InternalServerError, ex.Message, ex.ToString());
+                await WriteError(context, HttpStatusCode.InternalServerError, "An unexpected error occurred");
             }
         }
 

@@ -4,6 +4,7 @@
 - [x] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
 - [ ] **Retire the per-PlaidItem SemaphoreSlim sync lock** — added to fix a race condition where overlapping sync triggers (manual click + webhook, or two rapid manual clicks) for the same PlaidItem could both read the same stale cursor and double-insert transactions. This lock only coordinates within a single process/container. It silently stops working the moment sync is triggered from outside the main backend process — e.g. a scheduled auto-sync moved to its own worker/container, a queue consumer, or horizontal scaling to multiple backend replicas. If any of that happens, replace it with a DB-level mechanism (Postgres advisory lock, or an atomic claim via conditional UPDATE on PlaidItems) that's visible across processes.
 - [ ] **Backfill stale MerchantNameNormalized values** — fixed the sync bug where newly-inserted transactions computed this from the raw, noisy `Name` (bank ACH descriptor) instead of preferring the cleaned-up `MerchantName`, but existing rows synced before the fix still have the noisy value. Needs a one-time backfill (`MerchantNameNormalized = NormalizeName(MerchantName ?? MerchantNameRaw)`) for all historical transactions, or they'll keep failing fuzzy/trigram matches (bill history, bulk categorize-by-merchant) until each one happens to get touched by a future Modified sync event.
+- [ ] **Expand ErrorHandlingMiddleware with typed exceptions** — `ApiBaseController`'s `NotFoundError`/`ValidationError`/`ForbiddenError` helpers only work from inside a controller action. Code in `FinTrak.Infrastructure` (repositories/services) has no access to those helpers or to `IActionResult` at all, so a failure deep in business logic can currently only throw a plain `Exception`, which the middleware flattens into a generic 500 even when it's really a 404/400/403. Fix: define custom exception types (e.g. `NotFoundException`) that carry their intended status code, and have the middleware's catch block map recognized exception types to the right status/`ErrorResponseDto` instead of always returning 500.
 
 
  
@@ -36,7 +37,7 @@
 - [ ] **Error pages** — dedicated 404, 500, and auth-error pages/components
 - [ ] **UI redesign** — navigation overhaul and visual refresh; evaluate light mode or theme toggle
 - [ ] **Loading skeletons** — replace blank states during fetch with skeleton loaders
-- [ ] **Toast notifications** — user feedback when sync completes, bill accepted, budget saved, etc.; most actions are currently silent
+- [x] **Toast notifications** — user feedback when sync completes, bill accepted, budget saved, etc.; most actions are currently silent
 - [ ] **Onboarding flow** — first-time users land on an empty dashboard with no guidance; short setup wizard (link bank → first sync → add a budget) to reduce drop-off
 - [ ] **Webpage title and favicon** — browser tab still shows the Vite default; set a proper `<title>` and favicon
 

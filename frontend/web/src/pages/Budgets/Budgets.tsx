@@ -4,12 +4,14 @@ import { getAccounts, type Account } from '../../api/accounts'
 import BalanceCard from '../../components/dashboard/BalanceCard'
 import BudgetCard from '../../components/dashboard/BudgetCard'
 import BudgetFormModal from '../../components/modals/BudgetFormModal'
+import { useToast } from '../../hooks/ToastProvider'
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null)
+  const toast = useToast()
 
   const fetchBudgets = () => getBudgets().then(setBudgets)
 
@@ -26,8 +28,9 @@ export default function Budgets() {
     try {
       await deleteBudget(id)
       fetchBudgets()
-    } catch (error) {
-      console.error('Failed to delete budget:', error)
+      toast.success({ title: 'Budget deleted', content: '' })
+    } catch {
+      toast.error({ title: 'Failed to delete budget', content: 'Please try again.' })
     }
   }
 

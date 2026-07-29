@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
@@ -9,10 +7,7 @@ using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
-    [Authorize]
-    [ApiController]
-    [Route("[controller]")]
-    public class BudgetsController(IBudgetRepository repo, BudgetValidator validator) : ControllerBase
+    public class BudgetsController(IBudgetRepository repo, BudgetValidator validator) : ApiBaseController
     {
         private readonly IBudgetRepository _repo = repo;
         private readonly BudgetValidator _validator = validator;
@@ -113,8 +108,5 @@ namespace FinTrak.Api.Controllers
             await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Budget deleted successfully." });
         }
-
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

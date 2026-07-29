@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { addBill, updateBill, type Bill } from '../../api/bills'
+import { ApiError } from '../../api/client'
 import { getCategories, type Category } from '../../api/categories'
 import { getTransactions, type Transaction } from '../../api/transactions'
 import { formatAmount } from '../../utils/format'
@@ -15,6 +16,7 @@ import {
   toggleThumbClass,
 } from './modalTheme'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
+import { useToast } from '../../hooks/ToastProvider'
 
 interface Props {
   isOpen: boolean
@@ -37,6 +39,7 @@ export default function BillFormModal({ isOpen, onClose, onSuccess, bill }: Prop
   const [categories, setCategories] = useState<Category[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const toast = useToast()
 
   // Add-mode-only: transaction search/picker state. Edit mode edits `name` directly instead.
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -173,8 +176,17 @@ export default function BillFormModal({ isOpen, onClose, onSuccess, bill }: Prop
       }
       onSuccess()
       onClose()
-    } catch {
-      setError('Failed to save bill.')
+      toast.success({ title: isEdit ? 'Bill updated' : 'Bill added', content: displayName.trim() })
+    } catch (err) {
+      // Field-level messages (from FluentValidation) are more useful than the generic
+      // top-level message, so prefer those when the server sent any.
+      const fieldMessages = err instanceof ApiError ? Object.values(err.fields ?? {}).flat() : []
+      const content = fieldMessages.length
+        ? fieldMessages.join(' ')
+        : err instanceof ApiError
+          ? err.message
+          : 'Please try again.'
+      toast.error({ title: 'Failed to save bill', content })
     } finally {
       setIsSubmitting(false)
     }

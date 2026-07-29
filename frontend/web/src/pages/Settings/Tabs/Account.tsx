@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { plaidApi, type PlaidItemSummary } from '../../../api/plaid'
 import { overlayClass, cardClass, titleClass } from '../../../components/modals/modalTheme'
+import { useToast } from '../../../hooks/ToastProvider'
 
 export default function Account() {
   const [items, setItems] = useState<PlaidItemSummary[]>([])
@@ -8,6 +9,7 @@ export default function Account() {
   const [pendingUnlink, setPendingUnlink] = useState<PlaidItemSummary | null>(null)
   const [unlinking, setUnlinking] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const toast = useToast()
 
   useEffect(() => {
     plaidApi
@@ -22,11 +24,13 @@ export default function Account() {
     setUnlinking(true)
     setError(null)
     try {
+      const institutionName = pendingUnlink.institutionName
       await plaidApi.unlink(pendingUnlink.id)
       setItems((prev) => prev.filter((i) => i.id !== pendingUnlink.id))
       setPendingUnlink(null)
+      toast.success({ title: 'Bank unlinked', content: institutionName })
     } catch {
-      setError('Could not unlink that bank. Please try again.')
+      toast.error({ title: 'Failed to unlink bank', content: 'Please try again.' })
     } finally {
       setUnlinking(false)
     }

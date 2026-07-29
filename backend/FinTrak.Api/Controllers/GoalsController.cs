@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
@@ -9,10 +7,7 @@ using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
-    [ApiController]
-    [Route("[controller]")]
-    [Authorize]
-    public class GoalsController(IGoalRepository repo, IAccountRepository accountRepo, IMapper mapper, GoalValidator validator) : ControllerBase
+    public class GoalsController(IGoalRepository repo, IAccountRepository accountRepo, IMapper mapper, GoalValidator validator) : ApiBaseController
     {
         private readonly IGoalRepository _repo = repo;
         private readonly IAccountRepository _accountRepo = accountRepo;
@@ -88,8 +83,5 @@ namespace FinTrak.Api.Controllers
             await _repo.SaveAsync(cancellationToken);
             return Ok(new { message = "Goal deleted successfully." });
         }
-
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }
