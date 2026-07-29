@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
@@ -10,10 +8,7 @@ using Going.Plaid.User;
 
 namespace FinTrak.Api.Controllers
 {
-    [ApiController]
-    [Authorize]
-    [Route("[controller]")]
-    public class BillsController(IBillRepository repo, IBillDetectionService billDetectionService, IMapper mapper, BillValidator validator) : ControllerBase
+    public class BillsController(IBillRepository repo, IBillDetectionService billDetectionService, IMapper mapper, BillValidator validator) : ApiBaseController
     {
         private readonly IBillRepository _repo = repo;
         private readonly IBillDetectionService _billDetectionService = billDetectionService;
@@ -39,7 +34,9 @@ namespace FinTrak.Api.Controllers
         {
             var validation = await _validator.ValidateAsync(bill, cancellationToken);
             if (!validation.IsValid)
-                return BadRequest(new { errors = validation.Errors.Select(e => e.ErrorMessage) });
+            {
+                return ValidationError(validation.ToDictionary(), "Please fix the errors below.");
+            }
 
             var newBill = new Bill
             {
@@ -103,8 +100,5 @@ namespace FinTrak.Api.Controllers
             var suggestions = await _billDetectionService.DetectAsync(userId, cancellationToken);
             return Ok(suggestions);
         }
-
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

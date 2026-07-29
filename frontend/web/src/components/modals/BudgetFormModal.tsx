@@ -13,6 +13,7 @@ import {
   toggleThumbClass,
 } from './modalTheme'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
+import { useToast } from '../../hooks/ToastProvider'
 
 interface Props {
   isOpen: boolean
@@ -43,6 +44,7 @@ export default function BudgetFormModal({ isOpen, onClose, onSuccess, budget }: 
   const [error, setError] = useState<string | null>(null)
   const [recurringDay, setRecurringDay] = useState(budget?.recurringDate || 'first')
   const [recurringDayCustom, setRecurringDayCustom] = useState<number>(1)
+  const toast = useToast()
 
   useEffect(() => {
     if (!isOpen) return
@@ -145,8 +147,12 @@ export default function BudgetFormModal({ isOpen, onClose, onSuccess, budget }: 
       }
       onSuccess()
       onClose()
+      toast.success({ title: isEdit ? 'Budget updated' : 'Budget added', content: name })
     } catch {
-      setError(isEdit ? 'Failed to update budget.' : 'Failed to save budget.')
+      toast.error({
+        title: isEdit ? 'Failed to update budget' : 'Failed to save budget',
+        content: 'Please try again.',
+      })
     } finally {
       setIsSubmitting(false)
     }

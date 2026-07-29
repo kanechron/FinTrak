@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Utilities;
 using FinTrak.Core.Interfaces;
@@ -11,10 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace FinTrak.Api.Controllers
 {
-    [ApiController]
-    [Route("[controller]")]
-    [Authorize]
-    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService, TransactionValidator tValidator) : ControllerBase
+    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService, TransactionValidator tValidator) : ApiBaseController
     {
         private readonly ITransactionRepository _repo = repo;
         private readonly IMapper _mapper = mapper;
@@ -134,9 +129,6 @@ namespace FinTrak.Api.Controllers
             var count = await _pdfImportService.ImportAsync(request.pdf.OpenReadStream(), GetUserId(), cancellationToken);
             return Ok(new { imported = count });
         }
-
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 
     public class PdfUploadRequest

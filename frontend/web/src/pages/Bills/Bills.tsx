@@ -6,6 +6,7 @@ import type { Transaction } from '../../api/transactions'
 import BillRow from './BillRow'
 import PendingBillRow from './PendingBillRow'
 import { monthlyEquivalent } from './billHelpers'
+import { useToast } from '../../hooks/ToastProvider'
 
 function BillSection({
   title,
@@ -35,6 +36,7 @@ export default function Bills() {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [historyCache, setHistoryCache] = useState<Record<string, Transaction[]>>({})
+  const toast = useToast()
 
   const fetchBills = () =>
     getBills().then((data) => {
@@ -52,8 +54,9 @@ export default function Bills() {
     try {
       await deleteBill(id)
       fetchBills()
+      toast.success({ title: 'Bill deleted', content: '' })
     } catch {
-      console.error('Failed to delete bill')
+      toast.error({ title: 'Failed to delete bill', content: 'Please try again.' })
     }
   }
 

@@ -1,16 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
+﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
-    [Authorize]
-    [ApiController]
-    [Route("[controller]")]
-    public class AccountsController(IAccountRepository repo, IMapper mapper) : ControllerBase
+    public class AccountsController(IAccountRepository repo, IMapper mapper) : ApiBaseController
     {
         private readonly IAccountRepository _repo = repo;
         private readonly IMapper _mapper = mapper;
@@ -21,8 +16,5 @@ namespace FinTrak.Api.Controllers
             var accounts = await _repo.GetByUserIdAsync(GetUserId(), cancellationToken);
             return Ok(_mapper.Map<List<AccountDto>>(accounts));
         }
-
-        private Guid GetUserId() =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 }

@@ -11,6 +11,7 @@ import {
   chipClass,
 } from './modalTheme'
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock'
+import { useToast } from '../../hooks/ToastProvider'
 
 interface Props {
   isOpen: boolean
@@ -32,6 +33,7 @@ export default function GoalFormModal({ isOpen, onClose, onSuccess, accounts, go
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const toast = useToast()
 
   useBodyScrollLock(isOpen)
 
@@ -94,8 +96,9 @@ export default function GoalFormModal({ isOpen, onClose, onSuccess, accounts, go
       }
       onSuccess()
       onClose()
+      toast.success({ title: isEdit ? 'Goal updated' : 'Goal added', content: name })
     } catch {
-      setError('Failed to save goal.')
+      toast.error({ title: 'Failed to save goal', content: 'Please try again.' })
     } finally {
       setIsSubmitting(false)
     }

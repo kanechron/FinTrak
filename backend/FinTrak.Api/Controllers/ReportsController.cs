@@ -1,19 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Interfaces;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace Fintrak.Api.Controllers
+namespace FinTrak.Api.Controllers
 {
-    [Authorize]
-    [ApiController]
-    [Route("[controller]")]
     [EnableRateLimiting("report")]
-    public class ReportsController : ControllerBase
+    public class ReportsController : ApiBaseController
     {
         private readonly FinTrakDbContext _db;
         private readonly IExportService _exportService;
@@ -23,8 +18,6 @@ namespace Fintrak.Api.Controllers
             _db = db;
             _exportService = exportService;
         }
-
-        private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         [HttpGet("category-spending")]
         public async Task<IActionResult> GetCategorySpending([FromQuery] string? from, [FromQuery] string? to, [FromQuery] Guid[]? categoryIds, [FromQuery] string? format)

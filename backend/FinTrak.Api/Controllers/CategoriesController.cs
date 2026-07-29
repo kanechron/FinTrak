@@ -1,15 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Interfaces;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
-    [ApiController]
-    [Route("[controller]")]
-    [Authorize]
-    public class CategoriesController(ICategoryRepository repo, IMapper mapper) : ControllerBase
+    public class CategoriesController(ICategoryRepository repo, IMapper mapper) : ApiBaseController
     {
         private readonly ICategoryRepository _repo = repo;
         private readonly IMapper _mapper = mapper;

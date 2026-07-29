@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { usePlaidLink } from 'react-plaid-link'
 import { getAccounts } from '../../api/accounts'
 import ReloadPage from '../../utils/ReloadPage'
+import { useToast } from '../../hooks/ToastProvider'
 
 type Status = 'idle' | 'connecting' | 'syncing' | 'done' | 'error'
 
@@ -47,6 +48,7 @@ export default function SyncButton() {
   const [status, setStatus] = useState<Status>('idle')
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const opened = useRef(false)
+  const toast = useToast()
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
@@ -56,9 +58,11 @@ export default function SyncButton() {
         setStatus('syncing')
         await runSync()
         setStatus('done')
+        toast.success({ title: 'Account linked', content: 'Sync complete.' })
         ReloadPage()
       } catch {
         setStatus('error')
+        toast.error({ title: 'Sync failed', content: 'Please try again.' })
       }
     },
     onExit: () => {
@@ -78,10 +82,12 @@ export default function SyncButton() {
         setStatus('syncing')
         await runSync()
         setStatus('done')
+        toast.success({ title: 'Synced', content: 'Your accounts are up to date.' })
         ReloadPage()
       }
     } catch {
       setStatus('error')
+      toast.error({ title: 'Sync failed', content: 'Please try again.' })
     }
   }
 
