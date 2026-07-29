@@ -17,7 +17,7 @@ namespace FinTrak.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -93,7 +93,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("PlaidItemId");
 
-                    b.ToTable("Accounts");
+                    b.ToTable("Accounts", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Bill", b =>
@@ -148,7 +148,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Bills");
+                    b.ToTable("Bills", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Budget", b =>
@@ -202,7 +202,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Budgets");
+                    b.ToTable("Budgets", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Category", b =>
@@ -237,7 +237,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Goal", b =>
@@ -279,7 +279,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Goals");
+                    b.ToTable("Goals", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Invite", b =>
@@ -307,7 +307,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("Token");
 
-                    b.ToTable("Invites");
+                    b.ToTable("Invites", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.MerchantAlias", b =>
@@ -336,7 +336,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("RawName")
                         .IsUnique();
 
-                    b.ToTable("MerchantAliases");
+                    b.ToTable("MerchantAliases", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.PlaidItem", b =>
@@ -388,7 +388,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("PlaidItemId")
                         .IsUnique();
 
-                    b.ToTable("PlaidItems");
+                    b.ToTable("PlaidItems", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.RefreshToken", b =>
@@ -418,7 +418,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.SyncQueue", b =>
@@ -453,7 +453,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("PlaidItemId");
 
-                    b.ToTable("SyncQueue");
+                    b.ToTable("SyncQueue", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Transaction", b =>
@@ -527,7 +527,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("PlaidTransactionId");
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.User", b =>
@@ -565,7 +565,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("GoogleId")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("AccountGoal", b =>
