@@ -39,7 +39,7 @@
 - [ ] **Loading skeletons** — replace blank states during fetch with skeleton loaders
 - [x] **Toast notifications** — user feedback when sync completes, bill accepted, budget saved, etc.; most actions are currently silent
 - [ ] **Onboarding flow** — first-time users land on an empty dashboard with no guidance; short setup wizard (link bank → first sync → add a budget) to reduce drop-off
-- [ ] **Webpage title and favicon** — browser tab still shows the Vite default; set a proper `<title>` and favicon
+- [x] **Webpage title and favicon** — browser tab still shows the Vite default; set a proper `<title>` and favicon
 
 ## Docs
 - [ ] **README: How to use** — walkthrough of core flows (sync, budgets, bills, goals, reports) aimed at a new user
