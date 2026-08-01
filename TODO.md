@@ -20,6 +20,7 @@
 - [ ] **Add Bill modal category list** — shows all categories in one flat dropdown; split into parent/subcategory lists like the Transactions modal
 - [x] **Bill history match logic** — the dropdown arrow on a bill shows matching transactions by category (getTransactionsByCategory); rework to match by the bill's NAME and AMOUNT instead
 - [x] **Bill history quick-hide** — when the bill history dropdown is expanded, add a quick collapse button at the bottom of the transaction list so users don't have to scroll back up to the 3-dot menu to hide it
+- [ ] **Bill period snapshots** — create a snapshot of every elapsed bill period, and add a section for viewing how each past bill period went
 
 ## Reports
 - [ ] **Projected monthly outcome** — estimated income (detected from pay period frequency) minus confirmed bills; designed to give a directional picture of future financial health, not exact figures
