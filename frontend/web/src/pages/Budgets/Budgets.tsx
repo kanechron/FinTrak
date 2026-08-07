@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getBudgets, type Budget } from '../../api/budgets'
 import { getAccounts, type Account } from '../../api/accounts'
-import BalanceCard from '../../components/dashboard/BalanceCard'
-import BudgetList from '../../components/dashboard/BudgetList'
+import BalanceCard from '../../components/common/BalanceCard'
+import BudgetList from '../../components/common/BudgetList'
 import BudgetFormModal from '../../components/modals/BudgetFormModal'
 
 export default function Budgets() {
