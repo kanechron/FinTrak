@@ -87,7 +87,7 @@ export default function Dashboard() {
           <RecentTransactions transactions={transactions} />
         </div>
         <div className="order-1 pb-10 border-b border-line md:order-2 md:pb-0 md:pl-14 md:border-b-0 md:border-l">
-          <BudgetList budgets={budgets} onBudgetAdded={fetchBudgets} />
+          <BudgetList budgets={budgets} onBudgetChange={fetchBudgets}/>
         </div>
       </div>
     </main>
