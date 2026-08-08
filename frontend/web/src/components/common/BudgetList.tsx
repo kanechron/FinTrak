@@ -2,22 +2,24 @@ import { useState } from 'react'
 import { deleteBudget, type Budget } from '../../api/budgets'
 import BudgetFormModal from '../modals/BudgetFormModal'
 import BudgetCard from './BudgetCard'
+import { useToast } from '../../hooks/ToastProvider'
 
 interface Props {
   budgets: Budget[]
-  onBudgetAdded: () => void
+  onBudgetChange: () => void
 }
 
-export default function BudgetList({ budgets, onBudgetAdded }: Props) {
+export default function BudgetList({ budgets, onBudgetChange }: Props) {
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null)
+  const toast = useToast()
 
   const handleDelete = async (id: string) => {
     try {
       await deleteBudget(id)
-      onBudgetAdded()
-    } catch (error) {
-      console.error('Failed to delete budget:', error)
+      toast.success({ title: 'Budget deleted', content: '' })
+    } catch {
+      toast.error({ title: 'Failed to delete budget', content: 'Please try again.' })
     }
   }
 
@@ -33,7 +35,7 @@ export default function BudgetList({ budgets, onBudgetAdded }: Props) {
         onSuccess={() => {
           setAddModalOpen(false)
           setSelectedBudget(null)
-          onBudgetAdded()
+          onBudgetChange()
         }}
       />
       <h2 className="font-medium text-ink mb-4">Budgets</h2>
