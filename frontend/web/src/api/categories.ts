@@ -15,7 +15,7 @@ export function getCategories() {
 }
 /**
  * Get only parent categories
- * @param 
+ * @param
  * @returns array of all non soft-deleted main categories (no subcategories)
  */
 export function getParentCategories() {

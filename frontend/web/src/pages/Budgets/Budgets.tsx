@@ -44,7 +44,7 @@ export default function Budgets() {
       <hr className="border-line my-12" />
 
       <section>
-        <BudgetList budgets={budgets} onBudgetChange={fetchBudgets}/>
+        <BudgetList budgets={budgets} onBudgetChange={fetchBudgets} />
       </section>
     </main>
   )
