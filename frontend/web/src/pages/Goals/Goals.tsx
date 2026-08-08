@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getGoals, type Goal } from '../../api/goals'
 import { getAccounts, type Account } from '../../api/accounts'
-import BalanceCard from '../../components/dashboard/BalanceCard'
-import GoalList from '../../components/dashboard/GoalList'
+import BalanceCard from '../../components/common/BalanceCard'
+import GoalList from '../../components/common/GoalList'
 import allocateGoalAmounts from '../../utils/AllocateGoalAmounts'
 
 export default function Goals() {
