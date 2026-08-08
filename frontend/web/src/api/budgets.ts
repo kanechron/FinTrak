@@ -1,5 +1,6 @@
 import { api } from './client'
 
+
 export interface Budget {
   id: string
   name: string
@@ -26,7 +27,7 @@ export function getBudgets(): Promise<Budget[]> {
  * Create new budget item
  * @remark 'id', 'spent', and 'category' fields omitted
  * @param budget object of type Budget
- * @throws {ApiError} if the request fails
+ * @throws {ApiError} if the request fails 
  */
 export function addBudget(budget: Omit<Budget, 'id' | 'spent' | 'category'>): Promise<void> {
   return api.post('/budgets/add-budget', budget)
@@ -37,7 +38,7 @@ export function addBudget(budget: Omit<Budget, 'id' | 'spent' | 'category'>): Pr
  * @remark 'id' and 'spent' fields optional
  * @param id string
  * @param budget object of type Budget
- * @throws {ApiError} if the request fails
+ * @throws {ApiError} if the request fails 
  */
 export function updateBudget(
   id: string,
@@ -49,7 +50,7 @@ export function updateBudget(
 /**
  * Delete budget item
  * @param id string
- * @throws {ApiError} if the request fails
+ * @throws {ApiError} if the request fails 
  */
 export function deleteBudget(id: string): Promise<void> {
   return api.delete(`/budgets/delete-budget/${id}`)
