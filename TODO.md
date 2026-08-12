@@ -26,6 +26,12 @@
 - [ ] **Projected monthly outcome** — estimated income (detected from pay period frequency) minus confirmed bills; designed to give a directional picture of future financial health, not exact figures
 - [x] **Date range picker** — let users scope reports to a custom date range
 - [ ] **Net worth snapshot** — account balances (assets) minus outstanding bills (liabilities)
+- [ ] **Linear Trend Extrapolation** — run a regression across a user's transaction history per category to project forward trend lines, not just historical totals; CPU-bound over potentially years of data, candidate for parallelizing across categories rather than another simple aggregate query
+- [ ] **Spending anomaly detection** — flag transactions that deviate from a merchant/category's historical mean+stddev (e.g. a normally $60-90 grocery run showing up at $340); rolling stats per merchant, computable incrementally as new transactions sync in
+- [ ] **Category drift over time** — track month-over-month percentage share per category, not just raw totals, to surface shifts like "dining went from 12% to 22% of spend over 6 months" that flat totals hide
+- [ ] **Recurring-but-unflagged spend detection** — reuse `IBillDetectionService`'s trigram/frequency pattern logic against non-bill categories to surface recurring spend users haven't consciously tracked as a bill (subscriptions, weekly habits)
+- [ ] **Income volatility / pay stability score** — for irregular income, a coefficient-of-variation-style metric on detected pay-period deposits; feeds a confidence band into the projected monthly outcome feature instead of a single point estimate
+- [ ] **Category correlation** — Pearson correlation across monthly category totals to surface categories that move together (e.g. dining spikes tracking with entertainment spikes); reuses the same monthly aggregation pipeline as the trend regression work
 
 ## AI
 - [ ] **AI budgeting assistant** — user inputs a goal (or pulls from existing Budget/Goal items) and Claude returns a personalized plan to reach it; consider what data to pass as context (spending history, bills, income estimate)
