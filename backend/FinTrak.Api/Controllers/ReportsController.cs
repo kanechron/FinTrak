@@ -251,7 +251,7 @@ namespace FinTrak.Api.Controllers
         public async Task<IActionResult> GetLTEForecasting()
         {
             var userId = GetUserId();
-            var result = _lte.GetLTEForecastingAsync(userId);
+            var result = await _lte.GetLTEForecasting(userId);
 
             return Ok(result);
         }

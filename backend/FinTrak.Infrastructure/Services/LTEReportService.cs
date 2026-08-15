@@ -10,16 +10,6 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
 
     public async Task<LTEForecastingResponseDto> GetLTEForecasting(Guid userId)
     {
-
-        /*
-            x = month's index
-            y = month's sum
-            x̄ and ȳ are the means of all the x and y values respectively
-        */
-        //LTE Slope formula: m = Σ((xᵢ - x̄)(yᵢ - ȳ)) / Σ((xᵢ - x̄)²)
-        //LTE Intercept forumula: b = ȳ - m·x̄
-        //LTE Projection calc: ŷ = m·x_next + b
-
         var categories = await _categoryRepo.GetAllAsync();
         var categoryNames = categories.ToDictionary(c => c.Id, c => c.Name);
 
@@ -65,6 +55,7 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
                     }
                 }
 
+                //
                 var projectionConfidence = flaggedCandidates.Count == 0
                     ? "This projection reflects a consistent trend."
                     : $"This projection was significantly influenced by {flaggedCandidates.MaxBy(c => c.ShiftPercent).Month:MMMM yyyy}.";
@@ -94,6 +85,11 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
         };
     }
 
+    /// <summary>
+    /// Generates a label representing the volatility of the Z-Score
+    /// </summary>
+    /// <param name="zScore"></param>
+    /// <returns>string</returns>
     private static string GetDeviationLabel(double zScore) => zScore switch
     {
         >= 2.0 => "Unusually high compared to your typical spending",
@@ -103,7 +99,12 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
         _ => "Typical for this category"
     };
 
-    //Calculate all of a point's deviation metrics
+    /// <summary>
+    /// Calculates the deviation metrics for a series of Data Points
+    /// </summary>
+    /// <param name="filledPoints"></param>
+    /// <param name="x"></param>
+    /// <returns>Deviation fields: dollarChange, pctChange, zScore</returns>
     private Deviation CalculateDeviation(List<LTEDataPoint> filledPoints, int x)
     {
         var target = filledPoints[x].MonthlySum;
@@ -121,10 +122,12 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
         return new Deviation(dollarChange, pctChange, zScore);
     }
 
-    //Calculate a projection
-    //LTE Slope formula: m = Σ((xᵢ - x̄)(yᵢ - ȳ)) / Σ((xᵢ - x̄)²)
-    //LTE Intercept forumula: b = ȳ - m·x̄
-    //LTE Projection calc: ŷ = m·x_next + b
+    /// <summary>
+    /// Calculate the projected outcome of next month's sum for a given series of datapoints
+    /// </summary>
+    /// <param name="points"></param>
+    /// <param name="xNext"></param>
+    /// <returns>Decimal value representing </returns>
     private decimal CalculateProjection(List<RegressionPoint> points, int xNext)
     {
         decimal meanY = points.Average(p => p.Y);
@@ -137,7 +140,19 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
         return result;
     }
 
+    /// <summary>
+    /// A permanent position tag for a datapoint. Retains its chronological position to survive removal from a list.
+    /// </summary>
+    /// <param name="X"></param>
+    /// <param name="Y"></param>
     private readonly record struct RegressionPoint(int X, decimal Y);
+
+    /// <summary>
+    /// The deviation data for a list of datapoints
+    /// </summary>
+    /// <param name="DollarChange"></param>
+    /// <param name="PercentChange"></param>
+    /// <param name="ZScore"></param>
     private readonly record struct Deviation(decimal DollarChange, double PercentChange, double ZScore);
 
 }
