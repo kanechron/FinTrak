@@ -7,6 +7,8 @@ import {
   type CategorySpending,
   type CashFlow,
   getMonthlyTransactions,
+  getLTERegression,
+  type LTEForecastingResponse,
 } from '../../api/reports'
 import { getBudgets, type Budget } from '../../api/budgets'
 import {
@@ -25,6 +27,8 @@ import { isoDate } from '../../utils/formatDate'
 import ReportMenu from './ReportMenu'
 import FilterPanel from './FilterPanel'
 import TransactionPanel from './TransactionPanel'
+import LTEChart from '../../components/charts/LTEChart'
+import LTECategoryList from '../../components/charts/LTECategoryList'
 
 function defaultFrom(): string {
   const d = new Date()
@@ -40,6 +44,24 @@ export default function Reports() {
   const [cashFlow, setCashFlow] = useState<CashFlow[]>([])
   const [categoryTransactions, setCategoryTransactions] = useState<Transaction[]>([])
   const [clickedCategory, setClickedCategory] = useState<{ id: string; name: string } | null>(null)
+  const [LTEPoints, setLTEPoints] = useState<LTEForecastingResponse>({
+    categories: [],
+    insufficientCategories: []
+  })
+  const [lockedIds, setLockedIds] = useState<Set<string>>(new Set())
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+
+  const handleToggleLock = (categoryId: string) => {
+    setLockedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(categoryId)) {
+        next.delete(categoryId)
+      } else {
+        next.add(categoryId)
+      }
+      return next
+    })
+  }
 
   // — UI state
   const [error, setError] = useState<string | null>(null)
@@ -67,12 +89,14 @@ export default function Reports() {
       getCategorySpending(from, to),
       getMonthlySpending(from, to),
       getCashFlow(from, to),
+      getLTERegression(),
     ])
-      .then(([cat, monthly, cash]) => {
+      .then(([cat, monthly, cash, dataPoints]) => {
         setCategorySpending(cat)
         setMonthlySpending(monthly)
         setCashFlow(cash)
         setSelectedCategoryIds(new Set())
+        setLTEPoints(dataPoints)
       })
       .catch(() => setError('Failed to load report data.'))
   }, [fromDate, toDate])
@@ -270,6 +294,30 @@ export default function Reports() {
               <CashFlowChart data={cashFlow} onPointClick={handleCashFlowClick} />
             </section>
           </div>
+
+          <hr className="border-line" />
+
+          {/* — LTE Forecasting: full-width, chart + category list side by side */}
+          <section>
+            <div className="mb-3">
+                <h2 className="font-medium text-ink">Predict Future Spending</h2>
+                <p className="text-xs text-ink-3 mt-0.5">Calculate this month's outcome per category based on past trends</p>
+            </div>
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="lg:w-3/4">
+                <LTEChart data={LTEPoints} lockedIds={lockedIds} hoveredId={hoveredId} />
+              </div>
+              <div className="lg:w-1/4 lg:max-h-[360px] lg:overflow-y-auto">
+                <LTECategoryList
+                  data={LTEPoints}
+                  hoveredId={hoveredId}
+                  onHover={setHoveredId}
+                  lockedIds={lockedIds}
+                  onToggleLock={handleToggleLock}
+                />
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 

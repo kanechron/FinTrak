@@ -12,14 +12,20 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
 {
     private readonly FinTrakDbContext _db = db;
 
-    public async Task<Dictionary<Guid, List<LTEDataPoint>>> GetDataPoints(Guid userId)
-    { 
+    // Interim hardcoded exclusion until the rules engine (TODO.md) lets users manage
+    // this themselves. These aren't spending categories, so they don't belong in a
+    // spending-trend forecast at all.
+    private static readonly string[] CategoryBlacklist = ["TRANSFER_IN", "TRANSFER_OUT", "INCOME"];
 
-            var insufficientCats = await _db.Transactions
+    public async Task<Dictionary<Guid, List<LTEDataPoint>>> GetDataPoints(Guid userId)
+    {
+
+            var rawMonthlySums = await _db.Transactions
             .Where(t =>
             t.UserId == userId &&
             t.DeletedAt == null &&
             t.CategoryId != null &&
+            !CategoryBlacklist.Contains(t.Category!.Name) &&
             t.Date >= DateOnly.FromDateTime(new DateTime(DateTime.Now.Year-1, DateTime.Now.Month, 1 )) &&
             t.Date < DateOnly.FromDateTime(DateTime.Now.AddDays(1 - DateTime.Now.Day))
             )
@@ -32,11 +38,11 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 MonthlySum = g.Sum(x => x.Amount) ?? 0m
             })
             .ToListAsync();
-             
-            var result = insufficientCats
+
+            var result = rawMonthlySums
             .GroupBy(x => x.CategoryId)
             .ToDictionary(
-                g => g.Key, 
+                g => g.Key,
                 g => g.Select(x => new LTEDataPoint(x.MonthlySum, new DateOnly(x.Year, x.Month, 1))).ToList());
 
         return result;
