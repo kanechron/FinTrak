@@ -1,3 +1,5 @@
+using FinTrak.Core.Interfaces;
+
 namespace FinTrak.Core.DTOs
 {
     public class CategorySpendingDto
@@ -28,5 +30,27 @@ namespace FinTrak.Core.DTOs
         public decimal Income { get; init; }
         public decimal Expenses { get; init; }
         public decimal Net { get; init; }
+    }
+
+
+    public class LTEForecastingResponseDto
+    {
+        public required List<LTEDataDto> Categories { get; init; }
+        public required List<LTEInsufficientDataDto> InsufficientCategories { get; init; }
+    }
+    public class LTEDataDto
+    {
+        public required string Category { get; init; }
+        public Guid CategoryId { get; init; }
+        public required List<LTEDataPoint> DataPoints { get; init; }
+        public required LTEDataPoint Projection { get; init; }
+        public required string ProjectionConfidence { get; init; }
+        public double PercentChange { get; init; }
+        public decimal DollarChange { get; init; }
+        public required string DeviationLabel { get; init; }
+    }
+    public class LTEInsufficientDataDto
+    {
+        public Guid CategoryId { get; init; }
     }
 }

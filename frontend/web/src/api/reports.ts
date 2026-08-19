@@ -117,3 +117,32 @@ export function getCashFlow(from?: string, to?: string) {
   const query = params.toString()
   return api.get<CashFlow[]>(`/reports/cash-flow${query ? `?${query}` : ''}`)
 }
+
+export interface LTEForecastingResponse {
+  categories: LTEData[]
+  insufficientCategories: LTEInsufficientData[]
+}
+
+export interface LTEData {
+  category: string
+  categoryId: string
+  dataPoints: LTEDataPoint[]
+  projection: LTEDataPoint
+  projectionConfidence: string
+  percentChange: number
+  dollarChange: number
+  deviationLabel: string
+}
+
+export interface LTEInsufficientData {
+  categoryId: string
+}
+
+export interface LTEDataPoint {
+  monthlySum: number
+  month: string
+}
+
+export function getLTERegression() {
+  return api.get<LTEForecastingResponse>(`/reports/lte-forecasting`)
+}

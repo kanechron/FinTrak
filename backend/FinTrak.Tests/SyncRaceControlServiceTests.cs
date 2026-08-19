@@ -4,7 +4,7 @@ namespace FinTrak.Tests;
 
 public class SyncRaceControlServiceTests
 {
-    //Marks a text xUnit should run. xUnit specific.
+    //Marks a test xUnit should run. xUnit specific.
     [Fact]
     public async Task AcquireAsync_ForSameId_NeverAllowsConcurrentAccess()
     {

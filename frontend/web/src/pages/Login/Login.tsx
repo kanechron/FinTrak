@@ -1,6 +1,12 @@
 import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ImportPreview, ReportsPreview, BillsPreview, GoalsPreview } from './FeaturePreviews'
+import {
+  ImportPreview,
+  ReportsPreview,
+  BillsPreview,
+  GoalsPreview,
+  LTEForecastPreview,
+} from './FeaturePreviews'
 import { reactivateAccount } from '../../api/auth'
 
 const features = [
@@ -23,6 +29,12 @@ const features = [
     title: 'Priority Goals',
     desc: 'Reorder goals by what matters most, and track progress on each one.',
     preview: GoalsPreview,
+  },
+  {
+    title: 'Spending Forecasts',
+    desc: `See where your spending in each category is headed next month, based on that category's spending history`,
+    preview: LTEForecastPreview,
+    fullWidth: true,
   },
 ]
 
@@ -214,7 +226,7 @@ export default function Login() {
             {features.map((f) => {
               const Preview = f.preview
               return (
-                <div key={f.title}>
+                <div key={f.title} className={f.fullWidth ? 'sm:col-span-2' : undefined}>
                   <Preview />
                   <p className="text-[13.5px] font-semibold text-ink mt-3.5">{f.title}</p>
                   <p className="text-xs text-ink-3 leading-relaxed mt-1">{f.desc}</p>
