@@ -1,9 +1,23 @@
 import { Fragment, useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 import type { LTEForecastingResponse } from '../../api/reports'
 import { formatCategoryName } from '../../utils/format'
 import { parseLocalDate } from '../../utils/formatDate'
-import { CATEGORY_COLORS, tooltipStyle, tooltipTextStyle, axisStyle, gridStroke } from './chartTheme'
+import {
+  CATEGORY_COLORS,
+  tooltipStyle,
+  tooltipTextStyle,
+  axisStyle,
+  gridStroke,
+} from './chartTheme'
 
 const GHOST_COLOR = 'var(--ink-3)'
 const GHOST_OPACITY = 0.35
@@ -96,13 +110,21 @@ export default function LTEChart({ data, hoveredId, lockedIds }: Props) {
   const isActive = (categoryId: string) => lockedIds.has(categoryId) || hoveredId === categoryId
 
   // Ghosted lines render first so any active/locked line draws on top of them.
-  const ordered = [...categories].sort((a, b) => Number(isActive(a.categoryId)) - Number(isActive(b.categoryId)))
+  const ordered = [...categories].sort(
+    (a, b) => Number(isActive(a.categoryId)) - Number(isActive(b.categoryId))
+  )
 
   return (
     <ResponsiveContainer width="100%" height={360}>
       <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
-        <XAxis dataKey="label" tick={axisStyle} angle={-35} textAnchor="end" interval="preserveStartEnd" />
+        <XAxis
+          dataKey="label"
+          tick={axisStyle}
+          angle={-35}
+          textAnchor="end"
+          interval="preserveStartEnd"
+        />
         <YAxis tick={axisStyle} tickFormatter={(v) => `$${v}`} />
         <Tooltip
           content={({ active, payload, label }) => (

@@ -299,79 +299,79 @@ export function LTEForecastPreview() {
 
       <div className="hidden sm:block">
         <Frame width={480}>
-      {/* ghosted (unlocked) categories, drawn first so the active line sits on top */}
-      <polyline
-        points="30,70 65,85 100,78 135,60 170,72 205,65"
-        fill="none"
-        stroke="var(--ink-3)"
-        strokeOpacity="0.35"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <polyline
-        points="205,65 245,75"
-        fill="none"
-        stroke="var(--ink-3)"
-        strokeOpacity="0.35"
-        strokeWidth="1.5"
-        strokeDasharray="4 4"
-        strokeLinecap="round"
-      />
-      <polyline
-        points="30,95 65,100 100,92 135,100 170,95 205,100"
-        fill="none"
-        stroke="var(--ink-3)"
-        strokeOpacity="0.35"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <polyline
-        points="205,100 245,95"
-        fill="none"
-        stroke="var(--ink-3)"
-        strokeOpacity="0.35"
-        strokeWidth="1.5"
-        strokeDasharray="4 4"
-        strokeLinecap="round"
-      />
+          {/* ghosted (unlocked) categories, drawn first so the active line sits on top */}
+          <polyline
+            points="30,70 65,85 100,78 135,60 170,72 205,65"
+            fill="none"
+            stroke="var(--ink-3)"
+            strokeOpacity="0.35"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <polyline
+            points="205,65 245,75"
+            fill="none"
+            stroke="var(--ink-3)"
+            strokeOpacity="0.35"
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+            strokeLinecap="round"
+          />
+          <polyline
+            points="30,95 65,100 100,92 135,100 170,95 205,100"
+            fill="none"
+            stroke="var(--ink-3)"
+            strokeOpacity="0.35"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <polyline
+            points="205,100 245,95"
+            fill="none"
+            stroke="var(--ink-3)"
+            strokeOpacity="0.35"
+            strokeWidth="1.5"
+            strokeDasharray="4 4"
+            strokeLinecap="round"
+          />
 
-      {/* historical trend (solid) */}
-      <polyline
-        points="30,102 65,90 100,97 135,70 170,80 205,55"
-        fill="none"
-        stroke="var(--s1)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* projected month (dashed) */}
-      <polyline
-        points="205,55 245,30"
-        fill="none"
-        stroke="var(--s1)"
-        strokeWidth="2"
-        strokeDasharray="4 4"
-        strokeLinecap="round"
-      />
-      <circle cx="245" cy="30" r="3" fill="none" stroke="var(--s1)" strokeWidth="1.6" />
+          {/* historical trend (solid) */}
+          <polyline
+            points="30,102 65,90 100,97 135,70 170,80 205,55"
+            fill="none"
+            stroke="var(--s1)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* projected month (dashed) */}
+          <polyline
+            points="205,55 245,30"
+            fill="none"
+            stroke="var(--s1)"
+            strokeWidth="2"
+            strokeDasharray="4 4"
+            strokeLinecap="round"
+          />
+          <circle cx="245" cy="30" r="3" fill="none" stroke="var(--s1)" strokeWidth="1.6" />
 
-      <line x1="26" y1="112" x2="255" y2="112" stroke="var(--line)" strokeWidth="1" />
+          <line x1="26" y1="112" x2="255" y2="112" stroke="var(--line)" strokeWidth="1" />
 
-      {/* category list, one locked (colored) and two not (ghosted) — matches the three lines above */}
-      <g transform="translate(300, 44)">
-        <rect width="8" height="8" rx="2" fill="var(--s1)" />
-        <rect x="14" y="1.5" width="80" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.7" />
-      </g>
-      <g transform="translate(300, 66)">
-        <rect width="8" height="8" rx="2" fill="var(--ink-3)" opacity="0.4" />
-        <rect x="14" y="1.5" width="60" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.5" />
-      </g>
-      <g transform="translate(300, 88)">
-        <rect width="8" height="8" rx="2" fill="var(--ink-3)" opacity="0.4" />
-        <rect x="14" y="1.5" width="70" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.5" />
-      </g>
+          {/* category list, one locked (colored) and two not (ghosted) — matches the three lines above */}
+          <g transform="translate(300, 44)">
+            <rect width="8" height="8" rx="2" fill="var(--s1)" />
+            <rect x="14" y="1.5" width="80" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.7" />
+          </g>
+          <g transform="translate(300, 66)">
+            <rect width="8" height="8" rx="2" fill="var(--ink-3)" opacity="0.4" />
+            <rect x="14" y="1.5" width="60" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.5" />
+          </g>
+          <g transform="translate(300, 88)">
+            <rect width="8" height="8" rx="2" fill="var(--ink-3)" opacity="0.4" />
+            <rect x="14" y="1.5" width="70" height="5" rx="2.5" fill="var(--ink-3)" opacity="0.5" />
+          </g>
         </Frame>
       </div>
     </>

@@ -46,7 +46,7 @@ export default function Reports() {
   const [clickedCategory, setClickedCategory] = useState<{ id: string; name: string } | null>(null)
   const [LTEPoints, setLTEPoints] = useState<LTEForecastingResponse>({
     categories: [],
-    insufficientCategories: []
+    insufficientCategories: [],
   })
   const [lockedIds, setLockedIds] = useState<Set<string>>(new Set())
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -300,8 +300,10 @@ export default function Reports() {
           {/* — LTE Forecasting: full-width, chart + category list side by side */}
           <section>
             <div className="mb-3">
-                <h2 className="font-medium text-ink">Predict Future Spending</h2>
-                <p className="text-xs text-ink-3 mt-0.5">Calculate this month's outcome per category based on past trends</p>
+              <h2 className="font-medium text-ink">Predict Future Spending</h2>
+              <p className="text-xs text-ink-3 mt-0.5">
+                Calculate this month's outcome per category based on past trends
+              </p>
             </div>
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="lg:w-3/4">

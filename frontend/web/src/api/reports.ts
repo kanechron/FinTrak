@@ -143,7 +143,6 @@ export interface LTEDataPoint {
   month: string
 }
 
-
 export function getLTERegression() {
   return api.get<LTEForecastingResponse>(`/reports/lte-forecasting`)
 }

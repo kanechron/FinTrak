@@ -18,7 +18,11 @@ export function parseLocalDate(date: string): Date {
  */
 export function formatDate(date: string | null): string {
   if (!date) return '—'
-  return parseLocalDate(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return parseLocalDate(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 /**

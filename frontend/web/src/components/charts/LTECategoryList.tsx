@@ -13,10 +13,16 @@ interface Props {
 }
 
 function formatProjectedMonth(iso: string) {
-  return parseLocalDate(iso).toLocaleDateString('en-US', { month: 'long'})
+  return parseLocalDate(iso).toLocaleDateString('en-US', { month: 'long' })
 }
 
-export default function LTECategoryList({ data, hoveredId, onHover, lockedIds, onToggleLock }: Props) {
+export default function LTECategoryList({
+  data,
+  hoveredId,
+  onHover,
+  lockedIds,
+  onToggleLock,
+}: Props) {
   // Color assignment stays anchored to the original, unsorted order — shared with LTEChart's
   // own findIndex — so a category's color never changes based on display/sort order, and the
   // two components always agree on which color belongs to which category.
