@@ -1,16 +1,28 @@
 /**
- * Format a date string for display (e.g. `"May 30, 2026"`)
+ * Parse an ISO date string as local time, avoiding the UTC-midnight shift
  * @remarks Appends `T00:00:00` to plain date-only strings (e.g. `"2026-05-30"`) to force
  * local time parsing. Without it, `new Date("2026-05-30")` parses as UTC midnight, and
- * `toLocaleDateString` shifts it back by the local timezone offset — often landing on
- * the *previous* day for users west of UTC.
+ * any local-timezone formatting (`toLocaleDateString`, etc.) shifts it back by the local
+ * timezone offset — often landing on the *previous* day for users west of UTC.
+ * @param date - an ISO date string (date-only or with a time component)
+ * @returns a `Date` safe to format in the local timezone without a day shift
+ */
+export function parseLocalDate(date: string): Date {
+  return new Date(date.includes('T') ? date : date + 'T00:00:00')
+}
+
+/**
+ * Format a date string for display (e.g. `"May 30, 2026"`)
  * @param date - an ISO date string (date-only or with a time component), or `null`
  * @returns the formatted date, or `"—"` if `date` is `null`
  */
 export function formatDate(date: string | null): string {
   if (!date) return '—'
-  const d = new Date(date.includes('T') ? date : date + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return parseLocalDate(date).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 /**

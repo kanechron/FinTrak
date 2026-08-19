@@ -40,6 +40,36 @@ export function KebabIcon({ className }: IconProps) {
   )
 }
 
+export function LockIcon({ className }: IconProps) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 14 14" fill="none" className={className}>
+      <rect x="2.5" y="6.25" width="9" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M4.25 6.25V4.25C4.25 2.73122 5.48122 1.5 7 1.5C8.51878 1.5 9.75 2.73122 9.75 4.25V6.25"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <circle cx="7" cy="9" r="0.9" fill="currentColor" />
+    </svg>
+  )
+}
+
+export function UnlockIcon({ className }: IconProps) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 14 14" fill="none" className={className}>
+      <rect x="2.5" y="6.25" width="9" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+      <path
+        d="M4.25 6.25V4.25C4.25 2.73122 5.48122 1.5 7 1.5C8.29403 1.5 9.38314 2.38312 9.66977 3.5786"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <circle cx="7" cy="9" r="0.9" fill="currentColor" />
+    </svg>
+  )
+}
+
 export function PencilIcon({ className }: IconProps) {
   return (
     <svg width="18" height="18" viewBox="0 0 14 14" fill="none" className={className}>

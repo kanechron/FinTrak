@@ -12,11 +12,13 @@ namespace FinTrak.Api.Controllers
     {
         private readonly FinTrakDbContext _db;
         private readonly IExportService _exportService;
+        private readonly ILTEReportService _lte;
 
-        public ReportsController(FinTrakDbContext db, IExportService exportService)
+        public ReportsController(FinTrakDbContext db, IExportService exportService, ILTEReportService lte)
         {
             _db = db;
             _exportService = exportService;
+            _lte = lte;
         }
 
         [HttpGet("category-spending")]
@@ -241,6 +243,15 @@ namespace FinTrak.Api.Controllers
             })
             .OrderByDescending(t => t.Amount)
             .ToListAsync();
+
+            return Ok(result);
+        }
+
+        [HttpGet("lte-forecasting")]
+        public async Task<IActionResult> GetLTEForecasting()
+        {
+            var userId = GetUserId();
+            var result = await _lte.GetLTEForecasting(userId);
 
             return Ok(result);
         }
