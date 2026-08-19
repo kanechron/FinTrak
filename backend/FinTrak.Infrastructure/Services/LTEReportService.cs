@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Interfaces;
 
@@ -90,7 +91,7 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
     /// </summary>
     /// <param name="zScore"></param>
     /// <returns>string</returns>
-    private static string GetDeviationLabel(double zScore) => zScore switch
+    internal static string GetDeviationLabel(double zScore) => zScore switch
     {
         >= 2.0 => "Unusually high compared to your typical spending",
         <= -2.0 => "Unusually low compared to your typical spending",
@@ -105,7 +106,7 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
     /// <param name="filledPoints"></param>
     /// <param name="x"></param>
     /// <returns>Deviation fields: dollarChange, pctChange, zScore</returns>
-    private Deviation CalculateDeviation(List<LTEDataPoint> filledPoints, int x)
+    internal static Deviation CalculateDeviation(List<LTEDataPoint> filledPoints, int x)
     {
         var target = filledPoints[x].MonthlySum;
         var others = filledPoints.Where((p, i) => i != x);
@@ -128,7 +129,7 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
     /// <param name="points"></param>
     /// <param name="xNext"></param>
     /// <returns>Decimal value representing </returns>
-    private decimal CalculateProjection(List<RegressionPoint> points, int xNext)
+    internal static decimal CalculateProjection(List<RegressionPoint> points, int xNext)
     {
         decimal meanY = points.Average(p => p.Y);
         decimal meanX = points.Sum(p => (decimal)p.X) / points.Count;
@@ -145,7 +146,7 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
     /// </summary>
     /// <param name="X"></param>
     /// <param name="Y"></param>
-    private readonly record struct RegressionPoint(int X, decimal Y);
+    internal readonly record struct RegressionPoint(int X, decimal Y);
 
     /// <summary>
     /// The deviation data for a list of datapoints
@@ -153,6 +154,6 @@ public class LTEReportService(IReportsRepository repts, ICategoryRepository cate
     /// <param name="DollarChange"></param>
     /// <param name="PercentChange"></param>
     /// <param name="ZScore"></param>
-    private readonly record struct Deviation(decimal DollarChange, double PercentChange, double ZScore);
+    internal readonly record struct Deviation(decimal DollarChange, double PercentChange, double ZScore);
 
 }
