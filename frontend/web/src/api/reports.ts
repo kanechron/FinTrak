@@ -126,8 +126,8 @@ export interface LTEForecastingResponse {
 export interface LTEData {
   category: string
   categoryId: string
-  dataPoints: LTEDataPoint[]
-  projection: LTEDataPoint
+  dataPoints: MonthlyDataPoint[]
+  projection: MonthlyDataPoint
   projectionConfidence: string
   percentChange: number
   dollarChange: number
@@ -138,11 +138,11 @@ export interface LTEInsufficientData {
   categoryId: string
 }
 
-export interface LTEDataPoint {
+export interface MonthlyDataPoint {
   monthlySum: number
   month: string
 }
 
 export function getLTERegression() {
-  return api.get<LTEForecastingResponse>(`/reports/lte-forecasting`)
+  return api.get<LTEForecastingResponse>(`/reports/lte-report`)
 }

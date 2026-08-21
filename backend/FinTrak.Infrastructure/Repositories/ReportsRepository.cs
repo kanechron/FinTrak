@@ -17,19 +17,47 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
     // spending-trend forecast at all.
     private static readonly string[] CategoryBlacklist = ["TRANSFER_IN", "TRANSFER_OUT", "INCOME"];
 
-    public async Task<Dictionary<Guid, List<LTEDataPoint>>> GetDataPoints(Guid userId)
+    public async Task<Dictionary<Guid, List<MonthlyDataPoint>>> GetDataPoints(Guid userId)
     {
 
-            var rawMonthlySums = await _db.Transactions
+        var rawMonthlySums = await _db.Transactions
+        .Where(t =>
+        t.UserId == userId &&
+        t.DeletedAt == null &&
+        t.CategoryId != null &&
+        !CategoryBlacklist.Contains(t.Category!.Name) &&
+        t.Date >= DateOnly.FromDateTime(new DateTime(DateTime.Now.Year - 1, DateTime.Now.Month, 1)) &&
+        t.Date < DateOnly.FromDateTime(DateTime.Now.AddDays(1 - DateTime.Now.Day))
+        )
+        .GroupBy(x => new { x.CategoryId, x.Date!.Value.Year, x.Date!.Value.Month })
+        .Select(g => new
+        {
+            CategoryId = g.Key.CategoryId!.Value,
+            g.Key.Year,
+            g.Key.Month,
+            MonthlySum = g.Sum(x => x.Amount) ?? 0m
+        })
+        .ToListAsync();
+
+        var result = rawMonthlySums
+        .GroupBy(x => x.CategoryId)
+        .ToDictionary(
+            g => g.Key,
+            g => g.Select(x => new MonthlyDataPoint(x.MonthlySum, new DateOnly(x.Year, x.Month, 1))).ToList());
+
+        return result;
+    }
+
+    public async Task<Dictionary<Guid, MonthlyDataPoint>> GetRunningTransactionTotal(Guid userId)
+    {
+        var rawMonthlySums = await _db.Transactions
             .Where(t =>
-            t.UserId == userId &&
-            t.DeletedAt == null &&
-            t.CategoryId != null &&
-            !CategoryBlacklist.Contains(t.Category!.Name) &&
-            t.Date >= DateOnly.FromDateTime(new DateTime(DateTime.Now.Year-1, DateTime.Now.Month, 1 )) &&
-            t.Date < DateOnly.FromDateTime(DateTime.Now.AddDays(1 - DateTime.Now.Day))
+                t.DeletedAt == null &&
+                t.UserId == userId &&
+                t.CategoryId != null &&
+                t.Date >= DateOnly.FromDateTime(DateTime.Now.AddDays(1 - DateTime.Now.Day))
             )
-            .GroupBy(x => new {x.CategoryId, x.Date!.Value.Year, x.Date!.Value.Month})
+            .GroupBy(x => new { x.CategoryId, x.Date!.Value.Year, x.Date!.Value.Month })
             .Select(g => new
             {
                 CategoryId = g.Key.CategoryId!.Value,
@@ -39,14 +67,8 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
             })
             .ToListAsync();
 
-            var result = rawMonthlySums
-            .GroupBy(x => x.CategoryId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(x => new LTEDataPoint(x.MonthlySum, new DateOnly(x.Year, x.Month, 1))).ToList());
-
-        return result;
+        return rawMonthlySums.ToDictionary(
+            x => x.CategoryId,
+            x => new MonthlyDataPoint(x.MonthlySum, new DateOnly(x.Year, x.Month, 1)));
     }
-
-
 }
