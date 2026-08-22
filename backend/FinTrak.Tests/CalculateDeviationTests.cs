@@ -1,15 +1,14 @@
-using FinTrak.Infrastructure.Services;
 using FinTrak.Core.Interfaces;
-using static FinTrak.Infrastructure.Services.LTEReportService;
+using static FinTrak.Core.Utilities.SpendingStatisticsUtil;
 
 
 namespace FinTrak.Tests;
 
 public class CalculateDeviationTests
 {
-    private readonly List<LTEDataPoint> knownGoodPoints;
-    private readonly List<LTEDataPoint> meanZeroPoints;
-    private readonly List<LTEDataPoint> stdevZeroPoints;
+    private readonly List<MonthlyDataPoint> knownGoodPoints;
+    private readonly List<MonthlyDataPoint> meanZeroPoints;
+    private readonly List<MonthlyDataPoint> stdevZeroPoints;
     public CalculateDeviationTests()
     {
         #region CalculateDeviation Datasets
@@ -21,7 +20,7 @@ public class CalculateDeviationTests
                 - PercentChange -31.2%
                 - ZScore -1.51
         */
-        knownGoodPoints = new List<LTEDataPoint>
+        knownGoodPoints = new List<MonthlyDataPoint>
             {
                 new(633.70m, new DateOnly(2025, 6, 1)),
                 new(537.74m, new DateOnly(2025, 7, 1)),
@@ -39,7 +38,7 @@ public class CalculateDeviationTests
         // "Others" (indices 0-10) sum to exactly 0 without being identical, so variance/stdev
         // stays nonzero — isolates the mean==0 guard from the stdev==0 guard, which realistic
         // (always non-negative) MonthlySum data could never do on its own.
-        meanZeroPoints = new List<LTEDataPoint>
+        meanZeroPoints = new List<MonthlyDataPoint>
             {
                 new(-200.00m, new DateOnly(2025, 6, 1)),
                 new(200.00m, new DateOnly(2025, 7, 1)),
@@ -57,7 +56,7 @@ public class CalculateDeviationTests
 
         // "Others" (indices 0-10) are all identical, so mean is nonzero but variance/stdev is
         // exactly 0 — isolates the stdev==0 guard from the mean==0 guard.
-        stdevZeroPoints = new List<LTEDataPoint>
+        stdevZeroPoints = new List<MonthlyDataPoint>
             {
                 new(500.00m, new DateOnly(2025, 6, 1)),
                 new(500.00m, new DateOnly(2025, 7, 1)),
