@@ -1,5 +1,6 @@
+using FinTrak.Infrastructure.Services;
 using FinTrak.Core.Interfaces;
-using static FinTrak.Core.Utilities.SpendingStatisticsUtil;
+using static FinTrak.Infrastructure.Services.LTEReportService;
 
 namespace FinTrak.Tests;
 

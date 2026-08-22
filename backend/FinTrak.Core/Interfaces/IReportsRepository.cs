@@ -4,13 +4,6 @@ namespace FinTrak.Core.Interfaces;
 
 public interface IReportsRepository
 {
-    Task<Dictionary<Guid, List<MonthlyDataPoint>>> GetDataPoints(Guid userId);
-    Task<Dictionary<Guid, MonthlyDataPoint>> GetRunningTransactionTotal(Guid userId);
-    Task<List<CategorySpendingDto>> GetCategorySpending(Guid userId, DateOnly from, DateOnly to, Guid[]? categoryIds);
-    Task<List<CategoryDetailSpendingDto>> GetCategoryDetailSpending(Guid userId, Guid categoryId, DateOnly from, DateOnly to);
-    Task<List<MonthlySpendingDto>> GetMonthlySpending(Guid userId, DateOnly from, DateOnly to);
-    Task<List<TransactionDto>> GetMonthlyTransactions(Guid userId, DateOnly from, DateOnly to);
-    Task<List<CashFlowDto>> GetCashFlow(Guid userId, DateOnly from, DateOnly to);
-    Task<List<TransactionDto>> GetCashFlowTransactions(Guid userId, DateOnly from, DateOnly to);
+    Task<Dictionary<Guid, List<LTEDataPoint>>> GetDataPoints(Guid userId);
 }
-    public readonly record struct MonthlyDataPoint(decimal MonthlySum, DateOnly Month);
+    public readonly record struct LTEDataPoint(decimal MonthlySum, DateOnly Month);

@@ -126,8 +126,8 @@ export interface LTEForecastingResponse {
 export interface LTEData {
   category: string
   categoryId: string
-  dataPoints: MonthlyDataPoint[]
-  projection: MonthlyDataPoint
+  dataPoints: LTEDataPoint[]
+  projection: LTEDataPoint
   projectionConfidence: string
   percentChange: number
   dollarChange: number
@@ -138,33 +138,11 @@ export interface LTEInsufficientData {
   categoryId: string
 }
 
-export interface MonthlyDataPoint {
+export interface LTEDataPoint {
   monthlySum: number
   month: string
 }
 
 export function getLTERegression() {
-  return api.get<LTEForecastingResponse>(`/reports/lte-report`)
-}
-
-export interface SADReportResponse {
-  categories: SADData[]
-  insufficientCategories: SADInsufficientData[]
-}
-
-export interface SADData {
-  category: string
-  categoryId: string
-  runningTotal: number
-  dollarChange: number
-  percentChange: number
-  deviationLabel: string
-}
-
-export interface SADInsufficientData {
-  categoryId: string
-}
-
-export function getSADReport() {
-  return api.get<SADReportResponse>(`/reports/sad-report`)
+  return api.get<LTEForecastingResponse>(`/reports/lte-forecasting`)
 }
