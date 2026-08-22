@@ -1,4 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { 
+  useState, 
+  useEffect, 
+  useMemo 
+} from 'react'
 import {
   getCategorySpending,
   getMonthlySpending,
@@ -9,8 +13,12 @@ import {
   getMonthlyTransactions,
   getLTERegression,
   type LTEForecastingResponse,
+
 } from '../../api/reports'
-import { getBudgets, type Budget } from '../../api/budgets'
+import { 
+  getBudgets, 
+  type Budget 
+} from '../../api/budgets'
 import {
   getTransactionsByCategory,
   getTransactionsByDetailedCategory,
@@ -23,7 +31,9 @@ import MonthlySpendingChart, {
 import BudgetPerformanceChart from '../../components/charts/BudgetPerformanceChart'
 import CashFlowChart from '../../components/charts/CashFlowChart'
 import CategoryDetailCarousel from '../../components/charts/CategoryDetailCarousel'
-import { isoDate } from '../../utils/formatDate'
+import { 
+  isoDate 
+} from '../../utils/formatDate'
 import ReportMenu from './ReportMenu'
 import FilterPanel from './FilterPanel'
 import TransactionPanel from './TransactionPanel'

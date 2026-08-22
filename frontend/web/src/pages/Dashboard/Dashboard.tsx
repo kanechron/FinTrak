@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
   const [SADData, setSADData] = useState<SADReportResponse>({
     categories: [],
-    insufficientCategories: [],
+    insufficientCategories: []
   })
   const [error, setError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)

@@ -25,7 +25,8 @@ function formatRunningTotal(v: number) {
 
 export default function SADWidget({ data }: Props) {
   // Worst offenders first — this widget exists to be scanned at a glance, not sorted through.
-  const sortedCategories = [...data.categories].sort((a, b) => a.percentChange - b.percentChange)
+  const sortedCategories = [...data.categories].sort(
+    (a, b) => a.percentChange - b.percentChange)
 
   return (
     <section>
