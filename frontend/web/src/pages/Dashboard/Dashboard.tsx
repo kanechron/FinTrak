@@ -1,5 +1,6 @@
 import BalanceCard from '../../components/common/BalanceCard'
 import RecentTransactions from '../../components/dashboard/RecentTransactions'
+import SADWidget from '../../components/dashboard/SADWidget'
 import BudgetList from '../../components/common/BudgetList'
 import GoalList from '../../components/common/GoalList'
 import Welcome from '../Welcome/Welcome'
@@ -8,6 +9,7 @@ import { getTransactions, type Transaction } from '../../api/transactions'
 import { getAccounts, type Account } from '../../api/accounts'
 import { getBudgets, type Budget } from '../../api/budgets'
 import { getGoals, type Goal } from '../../api/goals'
+import { getSADReport, type SADReportResponse } from '../../api/reports'
 import allocateGoalAmounts from '../../utils/AllocateGoalAmounts'
 
 export default function Dashboard() {
@@ -15,21 +17,27 @@ export default function Dashboard() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [allocatedGoals, setAllocatedGoals] = useState<Goal[]>([])
+  const [SADData, setSADData] = useState<SADReportResponse>({
+    categories: [],
+    insufficientCategories: []
+  })
   const [error, setError] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   async function fetchData() {
     try {
-      const [transactions, accounts, budgets, goals] = await Promise.all([
+      const [transactions, accounts, budgets, goals, sadData] = await Promise.all([
         getTransactions(),
         getAccounts(),
         getBudgets(),
         getGoals(),
+        getSADReport(),
       ])
       setTransactions(transactions)
       setAccounts(accounts)
       setBudgets(budgets)
       setAllocatedGoals(allocateGoalAmounts(goals, accounts))
+      setSADData(sadData)
     } catch {
       setError('Failed to load dashboard data.')
     } finally {
@@ -74,8 +82,12 @@ export default function Dashboard() {
   if (loaded && accounts.length === 0) return <Welcome />
   return (
     <main className="max-w-[76rem] mx-auto px-3 py-8">
-      <BalanceCard availableBalance={availableBalance} accounts={accounts} />
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
+        <BalanceCard availableBalance={availableBalance} accounts={accounts} />
+        <div className="pt-10 border-t border-line md:pt-0 md:pl-14 md:border-t-0 md:border-l">
+          <SADWidget data={SADData} />
+        </div>
+      </div>
       <hr className="border-line my-12" />
 
       <GoalList goals={allocatedGoals} onGoalAdded={fetchGoals} accounts={accounts} />

@@ -262,7 +262,7 @@ namespace FinTrak.Api.Controllers
         public async Task<IActionResult> GetSADReport()
         {
             var userId = GetUserId();
-            var result = await _sad.GetSpendingAnomalies(userId);
+            var result = await _sad.GetSpendingAnomaliesAsync(userId);
 
             return Ok(result);
         }

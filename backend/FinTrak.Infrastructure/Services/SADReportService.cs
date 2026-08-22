@@ -9,7 +9,7 @@ public class SADReportService(IReportsRepository repts, ICategoryRepository cats
 {
     private readonly IReportsRepository _repts = repts;
     private readonly ICategoryRepository _cats = cats;
-    public async Task<SADReportResponseDto> GetSpendingAnomalies(Guid userId)
+    public async Task<SADReportResponseDto> GetSpendingAnomaliesAsync(Guid userId)
     {
         var categories = await _cats.GetAllAsync();
         var categoryNames = categories.ToDictionary(c => c.Id, c => c.Name);
