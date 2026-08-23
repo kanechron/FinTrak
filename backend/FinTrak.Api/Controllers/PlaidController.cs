@@ -54,7 +54,7 @@ namespace FinTrak.Api.Controllers
                 Language = Going.Plaid.Entity.Language.English,
                 CountryCodes = [Going.Plaid.Entity.CountryCode.Us],
                 Webhook = "https://fintrak.org/api/plaid/webhook",
-                Transactions = new Going.Plaid.Entity.LinkTokenTransactions {DaysRequested = 730}
+                Transactions = new Going.Plaid.Entity.LinkTokenTransactions { DaysRequested = 730 }
 
             });
 
@@ -92,7 +92,7 @@ namespace FinTrak.Api.Controllers
                 });
 
             var institutionName = itemResponse.Item.InstitutionId ?? "Unknown Institution";
- 
+
             // If this already exists, don't create a duplicate
             var existingItem = await _db.PlaidItems
                 .IgnoreQueryFilters()
@@ -174,7 +174,7 @@ namespace FinTrak.Api.Controllers
         [EnableRateLimiting("expensive")]
         public async Task<IActionResult> Sync([FromServices] PlaidClient plaid, CancellationToken ct)
         {
-            
+
             var userId = GetUserId();
             var items = await _db.PlaidItems
                 .Where(p => p.UserId == userId)
@@ -201,7 +201,7 @@ namespace FinTrak.Api.Controllers
             var hasMore = true;
             var userId = item.UserId;
 
-            
+
 
             while (hasMore)
             {
@@ -227,9 +227,9 @@ namespace FinTrak.Api.Controllers
                 .Where(trans => trans.UserId == userId && incomingTransactionIds.Contains(trans.PlaidTransactionId))
                 .ToListAsync(ct);
 
-            var existingTransactions = existingTransactionsList
-                .GroupBy(t => t.PlaidTransactionId!)
-                .ToDictionary(g => g.Key, g => g.First());
+                var existingTransactions = existingTransactionsList
+                    .GroupBy(t => t.PlaidTransactionId!)
+                    .ToDictionary(g => g.Key, g => g.First());
 
 
                 var incomingAccountIds = response.Added.Select(t => t.AccountId).ToList();
@@ -280,18 +280,29 @@ namespace FinTrak.Api.Controllers
 
                     accounts.TryGetValue(t.AccountId!, out var account);
 
+#pragma warning disable CS0612 // Type or member is obsolete
                     var (category, categoryDetailed) = ResolveCategories(t.Name, t.PersonalFinanceCategory);
+#pragma warning restore CS0612 // Type or member is obsolete
 
                     if (existing != null)
                     {
+#pragma warning disable CS0612 // Type or member is obsolete
                         existing.MerchantNameRaw = t.Name ?? string.Empty;
+#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning disable CS0612 // Type or member is obsolete
                         existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning disable CS0612 // Type or member is obsolete
                         existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
+#pragma warning restore CS0612 // Type or member is obsolete
                         existing.CategoryId = category?.Id;
                         existing.CategoryDetailedId = categoryDetailed?.Id;
                     }
                     else
                     {
+#pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0612 // Type or member is obsolete
+#pragma warning disable CS0612 // Type or member is obsolete
                         _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
                         {
                             Id = Guid.NewGuid(),
@@ -311,6 +322,9 @@ namespace FinTrak.Api.Controllers
                             CategoryDetailedId = categoryDetailed?.Id
 
                         });
+#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning restore CS0612 // Type or member is obsolete
                     }
                 }
 
@@ -328,12 +342,18 @@ namespace FinTrak.Api.Controllers
 
                     if (existing == null) continue;
 
+#pragma warning disable CS0612 // Type or member is obsolete
                     var (category, categoryDetailed) = ResolveCategories(t.Name, t.PersonalFinanceCategory);
+#pragma warning restore CS0612 // Type or member is obsolete
 
                     existing.Amount = t.Amount;
                     existing.IsPending = t.Pending!.Value;
+#pragma warning disable CS0612 // Type or member is obsolete
                     existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+#pragma warning restore CS0612 // Type or member is obsolete
+#pragma warning disable CS0612 // Type or member is obsolete
                     existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
+#pragma warning restore CS0612 // Type or member is obsolete
                     existing.CategoryId = category?.Id;
                     existing.CategoryDetailedId = categoryDetailed?.Id;
                 }
@@ -341,7 +361,7 @@ namespace FinTrak.Api.Controllers
 
                 var removedIds = response.Removed.Select(t => t.TransactionId).ToList();
                 var existingRemoved = await _db.Transactions
-                    .Where(t => t.UserId == userId && removedIds.Contains(t.PlaidTransactionId))
+                    .Where(t => t.UserId == userId && removedIds.Contains(t.PlaidTransactionId!))
                     .ToDictionaryAsync(t => t.PlaidTransactionId!);
 
                 // Handle removed transactions
@@ -483,7 +503,7 @@ namespace FinTrak.Api.Controllers
         public async Task<IActionResult> UpdateWebhook([FromServices] PlaidClient plaid, CancellationToken ct)
         {
             var items = await _db.PlaidItems.Where(p => p.UserId == GetUserId()).ToListAsync(ct);
-            
+
             foreach (var item in items)
             {
                 await plaid.ItemWebhookUpdateAsync(new Going.Plaid.Item.ItemWebhookUpdateRequest
@@ -492,7 +512,7 @@ namespace FinTrak.Api.Controllers
                     Webhook = "https://fintrak.org/api/plaid/webhook"
                 });
             }
-            
+
             return Ok();
         }
 

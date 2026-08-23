@@ -58,8 +58,6 @@ namespace FinTrak.Core.Utilities
             // Strip trailing last-name token (e.g. "ii" appended by NFCU for suffix cardholders)
             result = Regex.Replace(result, @"\b(ii|iii|iv|jr|sr)\b\s*$", "");
 
-            
-
             // Remove duplicate consecutive tokens
             result = Regex.Replace(result, @"\b(\w+)\b(?:\s+\1)+\b", "$1");
 
