@@ -1,5 +1,6 @@
 using FinTrak.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 
 namespace FinTrak.Infrastructure.Persistance
 {
@@ -23,6 +24,7 @@ namespace FinTrak.Infrastructure.Persistance
         public DbSet<Invite> Invites => Set<Invite>();
         public DbSet<MerchantAlias> MerchantAliases => Set<MerchantAlias>();
         public DbSet<SyncQueue> SyncQueue => Set<SyncQueue>();
+        public DbSet<Rule> Rules => Set<Rule>();
         
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,6 +44,7 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<Bill>().HasQueryFilter(b => b.DeletedAt == null);
             modelBuilder.Entity<Invite>().HasQueryFilter(i => i.UsedAt == null);
             modelBuilder.Entity<User>().HasQueryFilter(u => u.DeletedAt == null);
+            modelBuilder.Entity<Rule>().HasQueryFilter(r => r.DeletedAt == null);
 
             // Unique indexes
             modelBuilder.Entity<User>().HasIndex(u => u.GoogleId).IsUnique();
@@ -54,6 +57,7 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<Invite>().HasIndex(i => i.Token);
             modelBuilder.Entity<Category>().HasIndex(i => i.DetailId);
             modelBuilder.Entity<Category>().HasIndex(c => c.Name).IsUnique();
+            modelBuilder.Entity<Rule>().HasIndex(r => new { r.UserId, r.Target, r.Priority}).IsUnique();
 
             // Enum storage — store as string for readability in the database
             modelBuilder.Entity<Transaction>()
@@ -83,6 +87,21 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<SyncQueue>()
                 .Property(s => s.Status)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<Rule>()
+                .Property(r => r.Target)
+                .HasConversion<string>();
+            
+            modelBuilder.Entity<Rule>()
+                .Property(r => r.Trigger)
+                .HasConversion<string>();
+
+            //JSON storage
+            modelBuilder.Entity<Rule>()
+                .OwnsMany(r => r.Conditions, c => c.ToJson());
+
+            modelBuilder.Entity<Rule>()
+                .OwnsMany(r => r.Actions, a => a.ToJson());
         }
     }
 }

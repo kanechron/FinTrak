@@ -264,6 +264,8 @@ builder.Services.AddControllers()
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "FinTrak API", Version = "v1" });
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "FinTrak.Api.xml"));
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "FinTrak.Core.xml"));
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

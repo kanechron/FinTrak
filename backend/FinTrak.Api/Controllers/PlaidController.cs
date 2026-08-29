@@ -168,7 +168,7 @@ namespace FinTrak.Api.Controllers
 
         /// <summary>
         /// Syncs transactions for all of the user's linked Plaid items.
-        /// Uses Plaid's cursor-based sync â€” only fetches changes since the last sync.
+        /// Uses Plaid's cursor-based sync only fetches changes since the last sync.
         /// </summary>
         [HttpPost("sync")]
         [EnableRateLimiting("expensive")]

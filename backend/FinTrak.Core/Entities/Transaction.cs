@@ -28,8 +28,20 @@ namespace FinTrak.Core.Entities
         /// <summary>Normalized merchant name after the dedup pipeline has run.</summary>
         public string MerchantName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// When true, Plaid Modified-sync events must not overwrite <see cref="MerchantName"/>/<see cref="MerchantNameNormalized"/> —
+        /// a rule action has deliberately set them. Flip back to false to allow the next sync to overwrite it again.
+        /// </summary>
+        public bool IsMerchantNameLocked { get; set; } = false;
+
         /// <summary>FK to the assigned category. Null until categorized.</summary>
         public Guid? CategoryId { get; set; } = null;
+
+        /// <summary>
+        /// When true, Plaid Modified-sync events must not overwrite <see cref="CategoryId"/> —
+        /// a rule action has deliberately set it. Flip back to false to allow the next sync to overwrite it again.
+        /// </summary>
+        public bool IsCategoryLocked { get; set; } = false;
 
         /// <summary>Navigation property for the assigned category.</summary>
         public Category? Category { get; set; }

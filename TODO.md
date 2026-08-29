@@ -10,7 +10,6 @@
  
 ## Transactions
 - [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
-- [ ] **Dashboard payload limit** — Dashboard.tsx pulls all transactions; add a limit/offset so only the most recent N are fetched on load
 - [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
 - [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
 - [ ] **De-normalize merchant names** — normalized names are stored all-lowercase; convert to Title Case for display
