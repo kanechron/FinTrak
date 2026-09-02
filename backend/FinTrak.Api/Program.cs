@@ -103,6 +103,8 @@ builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IAccountManagementService, DeleteUserAccountService>();
 builder.Services.AddScoped<ILTEReportService, LTEReportService>();
 builder.Services.AddScoped<ISADReportService, SADReportService>();
+builder.Services.AddScoped<IRulesRepository, RulesRepository>();
+builder.Services.AddScoped<IRulesService, RulesService>();
 
 builder.Services.AddSingleton<ISyncRaceControlService, SyncRaceControlService>();
 
