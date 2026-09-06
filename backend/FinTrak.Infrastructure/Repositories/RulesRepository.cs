@@ -15,6 +15,14 @@ public class RulesRepository(FinTrakDbContext db) : IRulesRepository
             .OrderBy(r => r.Priority)
             .ToListAsync(cancellationToken);
 
+    public async Task<List<Rule>> GetByTargetAsync(Guid userId, string target, CancellationToken cancellationToken = default) =>
+        await _db.Rules
+            .Where(r => 
+            r.UserId == userId &&
+            r.Target.ToString() == target)
+            .OrderBy(r => r.Priority)
+            .ToListAsync(cancellationToken);
+
     public async Task<Rule?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _db.Rules.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 

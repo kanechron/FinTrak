@@ -8,25 +8,32 @@ import Budgets from './Tabs/Budgets'
 import Goals from './Tabs/Goals'
 import Bills from './Tabs/Bills'
 import Reports from './Tabs/Reports'
+import type { TargetType } from '../../api/rules'
 
 type Section =
   'general' | 'account' | 'display' | 'transactions' | 'budgets' | 'goals' | 'bills' | 'reports'
 
-const navGroups = [
+  interface NavItem {
+    id: Section
+    label: string
+    target?: TargetType
+  }
+
+const navGroups: { items: NavItem[] }[] = [
   {
     items: [
-      { id: 'general' as Section, label: 'General' },
-      { id: 'account' as Section, label: 'Account' },
-      { id: 'display' as Section, label: 'Display' },
+      { id: 'general' as Section, label: 'General', target: undefined },
+      { id: 'account' as Section, label: 'Account', target: undefined },
+      { id: 'display' as Section, label: 'Display', target: undefined },
     ],
   },
   {
     items: [
-      { id: 'transactions' as Section, label: 'Transactions' },
-      { id: 'budgets' as Section, label: 'Budgets' },
-      { id: 'goals' as Section, label: 'Goals' },
-      { id: 'bills' as Section, label: 'Bills' },
-      { id: 'reports' as Section, label: 'Reports' },
+      { id: 'transactions' as Section, label: 'Transactions', target: 'Transaction' },
+      { id: 'budgets' as Section, label: 'Budgets', target: 'Budget' },
+      { id: 'goals' as Section, label: 'Goals', target: 'Goal' },
+      { id: 'bills' as Section, label: 'Bills', target: 'Bill' },
+      { id: 'reports' as Section, label: 'Reports', target: 'Report' },
     ],
   },
 ]

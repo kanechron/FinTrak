@@ -1,7 +1,15 @@
-export default function Transactions() {
+import { useEffect, useState } from "react"
+import RulesBlock from "../../../components/common/RulesBlock"
+import { 
+  getRulesByTarget, 
+  addRule,
+type Rule, 
+type TargetType} from "../../../api/rules"
+
+
+
+export default function Transactions()  {
   return (
-    <div>
-      <p className="text-[13px] text-ink-3">Coming soon.</p>
-    </div>
+    <RulesBlock target="Transaction"/>
   )
 }

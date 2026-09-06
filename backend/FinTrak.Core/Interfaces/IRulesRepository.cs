@@ -5,6 +5,7 @@ namespace FinTrak.Core.Interfaces;
 public interface IRulesRepository
 {
     Task<List<Rule>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<List<Rule>> GetByTargetAsync(Guid userId, string target, CancellationToken cancellationToken = default);
     Task<Rule?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>Checks for an existing rule at the same (UserId, TargetType, Priority). Pass the rule's own Id via <paramref name="excludeRuleId"/> when updating, so it doesn't collide with itself.</summary>

@@ -1,29 +1,36 @@
 import { api } from './client'
 
-export type TargetType = 'Transaction'
+export type TargetType = 'Transaction' | 'Goal' | 'Budget' | 'Bill' | 'Report'
 
-export type TriggerType = 'Always' | 'OnSync'
+export const TRIGGER_TYPES = ['Always', 'OnSync'] as const
+export type TriggerType = (typeof TRIGGER_TYPES)[number]
 
-export type Operator =
-  | 'GREATER_THAN'
-  | 'LESS_THAN'
-  | 'EQUALS'
-  | 'CONTAINS'
-  | 'GREATER_THAN_OR_EQUAL'
-  | 'LESS_THAN_OR_EQUAL'
-  | 'IN'
+export const OPERATORS = [
+  'GREATER_THAN',
+  'LESS_THAN',
+  'EQUALS',
+  'CONTAINS',
+  'GREATER_THAN_OR_EQUAL',
+  'LESS_THAN_OR_EQUAL',
+  'IN',
+] as const
+export type Operator = (typeof OPERATORS)[number]
 
-export type ConditionField =
-  | 'MerchantName'
-  | 'Amount'
-  | 'TransactionDate'
-  | 'DayOfMonth'
-  | 'DayOfWeek'
-  | 'Month'
+export const CONDITION_FIELDS = [
+  'MerchantName',
+  'Amount',
+  'TransactionDate',
+  'DayOfMonth',
+  'DayOfWeek',
+  'Month',
+] as const
+export type ConditionField = (typeof CONDITION_FIELDS)[number]
 
-export type ActionField = 'Category' | 'MerchantName' | 'BudgetExclusion' | 'BillFlag'
+export const ACTION_FIELDS = ['Category', 'MerchantName', 'BudgetExclusion', 'BillFlag'] as const
+export type ActionField = (typeof ACTION_FIELDS)[number]
 
-export type ActionType = 'Set' | 'Exclude'
+export const ACTION_TYPES = ['Set', 'Exclude'] as const
+export type ActionType = (typeof ACTION_TYPES)[number]
 
 export interface Condition {
   groupId: string
@@ -63,6 +70,15 @@ export function getRules(): Promise<Rule[]> {
 }
 
 /**
+ * 
+ * @param target 
+ * @returns 
+ */
+export function getRulesByTarget(target: string): Promise<Rule[]> {
+    return api.get<Rule[]>(`/rules/get-rules-by-target/${target}`)
+}
+
+/**
  * Get a single rule by id
  * @throws {ApiError} if the rule doesn't exist or isn't owned by the current user
  */
@@ -79,6 +95,19 @@ export function addRule(
   rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt'>
 ): Promise<{ message: string; id: string }> {
   return api.post('/rules/add-rule', rule)
+}
+
+/**
+ * 
+ * @param id ID of the rule being updated
+ * @param rule Entire rule object
+ * @returns 
+ */
+export function updateRule(
+    id: string,
+    rule: Omit<Rule, 'id' | 'userId' | 'createdAt'>
+): Promise<{ message: string }> {
+    return api.patch(`/rules/update-rule/${id}`, rule)
 }
 
 /**

@@ -12,7 +12,7 @@ export default function Transactions() {
   const [categoryIds, setCategoryIds] = useState<Category[]>([])
 
   // — UI state
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null) — edit temporarily disabled
 
