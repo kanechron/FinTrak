@@ -11,16 +11,16 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Anthropic.SDK;
 using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
+using FinTrak.Infrastructure.Utilities;
 using FinTrak.Core.Interfaces;
 using FluentValidation;
 using System.Threading.RateLimiting;
-using System.Globalization;
-using Microsoft.AspNetCore.RateLimiting;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
 // never hardcoded or committed to source control.
 LoadEnv();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -124,6 +124,11 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IAccountReactivationRepository, UserRepostory>();
 builder.Services.AddScoped<IReportsRepository, ReportsRepository>();
 
+// -------------------------------------------------------------------------
+// JSON
+// -------------------------------------------------------------------------
+
+builder.Services.AddSingleton(new RuleFieldMapDeserializer().ParseRuleFieldmap());
 
 // -------------------------------------------------------------------------
 // Database

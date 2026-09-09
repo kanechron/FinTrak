@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
+using System.Text.Json;
+using System.IO;
+using System.Collections.Generic;
 
 namespace FinTrak.Api.Controllers
 {
@@ -32,6 +35,13 @@ namespace FinTrak.Api.Controllers
             if (rule.UserId != GetUserId()) return ForbiddenError();
 
             return Ok(rule);
+        }
+
+        [HttpGet("get-rule-field-map")]
+        public IActionResult GetRuleFieldMap()
+        {
+            var fieldmap = _rules.GetRuleFieldMapSync();
+            return Ok(fieldmap);
         }
 
         [HttpPost("add-rule")]

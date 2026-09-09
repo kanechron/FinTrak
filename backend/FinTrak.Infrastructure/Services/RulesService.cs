@@ -1,11 +1,13 @@
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
+using FinTrak.Core.DTOs;
 
 namespace FinTrak.Infrastructure.Services;
 
-public class RulesService(IRulesRepository repo) : IRulesService
+public class RulesService(IRulesRepository repo, Dictionary<TargetType, RuleFieldMapDto> fieldMap) : IRulesService
 {
     private readonly IRulesRepository _repo = repo;
+    private readonly Dictionary<TargetType, RuleFieldMapDto> _fieldMap = fieldMap;
 
     public Task<List<Rule>> GetRulesAsync(Guid userId, CancellationToken cancellationToken = default) =>
         _repo.GetByUserIdAsync(userId, cancellationToken);
@@ -39,4 +41,6 @@ public class RulesService(IRulesRepository repo) : IRulesService
 
     public Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default) =>
         _repo.DeleteAsync(rule, cancellationToken);
+
+    public Dictionary<TargetType, RuleFieldMapDto> GetRuleFieldMapSync() => _fieldMap;
 }

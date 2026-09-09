@@ -84,11 +84,11 @@ public enum Operator
 {
     GREATER_THAN = 0,
     LESS_THAN = 1,
-    EQUALS = 2,
+    GREATER_THAN_OR_EQUAL = 2,
+    LESS_THAN_OR_EQUAL = 3,
+    EQUALS = 4,
     //NOTE TO SELF: CONTAINS is for string/substring matching, IN is gated by number of values being compared REGARDLESS of value type.
-    CONTAINS = 3,
-    GREATER_THAN_OR_EQUAL = 4,
-    LESS_THAN_OR_EQUAL = 5,
+    CONTAINS = 5,
     IN = 6
 }
 

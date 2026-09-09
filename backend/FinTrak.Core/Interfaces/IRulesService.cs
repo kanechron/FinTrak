@@ -1,3 +1,4 @@
+using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 
 namespace FinTrak.Core.Interfaces;
@@ -15,4 +16,6 @@ public interface IRulesService
     Task UpdateRuleAsync(Rule rule, CancellationToken cancellationToken = default);
 
     Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default);
+    Dictionary<TargetType, RuleFieldMapDto> GetRuleFieldMapSync();
+
 }
