@@ -37,7 +37,8 @@ public class Rule
 /// <summary>What kind of entity a rule targets.</summary>
 public enum TargetType
 {
-    Transaction = 0
+    Undefined = 0,
+    Transaction = 1
 }
 
 /// <summary>When a rule is evaluated.</summary>
@@ -48,8 +49,9 @@ public enum TargetType
 /// </list>
 public enum TriggerType
 {
-    Always = 0,
-    OnSync = 1,
+    Undefined = 0,
+    Always = 1,
+    OnSync = 2,
 }
 
 /// <summary>One clause of a rule's match logic: does <see cref="ConditionField"/> satisfy <see cref="ConditionOperator"/> against <see cref="ConditionValue"/>.</summary>

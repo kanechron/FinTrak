@@ -15,7 +15,7 @@ public class ActionValidator : AbstractValidator<FinTrak.Core.Entities.Action>
             .NotNull().WithMessage("Action must have a type.");
 
         RuleFor(a => a.ActionValue)
-            .NotNull().WithMessage("Action must have a value.");
+            .NotNull().WithMessage("Action must have a value."); 
 
         RuleFor(a => a)
             .Must(a => fieldmap.TryGetValue(target, out var entry) &&

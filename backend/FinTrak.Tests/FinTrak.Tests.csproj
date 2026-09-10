@@ -22,6 +22,11 @@
   <ItemGroup>
     <ProjectReference Include="..\FinTrak.Core\FinTrak.Core.csproj" />
     <ProjectReference Include="..\FinTrak.Infrastructure\FinTrak.Infrastructure.csproj" />
+    <ProjectReference Include="..\FinTrak.Api\FinTrak.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\FinTrak.Api\rulefieldmap.json" Link="rulefieldmap.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
