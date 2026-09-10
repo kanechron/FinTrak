@@ -2,15 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
-using System.Text.Json;
-using System.IO;
-using System.Collections.Generic;
+using FinTrak.Api.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace FinTrak.Api.Controllers
 {
-    public class RulesController(IRulesService rules) : ApiBaseController
+    public class RulesController(IRulesService rules, RuleValidator val) : ApiBaseController
     {
         private readonly IRulesService _rules = rules;
+        private readonly RuleValidator _val = val;
 
         [HttpGet("get-rules")]
         public async Task<IActionResult> GetRules()
@@ -62,21 +62,29 @@ namespace FinTrak.Api.Controllers
                 Actions = rule.Actions
             };
 
-            try
-            {
-                await _rules.CreateRuleAsync(newRule, cancellationToken);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return ValidationError(ex.Message);
-            }
-
+                var ruleVal = await _val.ValidateAsync(newRule, cancellationToken);
+                if (ruleVal.IsValid)
+                {
+                    try
+                    {
+                        await _rules.CreateRuleAsync(newRule,cancellationToken);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return ValidationError(ex.Message);
+                    }
+                }
+                else return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
+    
             return Ok(new { message = "Rule added successfully.", id = newRule.Id });
         }
 
         [HttpPatch("update-rule/{id}")]
         public async Task<IActionResult> UpdateRule(Guid id, [FromBody] Rule rule, CancellationToken cancellationToken)
         {
+            var ruleVal = await _val.ValidateAsync(rule, cancellationToken);
+            if(ruleVal.IsValid) 
+            {
             var existingRule = await _rules.GetRuleAsync(id, cancellationToken);
             if (existingRule == null) return NotFoundError("Rule not found.");
             if (existingRule.UserId != GetUserId()) return ForbiddenError();
@@ -90,16 +98,19 @@ namespace FinTrak.Api.Controllers
             existingRule.Conditions = rule.Conditions;
             existingRule.Actions = rule.Actions;
 
-            try
-            {
-                await _rules.UpdateRuleAsync(existingRule, cancellationToken);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return ValidationError(ex.Message);
-            }
+            
+                try
+                {
+                    await _rules.UpdateRuleAsync(existingRule, cancellationToken);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return ValidationError(ex.Message);
+                }
 
             return Ok(new { message = "Rule updated successfully." });
+            }
+            else return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
         }
 
         [HttpDelete("delete-rule/{id}")]
