@@ -15,6 +15,8 @@ using FinTrak.Infrastructure.Utilities;
 using FinTrak.Core.Interfaces;
 using FluentValidation;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Identity;
+using FinTrak.Api.Validation;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -94,7 +96,13 @@ builder.Services.AddHostedService<BillsAutoDetectService>();
 // Services
 // -------------------------------------------------------------------------
 
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+//Throws error when 
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(
+    ServiceLifetime.Scoped,
+    filter => 
+        filter.ValidatorType != typeof(ConditionValidator) && 
+        filter.ValidatorType != typeof(ActionValidator)
+);
 
 builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
@@ -246,6 +254,8 @@ builder.Services.AddSession(options =>
 // -------------------------------------------------------------------------
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
+    //Make it so any enums are stored and read for their string values,
+    //not integer values
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -278,9 +288,10 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
+
 
 var app = builder.Build();
 
@@ -328,11 +339,9 @@ app.Run();
 // Helpers
 // -------------------------------------------------------------------------
 
-/// <summary>
-/// Walks up the directory tree from the current working directory to find
-/// and load a .env file, setting each key-value pair as an environment variable.
-/// Handles inline # comments and quoted values.
-/// </summary>
+// Walks up the directory tree from the current working directory to find
+// and load a .env file, setting each key-value pair as an environment variable.
+// Handles inline # comments and quoted values.
 static void LoadEnv()
 {
     var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -370,10 +379,8 @@ static void LoadEnv()
     }
 }
 
-/// <summary>
-/// Reads a required environment variable. Throws if the variable is not set
-/// and no fallback is provided, so misconfiguration is caught at startup.
-/// </summary>
+// Reads a required environment variable. Throws if the variable is not set
+// and no fallback is provided, so misconfiguration is caught at startup.
 static string Env(string key, string? fallback = null) =>
     System.Environment.GetEnvironmentVariable(key)
     ?? fallback

@@ -1,10 +1,8 @@
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 using FluentValidation;
-using Microsoft.IdentityModel.Tokens.Experimental;
 
 namespace FinTrak.Api.Validation;
-
 public class ConditionValidator : AbstractValidator<Condition>
 {
     public ConditionValidator(Dictionary<TargetType, RuleFieldMapDto> fieldmap, TargetType target)

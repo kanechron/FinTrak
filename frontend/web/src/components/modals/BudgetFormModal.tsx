@@ -129,6 +129,7 @@ export default function BudgetFormModal({ isOpen, onClose, onSuccess, budget }: 
     }
     setIsSubmitting(true)
     setError(null)
+    
     try {
       const payload = {
         name,

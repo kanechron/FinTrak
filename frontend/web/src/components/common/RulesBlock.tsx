@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import { getRulesByTarget, type Rule, type TargetType } from "../../api/rules";
+import {
+    getRulesByTarget,
+    deleteRule,
+    type Rule,
+    type TargetType
+} from "../../api/rules";
 import RuleForm from "./RuleForm";
+import RuleCard from "./RuleCard";
 
 interface Props {
     target?: TargetType
 }
-export default function RulesBlock({ target } : Props) {
+export default function RulesBlock({ target }: Props) {
     // Data
     const [rules, setRules] = useState<Rule[]>([])
-
+    const [selectedRule, setSelectedRule] = useState<Rule | undefined>(undefined)
     // UI State
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -24,14 +30,10 @@ export default function RulesBlock({ target } : Props) {
             .finally(() => setLoading(false))
     }
 
-    if(!target) {
-        setError('No available rules')
-    }
-    else {
-        useEffect(() => {
-            fetchRules()
-        }, [])
-    }
+    useEffect(() => {
+        if(target) fetchRules();
+        else setError("No target selected")
+    }, [target])
 
     return (
         <div className="overflow-y-auto no-scrollbar" style={{ height: 'calc(100vh - 180px)' }}>
@@ -43,27 +45,39 @@ export default function RulesBlock({ target } : Props) {
                 ) : (
                     <div className="flex flex-col divide-y divide-line">
                         {rules.map((rule) => (
-                            <div key={rule.id} className="flex items-center justify-between py-3">
-                                <div>
-                                    <p className="text-[13px] font-medium text-ink-2">{rule.ruleName}</p>
-                                    <p className="text-[11.5px] text-ink-3 mt-0.5">
-                                        Priority {rule.priority} · {rule.conditions.length} condition
-                                        {rule.conditions.length === 1 ? '' : 's'} · {rule.actions.length} action
-                                        {rule.actions.length === 1 ? '' : 's'}
-                                    </p>
-                                </div>
-                                <span
-                                    className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${rule.isActive ? 'text-good bg-good/15' : 'text-ink-3 bg-raised'
-                                        }`}
-                                >
-                                    {rule.isActive ? 'Active' : 'Inactive'}
-                                </span>
-                            </div>
+                            <RuleCard
+                                key={rule.id}
+                                rule={rule}
+                                onClick={() => {
+                                    setSelectedRule(rule)
+                                    setShowForm(true)
+                                }}
+                                onDelete={(id) => {
+                                    deleteRule(id).then(fetchRules)
+                                }}
+                                onUpdate={() => {
+                                    fetchRules()
+                                }}
+                            />
                         ))}
                     </div>
                 )
             )}
-            {showForm && <RuleForm target={target!} onCancel={() => setShowForm(false)} />}
+            {showForm &&
+                <RuleForm
+                    target={target!}
+                    onCancel={() => {
+                        setShowForm(false)
+                        setSelectedRule(undefined)
+                    }}
+                    onSuccess={() => {
+                        setShowForm(false)
+                        setSelectedRule(undefined)
+                        fetchRules()
+                    }}
+                    rule={selectedRule ?? undefined}
+                    nextPriority={Math.max(0, ...rules.map(r => r.priority)) + 1} />
+            }
             {!showForm && (
                 <button
                     onClick={() => setShowForm(true)}

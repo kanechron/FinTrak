@@ -61,6 +61,16 @@ export interface Rule {
   actions: Action[]
 }
 
+export interface RuleFieldMapDto {
+  conditions: Record<ConditionField, Operator[]>
+  actions: Record<ActionField, ActionType[]>
+}
+
+export type FieldMap = Record<TargetType, RuleFieldMapDto>
+
+
+
+
 /**
  * Get all rules for the current user
  * @returns array of all non soft-deleted rules
@@ -86,6 +96,10 @@ export function getRule(id: string): Promise<Rule> {
   return api.get<Rule>(`/rules/get-rule/${id}`)
 }
 
+export function getRuleFieldmap() : Promise<FieldMap> {
+  return api.get<FieldMap>(`/rules/get-rule-field-map`)
+}
+
 /**
  * Create a new rule
  * @remarks 'id', 'userId', 'createdAt', 'deletedAt' are set server-side
@@ -105,7 +119,7 @@ export function addRule(
  */
 export function updateRule(
     id: string,
-    rule: Omit<Rule, 'id' | 'userId' | 'createdAt'>
+    rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt'>
 ): Promise<{ message: string }> {
     return api.patch(`/rules/update-rule/${id}`, rule)
 }
