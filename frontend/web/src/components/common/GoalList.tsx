@@ -35,14 +35,8 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
   // Separate mouse/touch sensors (rather than PointerSensor) so touch gets its own
   // activation constraint: a short delay + movement tolerance before a drag starts,
   // so a tap-and-scroll on the handle isn't immediately hijacked as a drag.
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
-  )
-
-  // Fall back to prop data before the first fetch completes
-  const displayGoals = localGoals.length > 0 ? localGoals : (goals ?? [])
-
+  
+  
   const handleDelete = async (goalId: string) => {
     try {
       await deleteGoal(goalId)
@@ -51,6 +45,14 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
       console.error('Failed to delete goal:', error)
     }
   }
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  )
+  
+  // Fall back to prop data before the first fetch completes
+  const displayGoals = localGoals.length > 0 ? localGoals : (goals ?? [])
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event

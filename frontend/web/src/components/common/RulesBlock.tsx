@@ -3,17 +3,23 @@ import {
     getRulesByTarget,
     deleteRule,
     type Rule,
-    type TargetType
+    type TargetType,
+    updateRule
 } from "../../api/rules";
 import RuleForm from "./RuleForm";
 import RuleCard from "./RuleCard";
+import { closestCenter, DndContext, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useToast } from "../../hooks/ToastProvider";
 
 interface Props {
     target?: TargetType
 }
 export default function RulesBlock({ target }: Props) {
+    const toast = useToast()
     // Data
     const [rules, setRules] = useState<Rule[]>([])
+    const [localRules, setLocalRules] = useState<Rule[]>(rules ?? [])
     const [selectedRule, setSelectedRule] = useState<Rule | undefined>(undefined)
     // UI State
     const [loading, setLoading] = useState(true)
@@ -30,8 +36,39 @@ export default function RulesBlock({ target }: Props) {
             .finally(() => setLoading(false))
     }
 
+    const sensors = useSensors(
+        useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+    )
+
+    const displayRules = localRules.length > 0 ? localRules : (rules ?? [])
+
+    async function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event
+        if (!over || active.id === over.id) return
+
+        const oldIndex = displayRules.findIndex((r) => r.id === active.id)
+        const newIndex = displayRules.findIndex((r) => r.id === over.id)
+        const reordered = arrayMove(displayRules, oldIndex, newIndex)
+        const reorderedWithPriority = reordered.map((r, i) => ({ ...r, priority: i }))
+        
+        //Source of possible rule flicker issue
+        try {
+            await Promise.all(reorderedWithPriority.map((r) => updateRule(r.id, { ...r, priority: r.priority })))
+            setLocalRules(reorderedWithPriority)
+            fetchRules()
+        }
+        catch {
+            toast.error({
+                title: "Reorder unsuccessful",
+                content: "Changes not saved."
+            })
+            fetchRules()
+        }
+    }
+
     useEffect(() => {
-        if(target) fetchRules();
+        if (target) fetchRules();
         else setError("No target selected")
     }, [target])
 
@@ -43,24 +80,31 @@ export default function RulesBlock({ target }: Props) {
                 rules.length === 0 ? (
                     <p className="px-1 py-12 text-center text-ink-3 text-sm">No rules yet.</p>
                 ) : (
-                    <div className="flex flex-col divide-y divide-line">
-                        {rules.map((rule) => (
-                            <RuleCard
-                                key={rule.id}
-                                rule={rule}
-                                onClick={() => {
-                                    setSelectedRule(rule)
-                                    setShowForm(true)
-                                }}
-                                onDelete={(id) => {
-                                    deleteRule(id).then(fetchRules)
-                                }}
-                                onUpdate={() => {
-                                    fetchRules()
-                                }}
-                            />
-                        ))}
-                    </div>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext
+                            items={displayRules.map(r => r.id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="flex flex-col divide-y divide-line">
+                                {displayRules.map((rule) => (
+                                    <RuleCard
+                                        key={rule.id}
+                                        rule={rule}
+                                        onClick={() => {
+                                            setSelectedRule(rule)
+                                            setShowForm(true)
+                                        }}
+                                        onDelete={(id) => {
+                                            deleteRule(id).then(fetchRules)
+                                        }}
+                                        onUpdate={() => {
+                                            fetchRules()
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
                 )
             )}
             {showForm &&
@@ -76,7 +120,8 @@ export default function RulesBlock({ target }: Props) {
                         fetchRules()
                     }}
                     rule={selectedRule ?? undefined}
-                    nextPriority={Math.max(0, ...rules.map(r => r.priority)) + 1} />
+                    nextPriority={Math.max(0, ...rules.map(r => r.priority)) + 1}
+                    ruleList={rules} />
             }
             {!showForm && (
                 <button
