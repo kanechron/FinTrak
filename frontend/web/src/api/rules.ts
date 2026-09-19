@@ -131,3 +131,11 @@ export function updateRule(
 export function deleteRule(id: string): Promise<{ message: string }> {
   return api.delete(`/rules/delete-rule/${id}`)
 }
+
+/**
+ * Bulk-persist a new priority ordering for a set of rules in one request.
+ * @param rules the full, reordered list of rules with their new priorities set
+ */
+export function reorderRules(rules: Rule[]): Promise<{ message: string }> {
+  return api.post('/rules/reorder-rules', rules)
+}

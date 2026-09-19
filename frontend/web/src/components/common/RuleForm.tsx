@@ -13,7 +13,7 @@ import {
   type TriggerType,
   updateRule,
 } from '../../api/rules'
-import { labelClass, inputClass, errorClass, checkboxClass, primaryButtonClass, shadedPrimaryButtonClass } from '../modals/modalTheme'
+import { labelClass, inputClass, errorClass, checkboxClass, primaryButtonClass } from '../modals/modalTheme'
 import { useFieldMap } from '../../hooks/FieldMapProvider'
 import { useToast } from '../../hooks/ToastProvider'
 
@@ -23,7 +23,6 @@ interface Props {
   onSuccess: () => void
   rule?: Rule
   nextPriority: number
-  ruleList: Rule[]
 }
 
 function newCondition(): Condition {
@@ -44,7 +43,7 @@ function newAction(): Action {
   }
 }
 
-export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriority, ruleList }: Props) {
+export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriority }: Props) {
   // Field Map
   const fieldmap = useFieldMap(target)
   const toast = useToast()
@@ -57,8 +56,6 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
   const [priority, setPriority] = useState(nextPriority)
   const [recursive, setRecursive] = useState(false)
   const [trigger, setTrigger] = useState<TriggerType>(TRIGGER_TYPES[0])
-  const [priorityList, setPriorityList] = useState<number[]>([])
-  const [collisionDetection, setCollidionDetection] = useState<boolean>(false)
 
   const [error, setError] = useState<string | null>(null)
 
@@ -73,8 +70,6 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
   function updateAction(index: number, patch: Partial<Action>) {
     setActions(prev => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)))
   }
-
-  
 
   async function handleSave() {
     if (!ruleName || !conditions || !actions) {
@@ -154,19 +149,8 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                 />
               </div>
 
+              {/* Priority is driven entirely by drag order in RulesBlock now, not user-editable here. */}
               <div className="grid grid-cols-2 gap-3">
-
-                <div className="flex flex-col gap-1">
-                  <label className={labelClass}>Priority</label>
-                  <input
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.valueAsNumber)}
-                    type="number"
-                    placeholder="Priority"
-                    className={inputClass}
-                  />
-                </div>
-
                 <div className="flex flex-col gap-1">
                   <label className={labelClass}>Trigger</label>
                   <select
@@ -342,17 +326,9 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                 <button onClick={onCancel} className="text-sm text-ink-3 hover:text-ink-2 transition-colors px-4 py-2">
                   Cancel
                 </button>
-                {!collisionDetection && (
-                  <button
-                    className={`${primaryButtonClass} !w-auto px-6`}
-                    onClick={handleSave}>Save Rule</button>
-                )}
-                {collisionDetection && (
-                  <button
-                    className={`${shadedPrimaryButtonClass} !w-auto px-6`}
-                  >Save Rule</button>
-                )}
-
+                <button
+                  className={`${primaryButtonClass} !w-auto px-6`}
+                  onClick={handleSave}>Save Rule</button>
               </div>
             </div>
           )

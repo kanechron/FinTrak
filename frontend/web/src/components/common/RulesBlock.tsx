@@ -4,7 +4,7 @@ import {
     deleteRule,
     type Rule,
     type TargetType,
-    updateRule
+    reorderRules
 } from "../../api/rules";
 import RuleForm from "./RuleForm";
 import RuleCard from "./RuleCard";
@@ -19,7 +19,6 @@ export default function RulesBlock({ target }: Props) {
     const toast = useToast()
     // Data
     const [rules, setRules] = useState<Rule[]>([])
-    const [localRules, setLocalRules] = useState<Rule[]>(rules ?? [])
     const [selectedRule, setSelectedRule] = useState<Rule | undefined>(undefined)
     // UI State
     const [loading, setLoading] = useState(true)
@@ -28,9 +27,9 @@ export default function RulesBlock({ target }: Props) {
 
 
     // Data fetchers
-    const fetchRules = () => {
+    const fetchRules = async () => {
         setLoading(true)
-        getRulesByTarget(target!)
+        await getRulesByTarget(target!)
             .then((r) => setRules(r))
             .catch(() => setError('Failed to load rules'))
             .finally(() => setLoading(false))
@@ -41,21 +40,18 @@ export default function RulesBlock({ target }: Props) {
         useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
     )
 
-    const displayRules = localRules.length > 0 ? localRules : (rules ?? [])
-
     async function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event
         if (!over || active.id === over.id) return
 
-        const oldIndex = displayRules.findIndex((r) => r.id === active.id)
-        const newIndex = displayRules.findIndex((r) => r.id === over.id)
-        const reordered = arrayMove(displayRules, oldIndex, newIndex)
+        const oldIndex = rules.findIndex((r) => r.id === active.id)
+        const newIndex = rules.findIndex((r) => r.id === over.id)
+        const reordered = arrayMove(rules, oldIndex, newIndex)
         const reorderedWithPriority = reordered.map((r, i) => ({ ...r, priority: i }))
-        
+
         //Source of possible rule flicker issue
         try {
-            await Promise.all(reorderedWithPriority.map((r) => updateRule(r.id, { ...r, priority: r.priority })))
-            setLocalRules(reorderedWithPriority)
+            await reorderRules(reorderedWithPriority)
             fetchRules()
         }
         catch {
@@ -82,11 +78,11 @@ export default function RulesBlock({ target }: Props) {
                 ) : (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext
-                            items={displayRules.map(r => r.id)}
+                            items={rules.map(r => r.id)}
                             strategy={verticalListSortingStrategy}
                         >
                             <div className="flex flex-col divide-y divide-line">
-                                {displayRules.map((rule) => (
+                                {rules.map((rule) => (
                                     <RuleCard
                                         key={rule.id}
                                         rule={rule}
@@ -120,8 +116,7 @@ export default function RulesBlock({ target }: Props) {
                         fetchRules()
                     }}
                     rule={selectedRule ?? undefined}
-                    nextPriority={Math.max(0, ...rules.map(r => r.priority)) + 1}
-                    ruleList={rules} />
+                    nextPriority={Math.max(0, ...rules.map(r => r.priority)) + 1} />
             }
             {!showForm && (
                 <button

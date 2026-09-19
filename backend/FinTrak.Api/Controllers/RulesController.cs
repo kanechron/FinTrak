@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using FinTrak.Api.Validation;
-using System.ComponentModel.DataAnnotations;
+using FinTrak.Core.DTOs;
 
 namespace FinTrak.Api.Controllers
 {
@@ -12,13 +12,10 @@ namespace FinTrak.Api.Controllers
         private readonly IRulesService _rules = rules;
         private readonly RuleValidator _val = val;
 
+
         [HttpGet("get-rules")]
-        public async Task<IActionResult> GetRules()
-        {
-            var userId = GetUserId();
-            return Ok(await _rules.GetRulesAsync(userId));
-            
-        }
+        public async Task<IActionResult> GetRules() => Ok(await _rules.GetRulesAsync(GetUserId()));
+
         [HttpGet("get-rules-by-target/{target}")]
         public async Task<IActionResult> GetRulesByTarget(string target)
         {
@@ -67,7 +64,7 @@ namespace FinTrak.Api.Controllers
                 {
                     try
                     {
-                        await _rules.CreateRuleAsync(newRule,cancellationToken);
+                        await _rules.CreateRuleAsync(newRule, cancellationToken);
                     }
                     catch (InvalidOperationException ex)
                     {
@@ -77,6 +74,21 @@ namespace FinTrak.Api.Controllers
                 else return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
     
             return Ok(new { message = "Rule added successfully.", id = newRule.Id });
+        }
+
+        [HttpPost("reorder-rules")]
+        public async Task<IActionResult> UpdateRulePriorities([FromBody] List<RuleDto> list, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _rules.UpdateRulePriorities(GetUserId(), list, cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ValidationError(ex.Message);
+            }
+
+            return Ok(new { message = "Rules updated successfully." });
         }
 
         [HttpPatch("update-rule/{id}")]
@@ -112,6 +124,7 @@ namespace FinTrak.Api.Controllers
             }
             else return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
         }
+
 
         [HttpDelete("delete-rule/{id}")]
         public async Task<IActionResult> DeleteRule(Guid id, CancellationToken cancellationToken)

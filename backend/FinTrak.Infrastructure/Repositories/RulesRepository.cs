@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Persistance;
+using FinTrak.Core.DTOs;
 
 namespace FinTrak.Infrastructure.Repositories;
 
@@ -32,6 +33,9 @@ public class RulesRepository(FinTrakDbContext db) : IRulesRepository
             r.Target == targetType &&
             r.Priority == priority &&
             r.Id != excludeRuleId, cancellationToken);
+
+    public async Task<List<Rule>> GetRulesForBulkUpdateAsync(Guid userId, List<Guid> ruleIds, CancellationToken cancellationToken = default) =>
+        await _db.Rules.Where(r => r.UserId == userId && ruleIds.Contains(r.Id)).ToListAsync(cancellationToken);
 
     public async Task AddAsync(Rule rule, CancellationToken cancellationToken = default)
     {

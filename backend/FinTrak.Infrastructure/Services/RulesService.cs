@@ -39,6 +39,39 @@ public class RulesService(IRulesRepository repo, Dictionary<TargetType, RuleFiel
         await _repo.SaveAsync(cancellationToken);
     }
 
+    public async Task UpdateRulePriorities(Guid userId, List<RuleDto> rules, CancellationToken cancellationToken)
+    {
+        if (rules.Select(r => r.Priority).Distinct().Count() != rules.Count)
+            throw new InvalidOperationException("Priorities in the reorder list must be unique.");
+
+        var ids = rules.Select(r => r.Id).ToList();
+        var existingRules = await _repo.GetRulesForBulkUpdateAsync(userId, ids, cancellationToken);
+        var newList = rules.ToDictionary(kvp => kvp.Id, kvp => kvp.Priority);
+
+        // Two-phase write: a straight reorder can require two rules to swap priorities,
+        // which EF can't apply in any single order without an intermediate collision on
+        // the (UserId, Target, Priority) unique index. First move everything to a
+        // guaranteed-negative placeholder (never collides with a real priority, which is
+        // always >= 0), save, then set the real values and save again.
+        foreach (var rule in existingRules)
+        {
+            if (newList.TryGetValue(rule.Id, out int foundRule))
+            {
+                rule.Priority = -(foundRule + 1);
+            }
+        }
+        await _repo.SaveAsync(cancellationToken);
+
+        foreach (var rule in existingRules)
+        {
+            if (newList.TryGetValue(rule.Id, out int foundRule))
+            {
+                rule.Priority = foundRule;
+            }
+        }
+        await _repo.SaveAsync(cancellationToken);
+    }
+
     public Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default) =>
         _repo.DeleteAsync(rule, cancellationToken);
 
