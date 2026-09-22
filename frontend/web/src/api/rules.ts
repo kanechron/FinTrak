@@ -13,6 +13,7 @@ export const OPERATORS = [
   'GREATER_THAN_OR_EQUAL',
   'LESS_THAN_OR_EQUAL',
   'IN',
+  undefined
 ] as const
 export type Operator = (typeof OPERATORS)[number]
 
@@ -29,7 +30,7 @@ export type ConditionField = (typeof CONDITION_FIELDS)[number]
 export const ACTION_FIELDS = ['Category', 'MerchantName', 'BudgetExclusion', 'BillFlag'] as const
 export type ActionField = (typeof ACTION_FIELDS)[number]
 
-export const ACTION_TYPES = ['Set', 'Exclude'] as const
+export const ACTION_TYPES = ['Set', 'Exclude', undefined] as const
 export type ActionType = (typeof ACTION_TYPES)[number]
 
 export interface Condition {
@@ -42,7 +43,7 @@ export interface Condition {
 
 export interface Action {
   actionField: ActionField
-  actionType: ActionType
+  actionType: ActionType | null
   actionValue: string
 }
 

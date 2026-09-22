@@ -13,6 +13,7 @@ import {
   type TriggerType,
   updateRule,
 } from '../../api/rules'
+import { ApiError } from '../../api/client'
 import { labelClass, inputClass, errorClass, checkboxClass, primaryButtonClass } from '../modals/modalTheme'
 import { useFieldMap } from '../../hooks/FieldMapProvider'
 import { useToast } from '../../hooks/ToastProvider'
@@ -29,7 +30,7 @@ function newCondition(): Condition {
   return {
     groupId: crypto.randomUUID(),
     conditionField: CONDITION_FIELDS[0],
-    conditionOperator: OPERATORS[0],
+    conditionOperator: undefined,
     conditionValue: '',
     not: false,
   }
@@ -38,7 +39,7 @@ function newCondition(): Condition {
 function newAction(): Action {
   return {
     actionField: ACTION_FIELDS[0],
-    actionType: ACTION_TYPES[0],
+    actionType: undefined,
     actionValue: '',
   }
 }
@@ -71,7 +72,26 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
     setActions(prev => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)))
   }
 
+  function handleConflictingConditions(conditions: Condition[]): boolean {
+
+    const conditionMap = new Map<string, Condition[]>()
+
+    conditions.forEach((c) => {
+      const check = `${c.groupId}/${c.conditionField}`
+      const existing = conditionMap.get(check)
+      existing ? existing.push(c) : conditionMap.set(check, [c])
+    })
+
+    //check each groupId's cluster of conditionFields to see if any condition operators are EQUALS and have more than that singular condition. if so, it's not valid, return false and throw an error.
+    return Array.from(conditionMap.values()).some((c) => c.some(o => o.conditionOperator === "EQUALS") && c.length > 1)
+  }
+
   async function handleSave() {
+    if(handleConflictingConditions(conditions)) {
+      setError(`A field can't be checked twice with 'EQUALS' in the same group`)
+      return
+    }
+    
     if (!ruleName || !conditions || !actions) {
       setError('Rule Name, Conditions, and Actions are required')
       return
@@ -87,10 +107,10 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
         trigger,
         isActive,
         target,
-        priority
+        priority,
       }
       if (isEdit) {
-        await updateRule(rule.id, { ...payload, priority: nextPriority })
+        await updateRule(rule.id, { ...payload })
       }
       else {
         await addRule({ ...payload, priority: nextPriority })
@@ -101,10 +121,10 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
       })
       onSuccess()
     }
-    catch {
+    catch (err) {
       toast.error({
         title: 'Rule failed to save',
-        content: 'Please try again'
+        content: err instanceof ApiError ? err.message : 'Please try again'
       })
     }
   }
@@ -192,7 +212,7 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className={labelClass}>Conditions</label>
-                  <button
+                  <button 
                     onClick={() => setConditions([...conditions, newCondition()])}
                     className="text-xs font-semibold text-s1 hover:opacity-80 cursor-pointer"
                   >
@@ -201,7 +221,26 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                 </div>
 
                 {conditions.map((condition, i) => (
-                  <div key={condition.groupId} className="flex items-center gap-2">
+                  <div key={i}>
+                    {i > 0 && (
+                      <div className="flex items-center gap-2 mt-1 mb-2">
+                        <div className="h-px flex-1 bg-line" />
+                        <select
+                          value={condition.groupId === conditions[i - 1].groupId ? 'AND' : 'OR'}
+                          onChange={(e) => {
+                            updateCondition(i, {
+                              groupId: e.target.value === 'AND' ? conditions[i - 1].groupId : crypto.randomUUID(),
+                            })
+                          }}
+                          className="text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-raised border border-line text-ink-3 cursor-pointer focus:outline-none focus:border-line-2"
+                        >
+                          <option value="AND">AND</option>
+                          <option value="OR">OR</option>
+                        </select>
+                        <div className="h-px flex-1 bg-line" />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
                     <select
                       value={condition.conditionField}
                       onChange={(e) => {
@@ -223,6 +262,7 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                       }
                       className={inputClass}
                     >
+                      <option value="" disabled>Select Operator...</option>
                       {fieldmap?.conditions[condition.conditionField].map((op) => (
                         <option key={op} value={op}>
                           {op}
@@ -255,10 +295,9 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                     >
                       ✕
                     </button>
+                    </div>
                   </div>
                 ))}
-                {/* GroupId is auto-generated per condition for now — linking conditions into AND/OR
-            groups is a separate UI concern not yet built. */}
               </div>
 
               {/* Actions */}
@@ -290,10 +329,11 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                     </select>
 
                     <select
-                      value={action.actionType}
+                      value={action.actionType ?? ''}
                       onChange={(e) => updateAction(i, { actionType: e.target.value as Action['actionType'] })}
                       className={inputClass}
                     >
+                      <option value="" disabled>Select Action Type...</option>
                       {fieldmap?.actions[action.actionField].map((t) => (
                         <option key={t} value={t}>
                           {t}

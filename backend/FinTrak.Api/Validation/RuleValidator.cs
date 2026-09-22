@@ -1,6 +1,8 @@
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 using FluentValidation;
+using Going.Plaid.Entity;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace FinTrak.Api.Validation;
 
@@ -48,5 +50,32 @@ public class RuleValidator : AbstractValidator<Rule>
             .Must(actions => actions.Select(a => a.ActionField).Distinct().Count() == actions.Count)
             .WithMessage("Each action type can only appear once.");
 
+        RuleFor(r => r.Conditions)
+            .Must(r => !HasConflictingEqualsConditions(r))
+            .WithMessage("A field can't be checked twice with 'EQUALS' in the same group");
+    }
+
+    private static bool HasConflictingEqualsConditions(List<Condition> conditions)
+    {
+        var newList = conditions.GroupBy(c => new { c.GroupId, c.ConditionField });
+        foreach(var item in newList)
+        {
+            //item enumerates twice and that sort of behavior should typically be avoided, but Rules objects should usually be pretty small. 
+            //If it ever matters, here's the alternative one-pass method. Replace the current 'if(item.Any...))' with the commented loop
+
+            /*
+            int count = 0;
+            bool hasEquals = false;
+            foreach (var c in item) {
+                count++;
+                if(c.ConditionOperator == Operator.EQUALS) hasEquals = true;
+            }
+
+            if(hasEquals && count > 1) return true;
+            */
+            if(item.Any(c => c.ConditionOperator == Operator.EQUALS) && item.Count() > 1) return true;
+        }
+
+        return false;
     }
 }
