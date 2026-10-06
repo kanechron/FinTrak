@@ -1,3 +1,5 @@
+using FinTrak.Core.Entities;
+
 namespace FinTrak.Core.DTOs
 {
     public class TransactionDto
@@ -12,5 +14,7 @@ namespace FinTrak.Core.DTOs
         public Guid? CategoryId { get; init; }
         public Guid? CategoryDetailedId { get; init; }
         public bool Pending { get; init; }
+        // Exclusions parked 2026-10-01 — see Transaction.Exclusions.
+        // public Exclusion Exclusions { get; init; }
     }
 }

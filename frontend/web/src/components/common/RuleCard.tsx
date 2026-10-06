@@ -46,6 +46,7 @@ export default function RuleCard({ rule, onDelete, onClick, onUpdate }: Props) {
           className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${rule.isActive ? 'text-good bg-good/15' : 'text-ink-3 bg-raised'
             }`}
         >
+          
           {rule.isActive ? 'Active' : 'Inactive'}
         </span>
         <RowMenu

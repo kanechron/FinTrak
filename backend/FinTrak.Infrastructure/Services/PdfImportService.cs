@@ -8,6 +8,7 @@ using Anthropic.SDK.Messaging;
 using Anthropic.SDK.Constants;
 using FuzzySharp;
 using FinTrak.Core.Utilities;
+using System.Threading.Channels;
 
 namespace FinTrak.Infrastructure.Services
 {
@@ -15,10 +16,12 @@ namespace FinTrak.Infrastructure.Services
     {
         private readonly FinTrakDbContext _db;
         private readonly AnthropicClient _client;
-        public PdfImportService(FinTrakDbContext db, AnthropicClient client)
+        private readonly Channel<IRuleTriggerEvent> _channel;
+        public PdfImportService(FinTrakDbContext db, AnthropicClient client, Channel<IRuleTriggerEvent> channel)
         {
             _db = db;
             _client = client;
+            _channel = channel;
 
         }
         public async Task<int> ImportAsync(Stream pdf, Guid userId, CancellationToken cancellationToken = default)
@@ -82,6 +85,8 @@ namespace FinTrak.Infrastructure.Services
                 .GroupBy(c => c.Name)
                 .ToDictionary(g => g.Key, g => g.First());
 
+            List<Guid> tList = [];
+
             foreach (var t in imported)
             {
                 Category? category = null;
@@ -135,9 +140,10 @@ namespace FinTrak.Infrastructure.Services
 
                 if (nameDuplicate) continue;
 
+                var id = Guid.NewGuid();
                 _db.Transactions.Add(new Transaction
                 {
-                    Id = Guid.NewGuid(),
+                    Id = id,
                     UserId = userId,
                     AccountId = Guid.Empty,
                     Amount = t.Amount,
@@ -152,9 +158,11 @@ namespace FinTrak.Infrastructure.Services
                     DedupStatus = DedupStatus.Accepted,
                     CreatedAt = DateTime.UtcNow
                 });
+                tList.Add(id);
             }
 
             await _db.SaveChangesAsync();
+            _channel.Writer.TryWrite(new PDFImportEvent(userId, tList, DateTime.UtcNow));
             return imported.Count;
         }
 

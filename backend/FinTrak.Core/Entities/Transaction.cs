@@ -1,5 +1,4 @@
-namespace FinTrak.Core.Entities
-{
+namespace FinTrak.Core.Entities;
     /// <summary>
     /// Represents a financial transaction, sourced either from Plaid or entered manually.
     /// </summary>
@@ -73,5 +72,19 @@ namespace FinTrak.Core.Entities
 
         /// <summary>The date the transaction occurred, as reported by the bank.</summary>
         public DateOnly? Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
+        // public Exclusion Exclusions { get; set; } = Exclusion.None;
+
     }
-}
+
+    // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
+    // [Flags]
+    // public enum Exclusion
+    // {
+    //     None = 0,
+    //     Budget = 1,
+    //     Bills = 2,
+    //     Reports = 4
+    // }
+

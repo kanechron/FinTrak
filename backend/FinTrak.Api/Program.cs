@@ -17,6 +17,9 @@ using FluentValidation;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using FinTrak.Api.Validation;
+using System.Threading.Channels;
+using SQLitePCL;
+using FinTrak.Infrastructure.EventHandlers;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -90,6 +93,7 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHostedService<DbDeleteService>();  // custom service to permanently delete soft-deleted records after a retention period
 builder.Services.AddHostedService<RecurringDateService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
+builder.Services.AddHostedService<RulesBackgroundService>();
 
 
 // -------------------------------------------------------------------------
@@ -131,6 +135,21 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IAccountReactivationRepository, UserRepostory>();
 builder.Services.AddScoped<IReportsRepository, ReportsRepository>();
+
+// -------------------------------------------------------------------------
+// Channels
+// -------------------------------------------------------------------------
+
+builder.Services.AddSingleton(Channel.CreateUnbounded<IRuleTriggerEvent>());
+
+// -------------------------------------------------------------------------
+// Events
+// -------------------------------------------------------------------------
+
+builder.Services.AddScoped<IEventHandler<SyncCompletedEvent>, TransactionRulesSyncHandler>();
+builder.Services.AddScoped<IEventHandler<RecursiveRuleSavedEvent>, TransactionRulesSyncHandler>();
+builder.Services.AddScoped<IEventHandler<PDFImportEvent>, TransactionRulesSyncHandler>();
+
 
 // -------------------------------------------------------------------------
 // JSON
@@ -299,8 +318,6 @@ var app = builder.Build();
 // Middleware pipeline
 // -------------------------------------------------------------------------
 // Order matters here — each middleware runs in the order it is registered.
-
-
 
 if (app.Environment.IsDevelopment())
 {

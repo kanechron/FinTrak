@@ -1,20 +1,22 @@
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
+using FinTrak.Core.Interfaces;
 using FluentValidation;
-using Going.Plaid.Entity;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+
 
 namespace FinTrak.Api.Validation;
 
 public class RuleValidator : AbstractValidator<Rule>
 {
     private readonly Dictionary<TargetType, RuleFieldMapDto> _fieldmap;
+    private readonly ICategoryRepository _cRepo;
 
     // RuleFor(...) calls go here directly — the primary constructor's class body
     // is the constructor body, no separate constructor needed.
-    public RuleValidator(Dictionary<TargetType, RuleFieldMapDto> fieldmap)
+    public RuleValidator(Dictionary<TargetType, RuleFieldMapDto> fieldmap, ICategoryRepository cRepo)
     {
         _fieldmap = fieldmap;
+        _cRepo = cRepo;
 
 
         RuleFor(r => r.RuleName)
@@ -48,11 +50,22 @@ public class RuleValidator : AbstractValidator<Rule>
         
         RuleFor(r => r.Actions)
             .Must(actions => actions.Select(a => a.ActionField).Distinct().Count() == actions.Count)
-            .WithMessage("Each action type can only appear once.");
+            .WithMessage("Each action type can only appear once");
 
         RuleFor(r => r.Conditions)
             .Must(r => !HasConflictingEqualsConditions(r))
             .WithMessage("A field can't be checked twice with 'EQUALS' in the same group");
+        
+        // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
+        // RuleForEach(r => r.Actions)
+        // .Where(a => a.ActionType == ActionType.Exclude)
+        // .Must(r => Enum.IsDefined(typeof(Exclusion), r.ActionValue))
+        // .WithMessage("This type of exclusion is not supported");
+
+        RuleForEach(r => r.Actions)
+        .Where(a => a.ActionField == ActionField.Category)
+            .MustAsync(async (r, ct) => await _cRepo.ExistsAsync(Guid.Parse(r.ActionValue), ct))
+            .WithMessage("This type of category is not supported");
     }
 
     private static bool HasConflictingEqualsConditions(List<Condition> conditions)

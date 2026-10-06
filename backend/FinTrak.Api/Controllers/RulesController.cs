@@ -4,13 +4,16 @@ using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using FinTrak.Api.Validation;
 using FinTrak.Core.DTOs;
+using System.Threading.Channels;
 
 namespace FinTrak.Api.Controllers
 {
-    public class RulesController(IRulesService rules, RuleValidator val) : ApiBaseController
+    public class RulesController(IRulesService rules, RuleValidator val, Channel<IRuleTriggerEvent> channel) : ApiBaseController
     {
         private readonly IRulesService _rules = rules;
         private readonly RuleValidator _val = val;
+        private readonly Channel<IRuleTriggerEvent> _channel = channel;
+        
 
 
         [HttpGet("get-rules")]
@@ -23,6 +26,8 @@ namespace FinTrak.Api.Controllers
             if(target == null) return Ok(new { message = "No rules for this target"});
             return Ok(await _rules.GetRulesByTargetAsync(userId, target));
         }
+
+
 
         [HttpGet("get-rule/{id}")]
         public async Task<IActionResult> GetRule(Guid id, CancellationToken cancellationToken)
@@ -72,7 +77,9 @@ namespace FinTrak.Api.Controllers
                     }
                 }
                 else return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
-    
+
+            if(newRule.Recursive == true) _channel.Writer.TryWrite(new RecursiveRuleSavedEvent(UserId: GetUserId(), OccurredAt: DateTime.UtcNow));
+
             return Ok(new { message = "Rule added successfully.", id = newRule.Id });
         }
 
@@ -91,6 +98,24 @@ namespace FinTrak.Api.Controllers
             return Ok(new { message = "Rules updated successfully." });
         }
 
+        [HttpPost("run-rule/{id}")]
+        public async Task<IActionResult> RuleOnDemand(Guid id, CancellationToken cancellationToken)
+        {
+            var existingRule = await _rules.GetRuleAsync(id, cancellationToken);
+            if (existingRule == null) return NotFoundError("Rule not found.");
+            if (existingRule.UserId != GetUserId()) return ForbiddenError();
+
+            try
+            {
+                await _rules.ApplyRuleOnDemand(GetUserId(), id, cancellationToken);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ValidationError(ex.Message);
+            }
+            return Ok(new {message = "Rule ran successfully."});
+        }
+
         [HttpPatch("update-rule/{id}")]
         public async Task<IActionResult> UpdateRule(Guid id, [FromBody] Rule rule, CancellationToken cancellationToken)
         {
@@ -100,6 +125,7 @@ namespace FinTrak.Api.Controllers
             var existingRule = await _rules.GetRuleAsync(id, cancellationToken);
             if (existingRule == null) return NotFoundError("Rule not found.");
             if (existingRule.UserId != GetUserId()) return ForbiddenError();
+            var wasRecursive = existingRule.Recursive;
 
             existingRule.RuleName = rule.RuleName;
             existingRule.Priority = rule.Priority;
@@ -119,6 +145,8 @@ namespace FinTrak.Api.Controllers
                 {
                     return ValidationError(ex.Message);
                 }
+            
+            if(!wasRecursive && rule.Recursive) _channel.Writer.TryWrite(new RecursiveRuleSavedEvent(UserId: GetUserId(), OccurredAt: DateTime.UtcNow));
 
             return Ok(new { message = "Rule updated successfully." });
             }

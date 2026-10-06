@@ -10,6 +10,9 @@ export interface Transaction {
   categoryId: string | null
   categoryDetailedId: string | null
   pending: boolean
+  // Exclusions parked 2026-10-01 — restore alongside the backend Transaction.Exclusions property.
+  // /** [Flags] enum serialized as a comma-separated string, e.g. "None" or "Budget, Reports" */
+  // exclusions: string
 }
 
 export interface TransactionAddPayload {

@@ -3,18 +3,17 @@
     {
         "Conditions":
         {
-            "MerchantName": ["EQUALS", "CONTAINS", "IN"],
-            "Amount": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL", "IN"],
-            "TransactionDate": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL", "IN"],
-            "DayOfMonth": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL", "IN"],
-            "DayOfWeek": ["EQUALS", "IN"],
-            "Month": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL", "IN"]
+            "MerchantName": ["EQUALS", "CONTAINS"],
+            "Amount": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"],
+            "TransactionDate": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"],
+            "DayOfMonth": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"],
+            "DayOfWeek": ["EQUALS"],
+            "Month": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"]
         },
         "Actions":
         {
             "Category": ["Set"],
             "MerchantName": ["Set"],
-            "BudgetExclusion": ["Exclude"],
             "BillFlag": ["Set", "Exclude"]
         }
     }

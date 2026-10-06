@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Persistance;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FinTrak.Infrastructure.Repositories;
 
@@ -56,6 +57,14 @@ public class TransactionRepository(FinTrakDbContext db) : ITransactionRepository
     public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         await _db.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.DeletedAt == null, cancellationToken);
 
+    public async Task<List<Transaction>> GetByIdsAsync(Guid userId, List<Guid> ids, CancellationToken cancellationToken = default) =>
+        await _db.Transactions
+            .Where(t => t.UserId == userId && t.DeletedAt == null && ids.Contains(t.Id))
+            .ToListAsync(cancellationToken);
+
+    public async Task<List<Transaction>> GetPaginatedTransactions(Guid userId, Guid lastId, int pageSize, CancellationToken cancellationToken = default) => 
+    await _db.Transactions.Where(t => userId == t.UserId && t.DeletedAt == null && t.Id > lastId).OrderBy(t => t.Id).Take(pageSize).ToListAsync(cancellationToken);
+
     public async Task AddAsync(Transaction transaction, CancellationToken cancellationToken = default)
     {
         _db.Transactions.Add(transaction);
@@ -64,4 +73,8 @@ public class TransactionRepository(FinTrakDbContext db) : ITransactionRepository
 
     public async Task SaveAsync(CancellationToken cancellationToken = default) =>
         await _db.SaveChangesAsync(cancellationToken);
+
+    public void ClearTracker() =>
+        _db.ChangeTracker.Clear();
+
 }

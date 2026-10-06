@@ -46,12 +46,15 @@ public enum TargetType
 ///     <listheader><term>Value</term><description>Meaning</description></listheader>
 ///     <item><term>Always</term><description>Evaluate on every check, regardless of source.</description></item>
 ///     <item><term>OnSync</term><description>Evaluate only when a transaction is added/modified during Plaid sync.</description></item>
+///     <item><term>OnDemand</term><description>Evaluate only when the user explicitly triggers this rule, not automatically.</description></item>
 /// </list>
 public enum TriggerType
 {
     Undefined = 0,
     Always = 1,
     OnSync = 2,
+    OnDemand = 3,
+    OnPDFImport = 4,
 }
 
 /// <summary>One clause of a rule's match logic: does <see cref="ConditionField"/> satisfy <see cref="ConditionOperator"/> against <see cref="ConditionValue"/>.</summary>
@@ -73,31 +76,33 @@ public class Condition
 
 public enum ConditionField
 {
-    MerchantName = 0,
-    Amount = 1,
-    TransactionDate = 2,
-    DayOfMonth = 3,
-    DayOfWeek = 4,
-    Month = 5
+    Undefined = 0,
+    MerchantName = 1,
+    Amount = 2,
+    TransactionDate = 3,
+    DayOfMonth = 4,
+    DayOfWeek = 5,
+    Month = 6
 }
 
 /// <summary>Comparison used to evaluate a <see cref="Condition"/>.</summary>
 public enum Operator
 {
-    GREATER_THAN = 0,
-    LESS_THAN = 1,
-    GREATER_THAN_OR_EQUAL = 2,
-    LESS_THAN_OR_EQUAL = 3,
-    EQUALS = 4,
+    UNDEFINED = 0,
+    GREATER_THAN = 1,
+    LESS_THAN = 2,
+    GREATER_THAN_OR_EQUAL = 3,
+    LESS_THAN_OR_EQUAL = 4,
+    EQUALS = 5,
     //NOTE TO SELF: CONTAINS is for string/substring matching, IN is gated by number of values being compared REGARDLESS of value type.
-    CONTAINS = 5,
-    IN = 6
+    CONTAINS = 6,
+    // IN = 7 — temporarily disabled until multi-value (list membership) matching is implemented.
 }
 
 /// <summary>One effect applied when a rule's conditions all match: <see cref="ActionType"/> <see cref="ActionField"/> to <see cref="ActionValue"/>.</summary>
 public class Action
 {
-    /// <summary>The field being acted on (e.g. Category, BudgetExclusion). A different vocabulary than <see cref="Condition.ConditionField"/> — not every field is settable.</summary>
+    /// <summary>The field being acted on (e.g. Category, Exclusion). A different vocabulary than <see cref="Condition.ConditionField"/> — not every field is settable.</summary>
     public ActionField ActionField { get; set; }
 
     public required ActionType ActionType { get; set; }
@@ -108,15 +113,19 @@ public class Action
 
 public enum ActionField
 {
-    Category = 0,
-    MerchantName = 1,
-    BudgetExclusion = 2,
-    BillFlag = 3
+    Undefined = 0,
+    Category = 1,
+    MerchantName = 2,
+    // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
+    // /// <summary>Adds a <see cref="FinTrak.Core.Entities.Exclusion"/> flag to the transaction; <see cref="Action.ActionValue"/> is the flag name (e.g. "Budget", "Bills", "Reports").</summary>
+    // Exclusion = 3,
+    BillFlag = 4
 }
 
 /// <summary>Verb applied to an <see cref="Action.ActionField"/>.</summary>
 public enum ActionType
 {
-    Set = 0,
-    Exclude = 1, 
+    Undefined = 0,
+    Set = 1,
+    Exclude = 2,
 }

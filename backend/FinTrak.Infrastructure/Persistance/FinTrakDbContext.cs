@@ -57,7 +57,7 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<Invite>().HasIndex(i => i.Token);
             modelBuilder.Entity<Category>().HasIndex(i => i.DetailId);
             modelBuilder.Entity<Category>().HasIndex(c => c.Name).IsUnique();
-            modelBuilder.Entity<Rule>().HasIndex(r => new { r.UserId, r.Target, r.Priority}).IsUnique();
+            modelBuilder.Entity<Rule>().HasIndex(r => new { r.UserId, r.Target, r.Priority}).IsUnique().HasFilter("\"DeletedAt\" IS NULL");
 
             // Enum storage — store as string for readability in the database
             modelBuilder.Entity<Transaction>()

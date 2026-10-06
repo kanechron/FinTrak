@@ -5,9 +5,11 @@ const FieldMapContext = createContext<FieldMap | null>(null)
 
 
 //Used inline props instead of 'interface Props {...}'
-export const FieldMapProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
-    const [fieldMap, setFieldMap] = useState<FieldMap | null>(null)
+// export const FieldMapProvider: React.FC<{ children: React.ReactNode }> = ({children}) => {
 
+
+export function FieldMapProvider({ children }: {children: React.ReactNode}) {
+        const [fieldMap, setFieldMap] = useState<FieldMap | null>(null)
 
     //Include the dependency array at the end to make sure this effect runs only once. Without [], useEffect will rerun EVERY render, which would cause an infinite loop. 
     useEffect(() => {

@@ -2,7 +2,7 @@ import { api } from './client'
 
 export type TargetType = 'Transaction' | 'Goal' | 'Budget' | 'Bill' | 'Report'
 
-export const TRIGGER_TYPES = ['Always', 'OnSync'] as const
+export const TRIGGER_TYPES = ['Always', 'OnSync', 'OnDemand', 'OnPDFImport'] as const
 export type TriggerType = (typeof TRIGGER_TYPES)[number]
 
 export const OPERATORS = [
@@ -12,7 +12,7 @@ export const OPERATORS = [
   'CONTAINS',
   'GREATER_THAN_OR_EQUAL',
   'LESS_THAN_OR_EQUAL',
-  'IN',
+  // 'IN', — temporarily disabled until multi-value (list membership) matching is implemented on the backend
   undefined
 ] as const
 export type Operator = (typeof OPERATORS)[number]
@@ -27,7 +27,8 @@ export const CONDITION_FIELDS = [
 ] as const
 export type ConditionField = (typeof CONDITION_FIELDS)[number]
 
-export const ACTION_FIELDS = ['Category', 'MerchantName', 'BudgetExclusion', 'BillFlag'] as const
+// 'Exclusion' parked 2026-10-01 — restore alongside ActionField.Exclusion on the backend
+export const ACTION_FIELDS = ['Category', 'MerchantName', /* 'Exclusion', */ 'BillFlag'] as const
 export type ActionField = (typeof ACTION_FIELDS)[number]
 
 export const ACTION_TYPES = ['Set', 'Exclude', undefined] as const

@@ -39,6 +39,7 @@
 
 ## Settings
 - [ ] **Transaction page size** — configurable limit for how many transactions load at once
+- [ ] **Customizable user settings architecture** — same idea as the Rules field map (JSON stored and loaded per-key), but per-user and DB-backed instead of a static file, so it must be `AddScoped` (not `AddSingleton` like the field map) — one instance per request, loaded via the authenticated user's id (`GetUserId()`/`IHttpContextAccessor`), not shared across users. Consider a secondary ownership check on top of that as a safety net.
 
 ## UX
 - [ ] **Apply-on-submit filters** — Transactions/Reports filters currently re-fetch on every keystroke/toggle; require a button push to apply so filter changes don't hammer the server

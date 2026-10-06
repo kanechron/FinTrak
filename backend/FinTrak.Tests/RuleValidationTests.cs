@@ -1,16 +1,16 @@
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
 using Action = FinTrak.Core.Entities.Action;
-using Xunit;
 using FinTrak.Infrastructure.Utilities;
 using FinTrak.Api.Validation;
-using System.ComponentModel.DataAnnotations;
+using FinTrak.Core.Interfaces;
+
 
 namespace FinTrak.Tests;
 
 public class RuleValidatorFixture
 {
-    public RuleValidator RuleVal { get; } = new RuleValidator(new RuleFieldMapDeserializer().ParseRuleFieldmap());
+    public RuleValidator RuleVal { get; } = new RuleValidator(new RuleFieldMapDeserializer().ParseRuleFieldmap(), new FakeCategoryRepository());
 }
 
 public class RuleValidationTests(RuleValidatorFixture val) : IClassFixture<RuleValidatorFixture>
@@ -149,12 +149,12 @@ public class RuleValidationTests(RuleValidatorFixture val) : IClassFixture<RuleV
         return rule;
     }
 
-    /// <summary>BudgetExclusion only allows Exclude, not Set, per the field map.</summary>
+    /// <summary>MerchantName only allows Set, not Exclude, per the field map.</summary>
     public static Rule ActionInvalidFieldTypeCombo()
     {
         var rule = ValidSpotifyRule();
-        rule.Actions[0].ActionField = ActionField.BudgetExclusion;
-        rule.Actions[0].ActionType = ActionType.Set;
+        rule.Actions[0].ActionField = ActionField.MerchantName;
+        rule.Actions[0].ActionType = ActionType.Exclude;
         return rule;
     }
 
@@ -211,8 +211,21 @@ public class RuleValidationTests(RuleValidatorFixture val) : IClassFixture<RuleV
     [Fact]
     public async Task RuleValidation_UnconfiguredTarget_FailsAgainstEmptyFieldMap()
     {
-        var emptyMapValidator = new RuleValidator(new Dictionary<TargetType, RuleFieldMapDto>());
+        var emptyMapValidator = new RuleValidator(new Dictionary<TargetType, RuleFieldMapDto>(), new FakeCategoryRepository());
         var result = await emptyMapValidator.ValidateAsync(UnconfiguredTarget());
         Assert.False(result.IsValid);
     }
 }
+internal class FakeCategoryRepository(bool exists = true) : ICategoryRepository
+{
+    public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default) =>
+        Task.FromResult(exists);
+
+    public Task<List<Category>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(new List<Category>());
+    public Task<List<Category>> GetParentsAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(new List<Category>());
+    public Task<List<Category>> GetDetailedAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(new List<Category>());
+}
+

@@ -1,12 +1,17 @@
 using FinTrak.Core.Entities;
+using Action = FinTrak.Core.Entities.Action;
 using FinTrak.Core.Interfaces;
 using FinTrak.Core.DTOs;
+using FinTrak.Core.Utilities;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FinTrak.Infrastructure.Services;
 
-public class RulesService(IRulesRepository repo, Dictionary<TargetType, RuleFieldMapDto> fieldMap) : IRulesService
+public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, Dictionary<TargetType, RuleFieldMapDto> fieldMap) : IRulesService
 {
     private readonly IRulesRepository _repo = repo;
+    private readonly ITransactionRepository _tRepo = tRepo;
     private readonly Dictionary<TargetType, RuleFieldMapDto> _fieldMap = fieldMap;
 
     public Task<List<Rule>> GetRulesAsync(Guid userId, CancellationToken cancellationToken = default) =>
@@ -76,4 +81,96 @@ public class RulesService(IRulesRepository repo, Dictionary<TargetType, RuleFiel
         _repo.DeleteAsync(rule, cancellationToken);
 
     public Dictionary<TargetType, RuleFieldMapDto> GetRuleFieldMapSync() => _fieldMap;
+
+
+    public async Task EvaluateTransactionRulesAsync(Guid userId, List<Guid> lookupItems, TriggerType trigger, CancellationToken cancellationToken = default)
+    {
+        var transactions = await _tRepo.GetByIdsAsync(userId, lookupItems, cancellationToken);
+        var rules = await GetRulesByTargetAsync(userId, TargetType.Transaction.ToString());
+        rules = rules.Where(r => r.Trigger == trigger && r.IsActive).ToList();
+        rules = rules.OrderBy(r => r.Priority).ToList();
+        foreach(var transaction in transactions)
+        {
+            foreach(var rule in rules)
+            {
+                if(ConditionsMatch(rule.Conditions, transaction))
+                {
+                    ApplyActions(rule.Actions, transaction);
+                }
+            }
+        }
+        await _tRepo.SaveAsync(cancellationToken); 
+    }
+
+    public static bool ConditionsMatch(List<Condition> conditions, Transaction transaction)
+    {
+        return conditions.GroupBy(c => c.GroupId)
+                 .Any(group => group.All(c => RuleUtil.ResolveConditionFieldValue(c, transaction)));
+    }
+
+    public void ApplyActions(List<Action> actions, Transaction transaction)
+    {
+        foreach(var action in actions)
+        {
+            switch (action.ActionType)
+            {
+                case ActionType.Set:
+                    RuleUtil.SetAction(action, transaction);
+                    break;
+                // Exclusions parked 2026-10-01 — see RuleUtil.ExcludeAction.
+                // case ActionType.Exclude:
+                //     RuleUtil.ExcludeAction(action, transaction);
+                //     break;
+                default:
+                    throw new ValidationException($"Invalid action type {action.ActionType}. Please select valid type");
+            }
+        }
+    }
+
+    public async Task ApplyRuleToTransactionHistory(Guid userId, CancellationToken cancellationToken)
+    {
+        var lastId = Guid.Empty;
+        var rules = await GetRulesByTargetAsync(userId, TargetType.Transaction.ToString());
+        rules = rules.Where(r => r.Recursive == true && r.DeletedAt == null && r.IsActive).OrderBy(r => r.Priority).ToList();
+        while(true)
+        {
+            var transactions = await _tRepo.GetPaginatedTransactions(userId, lastId, pageSize: 50, cancellationToken);
+            foreach(var transaction in transactions)
+            {
+                foreach(var rule in rules)
+                {
+                    if(ConditionsMatch(rule.Conditions, transaction))
+                    {
+                        ApplyActions(rule.Actions, transaction);
+                    }
+                }
+            }
+            await _tRepo.SaveAsync(cancellationToken); 
+            _tRepo.ClearTracker();
+            if(transactions.Count < 50) break;
+            lastId = transactions[^1].Id;
+        }
+    }
+
+    public async Task ApplyRuleOnDemand(Guid userId, Guid ruleId, CancellationToken cancellationToken)
+    {
+        var lastId = Guid.Empty;
+        var rule = await GetRuleAsync(ruleId, cancellationToken);
+        if(rule == null) throw new Exception();
+        while(true)
+        {
+            var transactions = await _tRepo.GetPaginatedTransactions(userId, lastId, pageSize: 50, cancellationToken);
+            foreach(var transaction in transactions)
+            {
+                if(ConditionsMatch(rule.Conditions, transaction))
+                {
+                    ApplyActions(rule.Actions, transaction);
+                }
+            }
+            await _tRepo.SaveAsync(cancellationToken); 
+            _tRepo.ClearTracker();
+            if(transactions.Count < 50) break;
+            lastId = transactions[^1].Id;
+        }
+    }
 }

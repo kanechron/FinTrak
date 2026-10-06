@@ -21,4 +21,8 @@ public interface IRulesService
     Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default);
 
     Dictionary<TargetType, RuleFieldMapDto> GetRuleFieldMapSync();
+
+    Task EvaluateTransactionRulesAsync(Guid userId, List<Guid> lookupList, TriggerType trigger, CancellationToken cancellationToken = default);
+    Task ApplyRuleToTransactionHistory(Guid userId, CancellationToken cancellationToken);
+    Task ApplyRuleOnDemand(Guid userId, Guid ruleId, CancellationToken cancellationToken);
 }

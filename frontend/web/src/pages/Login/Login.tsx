@@ -6,6 +6,7 @@ import {
   BillsPreview,
   GoalsPreview,
   LTEForecastPreview,
+  RulesPreview,
 } from './FeaturePreviews'
 import { reactivateAccount } from '../../api/auth'
 
@@ -35,6 +36,11 @@ const features = [
     desc: `See where your spending in each category is headed next month, based on that category's spending history`,
     preview: LTEForecastPreview,
     fullWidth: true,
+  },
+  {
+    title: 'Custom Rules',
+    desc: 'Set up your own if-this-then-that rules to rename and recategorize transactions automatically, as they come in or across your whole history.',
+    preview: RulesPreview,
   },
 ]
 
@@ -233,7 +239,7 @@ export default function Login() {
                 </div>
               )
             })}
-            <div className="sm:col-span-2 flex flex-col items-center justify-center border border-dashed border-line-2 rounded-xl text-ink-3 py-10">
+            <div className="flex flex-col items-center justify-center border border-dashed border-line-2 rounded-xl text-ink-3 py-10">
               <span className="text-2xl leading-none">+</span>
               <span className="text-xs font-medium mt-1.5">More coming soon</span>
             </div>

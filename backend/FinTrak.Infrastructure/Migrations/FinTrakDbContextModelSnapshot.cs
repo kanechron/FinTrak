@@ -458,7 +458,8 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("UserId", "Target", "Priority")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("Rules");
                 });

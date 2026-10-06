@@ -37,6 +37,7 @@ public class RulesRepository(FinTrakDbContext db) : IRulesRepository
     public async Task<List<Rule>> GetRulesForBulkUpdateAsync(Guid userId, List<Guid> ruleIds, CancellationToken cancellationToken = default) =>
         await _db.Rules.Where(r => r.UserId == userId && ruleIds.Contains(r.Id)).ToListAsync(cancellationToken);
 
+
     public async Task AddAsync(Rule rule, CancellationToken cancellationToken = default)
     {
         _db.Rules.Add(rule);
