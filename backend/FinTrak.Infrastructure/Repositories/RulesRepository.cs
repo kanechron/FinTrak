@@ -24,8 +24,8 @@ public class RulesRepository(FinTrakDbContext db) : IRulesRepository
             .OrderBy(r => r.Priority)
             .ToListAsync(cancellationToken);
 
-    public async Task<Rule?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        await _db.Rules.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+    public async Task<Rule?> GetByIdAsync(Guid userId, Guid ruleId, CancellationToken cancellationToken = default) =>
+        await _db.Rules.FirstOrDefaultAsync(r => r.Id == ruleId && r.UserId == userId, cancellationToken);
 
     public async Task<bool> PriorityExistsAsync(Guid userId, TargetType targetType, int priority, Guid? excludeRuleId = null, CancellationToken cancellationToken = default) =>
         await _db.Rules.AnyAsync(r =>

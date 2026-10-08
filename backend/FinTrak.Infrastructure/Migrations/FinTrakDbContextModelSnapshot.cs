@@ -436,6 +436,10 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
@@ -538,6 +542,9 @@ namespace FinTrak.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Exclusions")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsCategoryLocked")
                         .HasColumnType("boolean");
 
@@ -577,6 +584,41 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("PlaidTransactionId");
 
                     b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.TransactionExclusion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Flags")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("SourceType", "SourceId", "TransactionId")
+                        .IsUnique();
+
+                    b.ToTable("TransactionExclusions");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.User", b =>
@@ -757,6 +799,17 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("CategoryDetailed");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.TransactionExclusion", b =>
+                {
+                    b.HasOne("FinTrak.Core.Entities.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
                 });
 #pragma warning restore 612, 618
         }

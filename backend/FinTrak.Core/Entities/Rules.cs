@@ -27,6 +27,13 @@ public class Rule
     /// <summary>When this rule is evaluated. Required at save time for the same reason as <see cref="Target"/>.</summary>
     public required TriggerType? Trigger { get; set; }
 
+    /// <summary>
+    /// What kind of rule this is, set once at creation and never changed by updates. <see cref="RuleKind.Action"/> rules
+    /// only contain Set actions and are fully editable; <see cref="RuleKind.Exclusion"/> rules only contain exclusion
+    /// actions and can only be deleted (deleting reverses their exclusions).
+    /// </summary>
+    public RuleKind Kind { get; set; } = RuleKind.Undefined;
+
     /// <summary>All conditions are ANDed together — every one must match for the rule to fire.</summary>
     public required List<Condition> Conditions { get; set; }
 
@@ -39,6 +46,14 @@ public enum TargetType
 {
     Undefined = 0,
     Transaction = 1
+}
+
+/// <summary>Whether a rule changes transaction fields or excludes transactions. A rule is one or the other, never both.</summary>
+public enum RuleKind
+{
+    Undefined = 0,
+    Action = 1,
+    Exclusion = 2
 }
 
 /// <summary>When a rule is evaluated.</summary>
@@ -116,9 +131,8 @@ public enum ActionField
     Undefined = 0,
     Category = 1,
     MerchantName = 2,
-    // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
-    // /// <summary>Adds a <see cref="FinTrak.Core.Entities.Exclusion"/> flag to the transaction; <see cref="Action.ActionValue"/> is the flag name (e.g. "Budget", "Bills", "Reports").</summary>
-    // Exclusion = 3,
+    /// <summary>Adds one <see cref="FinTrak.Core.Entities.Exclusion"/> flag to the transaction; <see cref="Action.ActionValue"/> is the flag name (e.g. "Budget", "Bills", "Reports"). Only allowed on <see cref="RuleKind.Exclusion"/> rules.</summary>
+    Exclusion = 3,
     BillFlag = 4
 }
 

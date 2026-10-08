@@ -7,7 +7,7 @@ public interface IRulesService
 {
     Task<List<Rule>> GetRulesAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<List<Rule>> GetRulesByTargetAsync(Guid userId, string target, CancellationToken cancellationToken = default);
-    Task<Rule?> GetRuleAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Rule?> GetRuleAsync(Guid userId, Guid ruleId, CancellationToken cancellationToken = default);
 
     /// <summary>Throws <see cref="InvalidOperationException"/> if Target is unset or the (UserId, Target, Priority) triple is already taken.</summary>
     Task CreateRuleAsync(Rule rule, CancellationToken cancellationToken = default);
@@ -25,4 +25,5 @@ public interface IRulesService
     Task EvaluateTransactionRulesAsync(Guid userId, List<Guid> lookupList, TriggerType trigger, CancellationToken cancellationToken = default);
     Task ApplyRuleToTransactionHistory(Guid userId, CancellationToken cancellationToken);
     Task ApplyRuleOnDemand(Guid userId, Guid ruleId, CancellationToken cancellationToken);
+
 }

@@ -35,6 +35,7 @@ public class RuleValidationTests(RuleValidatorFixture val) : IClassFixture<RuleV
         Recursive = false,
         Target = TargetType.Transaction,
         Trigger = TriggerType.OnSync,
+        Kind = RuleKind.Action,
         Conditions =
         [
             new Condition
@@ -70,6 +71,7 @@ public class RuleValidationTests(RuleValidatorFixture val) : IClassFixture<RuleV
             Recursive = false,
             Target = TargetType.Transaction,
             Trigger = TriggerType.OnSync,
+            Kind = RuleKind.Action,
             Conditions =
             [
                 new Condition { GroupId = groupA, ConditionField = ConditionField.MerchantName, ConditionOperator = Operator.CONTAINS, ConditionValue = "Spotify" },

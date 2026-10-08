@@ -24,7 +24,8 @@ public static class RuleUtil
 
         var result = condition.ConditionField switch
         {
-            ConditionField.MerchantName => Compare(transaction.MerchantName, value.ToLower(), op),
+            // Case is handled inside the string Compare (OrdinalIgnoreCase for both EQUALS and CONTAINS).
+            ConditionField.MerchantName => Compare(transaction.MerchantName, value, op),
             ConditionField.Amount => Compare(amount, decimal.Parse(value), op),
             ConditionField.TransactionDate => Compare(date, DateOnly.Parse(value), op),
             ConditionField.DayOfMonth => Compare(date.Day, int.Parse(value), op),
@@ -61,7 +62,7 @@ public static class RuleUtil
         return op switch
         {
             Operator.EQUALS => string.Equals(left, right, StringComparison.OrdinalIgnoreCase),
-            Operator.CONTAINS => left.Contains(right),
+            Operator.CONTAINS => left.Contains(right, StringComparison.OrdinalIgnoreCase),
             _ => throw new ValidationException($"Operator {op} is not supported for String comparisons.")
         };
     }
@@ -83,15 +84,4 @@ public static class RuleUtil
                 throw new ValidationException($"Action field value {action.ActionField} is not valid. Please select valid field");
         }
     }
-
-    // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
-    // public static void ExcludeAction(Action action, Transaction transaction)
-    // {
-    //     if(Enum.IsDefined(typeof(Exclusion), action.ActionValue))
-    //     {
-    //         transaction.Exclusions |= Enum.Parse<Exclusion>(action.ActionValue);
-    //     }
-    //     else throw new ValidationException($"Exclusion value {action.ActionValue} is not valid. Please select valid field.");
-    // }
-
 }

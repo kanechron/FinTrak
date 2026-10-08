@@ -41,6 +41,21 @@ public class RuleValidator : AbstractValidator<Rule>
             .NotNull().WithMessage("Trigger is required")
             .NotEmpty().WithMessage("Trigger must not be empty");
 
+        RuleFor(r => r.Kind)
+            .IsInEnum().WithMessage("Rule kind is not valid")
+            .NotEqual(RuleKind.Undefined).WithMessage("Rule kind is required");
+
+        // A rule is either an action rule or an exclusion rule — never both.
+        RuleFor(r => r.Actions)
+            .Must(actions => actions.All(a => a.ActionField == ActionField.Exclusion))
+            .When(r => r.Kind == RuleKind.Exclusion && r.Actions is not null)
+            .WithMessage("Exclusion rules can only contain exclusion actions");
+
+        RuleFor(r => r.Actions)
+            .Must(actions => actions.All(a => a.ActionField != ActionField.Exclusion))
+            .When(r => r.Kind == RuleKind.Action && r.Actions is not null)
+            .WithMessage("Exclusions must be their own rule, not mixed with other actions");
+
         //Check if ConditionOperator is in the ConditionField's fieldmap first
         RuleForEach(r => r.Conditions)
             .SetValidator(r => new ConditionValidator(_fieldmap, r.Target ?? TargetType.Undefined));
@@ -48,19 +63,24 @@ public class RuleValidator : AbstractValidator<Rule>
         RuleForEach(r => r.Actions)
             .SetValidator(r => new ActionValidator(_fieldmap, r.Target ?? TargetType.Undefined));
         
+        // Each action field once — except Exclusion, which may appear several times as long as each flag appears once
+        // (e.g. one rule excluding from both Budget and Reports).
         RuleFor(r => r.Actions)
-            .Must(actions => actions.Select(a => a.ActionField).Distinct().Count() == actions.Count)
-            .WithMessage("Each action type can only appear once");
+            .Must(actions => actions
+                .Select(a => a.ActionField == ActionField.Exclusion ? $"{a.ActionField}:{a.ActionValue}" : a.ActionField.ToString())
+                .Distinct().Count() == actions.Count)
+            .WithMessage("Each action type can only appear once, and each exclusion only once");
 
         RuleFor(r => r.Conditions)
             .Must(r => !HasConflictingEqualsConditions(r))
             .WithMessage("A field can't be checked twice with 'EQUALS' in the same group");
         
-        // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
-        // RuleForEach(r => r.Actions)
-        // .Where(a => a.ActionType == ActionType.Exclude)
-        // .Must(r => Enum.IsDefined(typeof(Exclusion), r.ActionValue))
-        // .WithMessage("This type of exclusion is not supported");
+        // Exactly one named flag per exclusion action (e.g. "Budget"). Rejects "None", numeric strings,
+        // and comma-combined values — Enum.IsDefined only accepts a single declared name.
+        RuleForEach(r => r.Actions)
+        .Where(a => a.ActionField == ActionField.Exclusion)
+            .Must(a => Enum.IsDefined(typeof(Exclusion), a.ActionValue) && a.ActionValue != nameof(Exclusion.None))
+            .WithMessage("This type of exclusion is not supported");
 
         RuleForEach(r => r.Actions)
         .Where(a => a.ActionField == ActionField.Category)

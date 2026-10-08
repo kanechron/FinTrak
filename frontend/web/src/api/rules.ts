@@ -5,6 +5,10 @@ export type TargetType = 'Transaction' | 'Goal' | 'Budget' | 'Bill' | 'Report'
 export const TRIGGER_TYPES = ['Always', 'OnSync', 'OnDemand', 'OnPDFImport'] as const
 export type TriggerType = (typeof TRIGGER_TYPES)[number]
 
+/** A rule is either an Action rule (Set actions, editable) or an Exclusion rule (exclusion actions, delete-only). Fixed at creation. */
+export const RULE_KINDS = ['Action', 'Exclusion'] as const
+export type RuleKind = (typeof RULE_KINDS)[number]
+
 export const OPERATORS = [
   'GREATER_THAN',
   'LESS_THAN',
@@ -27,9 +31,13 @@ export const CONDITION_FIELDS = [
 ] as const
 export type ConditionField = (typeof CONDITION_FIELDS)[number]
 
-// 'Exclusion' parked 2026-10-01 — restore alongside ActionField.Exclusion on the backend
-export const ACTION_FIELDS = ['Category', 'MerchantName', /* 'Exclusion', */ 'BillFlag'] as const
-export type ActionField = (typeof ACTION_FIELDS)[number]
+/** Action fields offered for Action rules. 'Exclusion' is deliberately not here — it's only valid on Exclusion rules. */
+export const ACTION_FIELDS = ['Category', 'MerchantName', 'BillFlag'] as const
+export type ActionField = (typeof ACTION_FIELDS)[number] | 'Exclusion'
+
+/** Flag names an Exclusion rule's actions can use (one action per flag). Must match the backend's Exclusion enum. */
+export const EXCLUSION_FLAGS = ['Budget', 'Bills', 'Reports'] as const
+export type ExclusionFlag = (typeof EXCLUSION_FLAGS)[number]
 
 export const ACTION_TYPES = ['Set', 'Exclude', undefined] as const
 export type ActionType = (typeof ACTION_TYPES)[number]
@@ -59,6 +67,7 @@ export interface Rule {
   deletedAt: string | null
   target: TargetType | null
   trigger: TriggerType | null
+  kind: RuleKind
   conditions: Condition[]
   actions: Action[]
 }
@@ -104,24 +113,25 @@ export function getRuleFieldmap() : Promise<FieldMap> {
 
 /**
  * Create a new rule
- * @remarks 'id', 'userId', 'createdAt', 'deletedAt' are set server-side
+ * @remarks 'id', 'userId', 'createdAt', 'deletedAt' are set server-side, and 'kind' is derived server-side
+ * from the actions (any 'Exclusion' action makes it an Exclusion rule)
  * @throws {ApiError} if Target is unset or (userId, target, priority) collides with an existing rule
  */
 export function addRule(
-  rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt'>
+  rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind'>
 ): Promise<{ message: string; id: string }> {
   return api.post('/rules/add-rule', rule)
 }
 
 /**
- * 
+ *
  * @param id ID of the rule being updated
- * @param rule Entire rule object
- * @returns 
+ * @param rule Entire rule object ('kind' is ignored — the server keeps the stored kind)
+ * @returns
  */
 export function updateRule(
     id: string,
-    rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt'>
+    rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind'>
 ): Promise<{ message: string }> {
     return api.patch(`/rules/update-rule/${id}`, rule)
 }

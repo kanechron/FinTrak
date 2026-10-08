@@ -26,7 +26,9 @@ public class TransactionRepository(FinTrakDbContext db) : ITransactionRepository
     public async Task<List<Transaction>> GetByCategoryIdAsync(Guid userId, Guid categoryId, DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
     {
         IQueryable<Transaction> query = _db.Transactions
+            // Only used by the Reports page's category side panel, so it honors the Reports exclusion.
             .Where(t => t.DeletedAt == null && t.UserId == userId && t.CategoryId == categoryId
+                && !t.Exclusions.HasFlag(Exclusion.Reports)
                 && (t.CategoryDetailedId == null
                     || ((!t.CategoryDetailed!.Name.StartsWith("TRANSFER_") || t.CategoryDetailed.Name.Contains("_FROM_APPS"))
                         && !t.CategoryDetailed.Name.StartsWith("INCOME"))))
@@ -42,7 +44,9 @@ public class TransactionRepository(FinTrakDbContext db) : ITransactionRepository
     public async Task<List<Transaction>> GetByDetailedCategoryIdAsync(Guid userId, Guid detailedCategoryId, DateOnly? from, DateOnly? to, CancellationToken cancellationToken = default)
     {
         IQueryable<Transaction> query = _db.Transactions
+            // Only used by the Reports page's detailed-category side panel, so it honors the Reports exclusion.
             .Where(t => t.DeletedAt == null && t.UserId == userId && t.CategoryDetailedId == detailedCategoryId
+                && !t.Exclusions.HasFlag(Exclusion.Reports)
                 && (!t.CategoryDetailed!.Name.StartsWith("TRANSFER_") || t.CategoryDetailed.Name.Contains("_FROM_APPS"))
                 && !t.CategoryDetailed.Name.StartsWith("INCOME"))
             .Include(t => t.Category)

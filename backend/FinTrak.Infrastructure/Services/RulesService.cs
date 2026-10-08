@@ -8,10 +8,11 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FinTrak.Infrastructure.Services;
 
-public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, Dictionary<TargetType, RuleFieldMapDto> fieldMap) : IRulesService
+public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, ITransactionExclusionRepository eRepo, Dictionary<TargetType, RuleFieldMapDto> fieldMap) : IRulesService
 {
     private readonly IRulesRepository _repo = repo;
     private readonly ITransactionRepository _tRepo = tRepo;
+    private readonly ITransactionExclusionRepository _eRepo = eRepo;
     private readonly Dictionary<TargetType, RuleFieldMapDto> _fieldMap = fieldMap;
 
     public Task<List<Rule>> GetRulesAsync(Guid userId, CancellationToken cancellationToken = default) =>
@@ -19,8 +20,8 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, D
 
     public Task<List<Rule>> GetRulesByTargetAsync(Guid userId, string target, CancellationToken cancellationToken = default) => _repo.GetByTargetAsync(userId, target);
 
-    public Task<Rule?> GetRuleAsync(Guid id, CancellationToken cancellationToken = default) =>
-        _repo.GetByIdAsync(id, cancellationToken);
+    public Task<Rule?> GetRuleAsync(Guid userId, Guid ruleId, CancellationToken cancellationToken = default) =>
+        _repo.GetByIdAsync(userId, ruleId, cancellationToken);
 
     public async Task CreateRuleAsync(Rule rule, CancellationToken cancellationToken = default)
     {
@@ -77,8 +78,17 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, D
         await _repo.SaveAsync(cancellationToken);
     }
 
-    public Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default) =>
-        _repo.DeleteAsync(rule, cancellationToken);
+    /// <summary>
+    /// Soft-deletes a rule. If it has exclusion actions, its exclusions are reversed FIRST (while the rule still
+    /// exists), so a failure during reversal leaves the rule in place rather than orphaning its exclusions.
+    /// </summary>
+    public async Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default)
+    {
+        if (rule.Kind == RuleKind.Exclusion)
+            await RemoveRuleExclusionsAsync(rule.UserId, rule.Id, cancellationToken);
+
+        await _repo.DeleteAsync(rule, cancellationToken);
+    }
 
     public Dictionary<TargetType, RuleFieldMapDto> GetRuleFieldMapSync() => _fieldMap;
 
@@ -87,19 +97,110 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, D
     {
         var transactions = await _tRepo.GetByIdsAsync(userId, lookupItems, cancellationToken);
         var rules = await GetRulesByTargetAsync(userId, TargetType.Transaction.ToString());
-        rules = rules.Where(r => r.Trigger == trigger && r.IsActive).ToList();
+        // Always rules run on every trigger, alongside the rules for this specific trigger.
+        rules = rules.Where(r => (r.Trigger == trigger || r.Trigger == TriggerType.Always) && r.IsActive).ToList();
         rules = rules.OrderBy(r => r.Priority).ToList();
-        foreach(var transaction in transactions)
+
+        await ApplyRulesToBatchAsync(userId, rules, transactions, cancellationToken);
+        await _tRepo.SaveAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// The shared core of every evaluation path (trigger events, recursive history pass, on-demand run):
+    /// for each transaction, runs each rule in order; matching rules apply their Set actions and, for exclusion
+    /// actions, OR the rule's flags onto the transaction and stage a <see cref="TransactionExclusion"/> receipt.
+    /// Doesn't save — the caller saves once per batch so receipts and transaction changes land together.
+    /// </summary>
+    private async Task ApplyRulesToBatchAsync(Guid userId, List<Rule> rules, List<Transaction> transactions, CancellationToken cancellationToken)
+    {
+        if (transactions.Count == 0 || rules.Count == 0) return;
+
+        // Computed once per batch, not once per transaction.
+        var masks = rules.ToDictionary(r => r.Id, GetExclusionMask);
+
+        // For each exclusion rule, which of this batch's transactions it already has a receipt for —
+        // so re-applying the same rule (e.g. a sync after a recursive pass) doesn't violate the unique index.
+        var transactionIds = transactions.Select(t => t.Id).ToList();
+        var receipted = new Dictionary<Guid, HashSet<Guid>>();
+        foreach (var rule in rules.Where(r => masks[r.Id] != Exclusion.None))
         {
-            foreach(var rule in rules)
+            receipted[rule.Id] = await _eRepo.GetReceiptedTransactionIdsAsync(userId, ExclusionSourceType.Rule, rule.Id, transactionIds, cancellationToken);
+        }
+
+        foreach (var transaction in transactions)
+        {
+            foreach (var rule in rules)
             {
-                if(ConditionsMatch(rule.Conditions, transaction))
+                if (!ConditionsMatch(rule.Conditions, transaction)) continue;
+
+                ApplyActions(rule.Actions, transaction);
+
+                var mask = masks[rule.Id];
+                if (mask == Exclusion.None) continue;
+
+                transaction.Exclusions |= mask;
+
+                if (receipted[rule.Id].Add(transaction.Id))
                 {
-                    ApplyActions(rule.Actions, transaction);
+                    _eRepo.Add(new TransactionExclusion
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        TransactionId = transaction.Id,
+                        SourceType = ExclusionSourceType.Rule,
+                        SourceId = rule.Id,
+                        Flags = mask,
+                        CreatedAt = DateTime.UtcNow
+                    });
                 }
             }
         }
-        await _tRepo.SaveAsync(cancellationToken); 
+    }
+
+    /// <summary>Every exclusion bit this rule's actions set, combined into one value. <see cref="Exclusion.None"/> if it has no exclusion actions.</summary>
+    private static Exclusion GetExclusionMask(Rule rule)
+    {
+        var mask = Exclusion.None;
+        foreach (var action in rule.Actions.Where(a => a.ActionField == ActionField.Exclusion))
+        {
+            mask |= Enum.Parse<Exclusion>(action.ActionValue);
+        }
+        return mask;
+    }
+
+    /// <summary>
+    /// Reverses one rule's exclusions using its receipts — no condition re-matching. Affected transactions are
+    /// re-summarized from their OTHER receipts, so a flag another source still wants stays on. Flags are updated
+    /// before the receipts are deleted, so a failure partway leaves receipts in place and the call can be retried.
+    /// </summary>
+    private async Task RemoveRuleExclusionsAsync(Guid userId, Guid ruleId, CancellationToken cancellationToken)
+    {
+        var receipts = await _eRepo.GetBySourceAsync(userId, ExclusionSourceType.Rule, ruleId, cancellationToken);
+        if (receipts.Count == 0) return;
+
+        var affectedIds = receipts.Select(r => r.TransactionId).Distinct().ToList();
+
+        // Chunked so a rule that touched a huge history doesn't load it all at once.
+        foreach (var chunk in affectedIds.Chunk(500))
+        {
+            var chunkIds = chunk.ToList();
+
+            var keep = (await _eRepo.GetByTransactionIdsAsync(userId, chunkIds, cancellationToken))
+                .Where(e => !(e.SourceType == ExclusionSourceType.Rule && e.SourceId == ruleId))
+                .GroupBy(e => e.TransactionId)
+                .ToDictionary(g => g.Key, g => g.Aggregate(Exclusion.None, (acc, e) => acc | e.Flags));
+
+            var transactions = await _tRepo.GetByIdsAsync(userId, chunkIds, cancellationToken);
+            foreach (var transaction in transactions)
+            {
+                transaction.Exclusions = keep.GetValueOrDefault(transaction.Id, Exclusion.None);
+            }
+
+            // No ClearTracker here: the caller's Rule entity is tracked by this same context and still needs saving.
+            await _tRepo.SaveAsync(cancellationToken);
+        }
+
+        await _eRepo.DeleteBySourceAsync(userId, ExclusionSourceType.Rule, ruleId, cancellationToken);
     }
 
     public static bool ConditionsMatch(List<Condition> conditions, Transaction transaction)
@@ -117,10 +218,9 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, D
                 case ActionType.Set:
                     RuleUtil.SetAction(action, transaction);
                     break;
-                // Exclusions parked 2026-10-01 — see RuleUtil.ExcludeAction.
-                // case ActionType.Exclude:
-                //     RuleUtil.ExcludeAction(action, transaction);
-                //     break;
+                // Exclusion actions are applied by ApplyRulesToBatchAsync, which also writes the receipt.
+                case ActionType.Exclude when action.ActionField == ActionField.Exclusion:
+                    break;
                 default:
                     throw new ValidationException($"Invalid action type {action.ActionType}. Please select valid type");
             }
@@ -135,17 +235,8 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, D
         while(true)
         {
             var transactions = await _tRepo.GetPaginatedTransactions(userId, lastId, pageSize: 50, cancellationToken);
-            foreach(var transaction in transactions)
-            {
-                foreach(var rule in rules)
-                {
-                    if(ConditionsMatch(rule.Conditions, transaction))
-                    {
-                        ApplyActions(rule.Actions, transaction);
-                    }
-                }
-            }
-            await _tRepo.SaveAsync(cancellationToken); 
+            await ApplyRulesToBatchAsync(userId, rules, transactions, cancellationToken);
+            await _tRepo.SaveAsync(cancellationToken);
             _tRepo.ClearTracker();
             if(transactions.Count < 50) break;
             lastId = transactions[^1].Id;
@@ -155,19 +246,13 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, D
     public async Task ApplyRuleOnDemand(Guid userId, Guid ruleId, CancellationToken cancellationToken)
     {
         var lastId = Guid.Empty;
-        var rule = await GetRuleAsync(ruleId, cancellationToken);
+        var rule = await GetRuleAsync(userId, ruleId, cancellationToken);
         if(rule == null) throw new Exception();
         while(true)
         {
             var transactions = await _tRepo.GetPaginatedTransactions(userId, lastId, pageSize: 50, cancellationToken);
-            foreach(var transaction in transactions)
-            {
-                if(ConditionsMatch(rule.Conditions, transaction))
-                {
-                    ApplyActions(rule.Actions, transaction);
-                }
-            }
-            await _tRepo.SaveAsync(cancellationToken); 
+            await ApplyRulesToBatchAsync(userId, [rule], transactions, cancellationToken);
+            await _tRepo.SaveAsync(cancellationToken);
             _tRepo.ClearTracker();
             if(transactions.Count < 50) break;
             lastId = transactions[^1].Id;

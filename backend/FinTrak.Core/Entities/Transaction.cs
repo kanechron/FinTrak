@@ -73,18 +73,22 @@ namespace FinTrak.Core.Entities;
         /// <summary>The date the transaction occurred, as reported by the bank.</summary>
         public DateOnly? Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
-        // public Exclusion Exclusions { get; set; } = Exclusion.None;
+        /// <summary>
+        /// Where this transaction is left out (budgets, bills, reports). Always the bitwise OR of the
+        /// <see cref="TransactionExclusion.Flags"/> on its receipts — never set directly, only via the rules pipeline.
+        /// Stored as an integer so queries can filter with <c>HasFlag</c> in SQL.
+        /// </summary>
+        public Exclusion Exclusions { get; set; } = Exclusion.None;
 
     }
 
-    // Exclusions parked 2026-10-01 — design to be revisited after the Rules feature + migration ship.
-    // [Flags]
-    // public enum Exclusion
-    // {
-    //     None = 0,
-    //     Budget = 1,
-    //     Bills = 2,
-    //     Reports = 4
-    // }
+    /// <summary>Places a transaction can be excluded from. Combine with <c>|</c>; each value is its own bit.</summary>
+    [Flags]
+    public enum Exclusion
+    {
+        None = 0,
+        Budget = 1,
+        Bills = 2,
+        Reports = 4
+    }
 

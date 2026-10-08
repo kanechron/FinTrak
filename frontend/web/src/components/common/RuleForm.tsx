@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
   ACTION_FIELDS,
-  ACTION_TYPES,
   addRule,
   CONDITION_FIELDS,
-  OPERATORS,
+  EXCLUSION_FLAGS,
   TRIGGER_TYPES,
+  type ActionField,
   type Rule,
   type Action,
   type Condition,
@@ -44,6 +44,14 @@ function newAction(): Action {
   }
 }
 
+function newExclusionAction(): Action {
+  return {
+    actionField: 'Exclusion',
+    actionType: 'Exclude',
+    actionValue: '',
+  }
+}
+
 export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriority }: Props) {
   // Field Map
   const fieldmap = useFieldMap(target)
@@ -70,6 +78,20 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
 
   function updateAction(index: number, patch: Partial<Action>) {
     setActions(prev => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)))
+  }
+
+  // A rule is either an action rule or an exclusion rule, never both (the backend derives `kind` from this).
+  const isExclusionRule = actions.some((a) => a.actionField === 'Exclusion')
+
+  // Which action fields a given row may pick: once any OTHER row is an exclusion, only 'Exclusion';
+  // once any other row is a normal action, never 'Exclusion'. Editing never offers 'Exclusion' — an existing
+  // action rule can't become an exclusion rule, and exclusion rules can't be edited at all.
+  function fieldOptionsFor(index: number): ActionField[] {
+    const othersAreExclusion = actions.some((a, ai) => ai !== index && a.actionField === 'Exclusion')
+    const othersAreAction = actions.some((a, ai) => ai !== index && a.actionField !== 'Exclusion')
+    if (othersAreExclusion) return ['Exclusion']
+    if (othersAreAction || isEdit) return [...ACTION_FIELDS]
+    return [...ACTION_FIELDS, 'Exclusion']
   }
 
   function handleConflictingConditions(conditions: Condition[]): boolean {
@@ -104,8 +126,10 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
         conditions,
         actions,
         recursive,
-        trigger,
-        isActive,
+        // Exclusions apply to new transactions from every source (the backend enforces this too).
+        trigger: isExclusionRule ? ('Always' as const) : trigger,
+        // Exclusion rules can't be activated/deactivated after saving, so they're always created active.
+        isActive: isExclusionRule ? true : isActive,
         target,
         priority,
       }
@@ -170,6 +194,7 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
               </div>
 
               {/* Priority is driven entirely by drag order in RulesBlock now, not user-editable here. */}
+              {!isExclusionRule && (
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className={labelClass}>Trigger</label>
@@ -186,17 +211,20 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                   </select>
                 </div>
               </div>
+              )}
 
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm text-ink-2">
-                  <input
-                    type="checkbox"
-                    checked={isActive}
-                    onChange={(e) => setIsActive(e.target.checked)}
-                    className={checkboxClass}
-                  />
-                  Active
-                </label>
+                {!isExclusionRule && (
+                  <label className="flex items-center gap-2 text-sm text-ink-2">
+                    <input
+                      type="checkbox"
+                      checked={isActive}
+                      onChange={(e) => setIsActive(e.target.checked)}
+                      className={checkboxClass}
+                    />
+                    Active
+                  </label>
+                )}
                 <label className="flex items-center gap-2 text-sm text-ink-2">
                   <input
                     type="checkbox"
@@ -305,23 +333,39 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                 <div className="flex items-center justify-between">
                   <label className={labelClass}>Actions</label>
                   <button
-                    onClick={() => setActions([...actions, newAction()])}
-                    className="text-xs font-semibold text-s1 hover:opacity-80 cursor-pointer"
+                    onClick={() => setActions([...actions, isExclusionRule ? newExclusionAction() : newAction()])}
+                    // An exclusion rule has at most one action per flag, so stop once every flag is used.
+                    disabled={isExclusionRule && actions.length >= EXCLUSION_FLAGS.length}
+                    className="text-xs font-semibold text-s1 hover:opacity-80 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     + Add Action
                   </button>
                 </div>
+
+                {isExclusionRule && (
+                  <p className="text-xs text-s3 bg-s3/15 rounded-lg px-3 py-2">
+                    This is an exclusion rule. Once saved it can't be edited, only deleted. Deleting it returns its
+                    transactions to your budgets, bills, and reports.
+                  </p>
+                )}
 
                 {actions.map((action, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <select
                       value={action.actionField}
                       onChange={(e) => {
-                        updateAction(i, { actionField: e.target.value as Action['actionField'], actionType: fieldmap.actions[e.target.value as Action['actionField']][0] })
+                        const field = e.target.value as ActionField
+                        // Value meanings differ between exclusion and normal actions, so switching between them clears it.
+                        const switchedKind = (field === 'Exclusion') !== (action.actionField === 'Exclusion')
+                        updateAction(i, {
+                          actionField: field,
+                          actionType: fieldmap.actions[field][0],
+                          ...(switchedKind ? { actionValue: '' } : {}),
+                        })
                       }}
                       className={inputClass}
                     >
-                      {ACTION_FIELDS.map((f) => (
+                      {fieldOptionsFor(i).map((f) => (
                         <option key={f} value={f}>
                           {f}
                         </option>
@@ -341,13 +385,33 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                       ))}
                     </select>
 
-                    <input
-                      value={action.actionValue}
-                      onChange={(e) => updateAction(i, { actionValue: e.target.value })}
-                      type="text"
-                      placeholder="Value"
-                      className={inputClass}
-                    />
+                    {action.actionField === 'Exclusion' ? (
+                      <select
+                        value={action.actionValue}
+                        onChange={(e) => updateAction(i, { actionValue: e.target.value })}
+                        className={inputClass}
+                      >
+                        <option value="" disabled>Exclude from...</option>
+                        {EXCLUSION_FLAGS.map((flag) => (
+                          // Each flag once per rule — the backend rejects duplicates.
+                          <option
+                            key={flag}
+                            value={flag}
+                            disabled={actions.some((a, ai) => ai !== i && a.actionField === 'Exclusion' && a.actionValue === flag)}
+                          >
+                            {flag}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        value={action.actionValue}
+                        onChange={(e) => updateAction(i, { actionValue: e.target.value })}
+                        type="text"
+                        placeholder="Value"
+                        className={inputClass}
+                      />
+                    )}
 
                     <button
                       onClick={() => setActions(actions.filter((_, ai) => ai !== i))}

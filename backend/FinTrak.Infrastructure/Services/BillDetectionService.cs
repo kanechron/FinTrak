@@ -52,6 +52,7 @@ namespace FinTrak.Infrastructure.Services
             .Where(t =>
             t.DeletedAt == null &&
             t.UserId == userId &&
+            !t.Exclusions.HasFlag(Exclusion.Bills) &&
             t.IsPending == false &&
             t.Date >= DateOnly.FromDateTime(DateTime.Today.AddMonths(-6)) &&
             t.Date <= DateOnly.FromDateTime(DateTime.Today))

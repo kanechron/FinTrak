@@ -6,7 +6,7 @@ public interface IRulesRepository
 {
     Task<List<Rule>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<List<Rule>> GetByTargetAsync(Guid userId, string target, CancellationToken cancellationToken = default);
-    Task<Rule?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Rule?> GetByIdAsync(Guid userId, Guid ruleId, CancellationToken cancellationToken = default);
 
     /// <summary>Fetches the subset of <paramref name="ruleIds"/> owned by <paramref name="userId"/>, tracked by the context, ready for in-place mutation and a single <see cref="SaveAsync"/>.</summary>
     Task<List<Rule>> GetRulesForBulkUpdateAsync(Guid userId, List<Guid> ruleIds, CancellationToken cancellationToken = default);

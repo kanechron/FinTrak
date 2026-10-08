@@ -65,6 +65,16 @@ public class RuleUtilTests
         Not = false
     };
 
+    /// <summary>CONTAINS ignores case on both sides: "SPOTIFY" matches "spotify usa".</summary>
+    public static Condition MerchantContainsUppercase() => new()
+    {
+        GroupId = Guid.NewGuid(),
+        ConditionField = ConditionField.MerchantName,
+        ConditionOperator = Operator.CONTAINS,
+        ConditionValue = "SPOTIFY",
+        Not = false
+    };
+
     // ---------------------------------------------------------------------
     // Conditions that SHOULD match MatchingTransaction()
     // (every field arm, every comparison operator, Enum.Parse ignoreCase, and a Not flip)
@@ -370,6 +380,7 @@ public class RuleUtilTests
     {
         yield return [nameof(MerchantContainsSpotify), MerchantContainsSpotify()];
         yield return [nameof(MerchantNameEquals), MerchantNameEquals()];
+        yield return [nameof(MerchantContainsUppercase), MerchantContainsUppercase()];
         yield return [nameof(AmountLessThanFifty), AmountLessThanFifty()];
         yield return [nameof(AmountGreaterThanOrEqualExact), AmountGreaterThanOrEqualExact()];
         yield return [nameof(TransactionDateEqualsSept15), TransactionDateEqualsSept15()];

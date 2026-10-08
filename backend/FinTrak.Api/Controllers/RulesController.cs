@@ -5,6 +5,7 @@ using FinTrak.Core.Interfaces;
 using FinTrak.Api.Validation;
 using FinTrak.Core.DTOs;
 using System.Threading.Channels;
+using Going.Plaid.User;
 
 namespace FinTrak.Api.Controllers
 {
@@ -32,9 +33,8 @@ namespace FinTrak.Api.Controllers
         [HttpGet("get-rule/{id}")]
         public async Task<IActionResult> GetRule(Guid id, CancellationToken cancellationToken)
         {
-            var rule = await _rules.GetRuleAsync(id, cancellationToken);
+            var rule = await _rules.GetRuleAsync(GetUserId(), id, cancellationToken);
             if (rule == null) return NotFoundError("Rule not found.");
-            if (rule.UserId != GetUserId()) return ForbiddenError();
 
             return Ok(rule);
         }
@@ -61,8 +61,20 @@ namespace FinTrak.Api.Controllers
                 Target = rule.Target,
                 Trigger = rule.Trigger,
                 Conditions = rule.Conditions,
-                Actions = rule.Actions
+                Actions = rule.Actions,
+                // Derived from the actions, never trusted from the client: any exclusion action makes it an
+                // exclusion rule. Mixed rules still fail validation ("no mixing" rules in RuleValidator).
+                // Null-safe because this runs before validation, which is what rejects a missing Actions list.
+                Kind = rule.Actions?.Any(a => a.ActionField == ActionField.Exclusion) == true ? RuleKind.Exclusion : RuleKind.Action
             };
+
+            // An exclusion applies to new transactions from every source, so its trigger is always Always.
+            // It's also always active: exclusion rules can't be edited, so an inactive one could never be switched on.
+            if (newRule.Kind == RuleKind.Exclusion)
+            {
+                newRule.Trigger = TriggerType.Always;
+                newRule.IsActive = true;
+            }
 
                 var ruleVal = await _val.ValidateAsync(newRule, cancellationToken);
                 if (ruleVal.IsValid)
@@ -101,9 +113,8 @@ namespace FinTrak.Api.Controllers
         [HttpPost("run-rule/{id}")]
         public async Task<IActionResult> RuleOnDemand(Guid id, CancellationToken cancellationToken)
         {
-            var existingRule = await _rules.GetRuleAsync(id, cancellationToken);
+            var existingRule = await _rules.GetRuleAsync(GetUserId(), id, cancellationToken);
             if (existingRule == null) return NotFoundError("Rule not found.");
-            if (existingRule.UserId != GetUserId()) return ForbiddenError();
 
             try
             {
@@ -119,12 +130,20 @@ namespace FinTrak.Api.Controllers
         [HttpPatch("update-rule/{id}")]
         public async Task<IActionResult> UpdateRule(Guid id, [FromBody] Rule rule, CancellationToken cancellationToken)
         {
-            var ruleVal = await _val.ValidateAsync(rule, cancellationToken);
-            if(ruleVal.IsValid) 
-            {
-            var existingRule = await _rules.GetRuleAsync(id, cancellationToken);
+            var existingRule = await _rules.GetRuleAsync(GetUserId(), id, cancellationToken);
             if (existingRule == null) return NotFoundError("Rule not found.");
-            if (existingRule.UserId != GetUserId()) return ForbiddenError();
+
+            // Exclusion rules are delete-only: editing or deactivating one would leave its exclusions applied.
+            if (existingRule.Kind == RuleKind.Exclusion)
+                return ValidationError("Exclusion rules can't be edited. Delete it and create a new one instead.");
+
+            // Kind is fixed at creation — validate the incoming rule against the STORED kind, so a request
+            // can't claim a different kind to sneak exclusion actions into an action rule.
+            rule.Kind = existingRule.Kind;
+
+            var ruleVal = await _val.ValidateAsync(rule, cancellationToken);
+            if(ruleVal.IsValid)
+            {
             var wasRecursive = existingRule.Recursive;
 
             existingRule.RuleName = rule.RuleName;
@@ -157,9 +176,8 @@ namespace FinTrak.Api.Controllers
         [HttpDelete("delete-rule/{id}")]
         public async Task<IActionResult> DeleteRule(Guid id, CancellationToken cancellationToken)
         {
-            var existingRule = await _rules.GetRuleAsync(id, cancellationToken);
+            var existingRule = await _rules.GetRuleAsync(GetUserId(), id, cancellationToken);
             if (existingRule == null) return NotFoundError("Rule not found.");
-            if (existingRule.UserId != GetUserId()) return ForbiddenError();
 
             await _rules.DeleteRuleAsync(existingRule, cancellationToken);
             return Ok(new { message = "Rule deleted successfully." });

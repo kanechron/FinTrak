@@ -14,6 +14,7 @@
         {
             "Category": ["Set"],
             "MerchantName": ["Set"],
+            "Exclusion": ["Exclude"],
             "BillFlag": ["Set", "Exclude"]
         }
     }
