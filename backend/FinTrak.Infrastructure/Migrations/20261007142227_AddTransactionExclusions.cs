@@ -40,6 +40,7 @@ namespace FinTrak.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+            
 
             migrationBuilder.CreateIndex(
                 name: "IX_TransactionExclusions_SourceType_SourceId_TransactionId",

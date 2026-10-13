@@ -35,13 +35,21 @@ export function addGoal(goal: GoalRequest) {
 
 /**
  * Update an existing savings goal
- * @param id - the goal's id
+ * @param goalId - the goal's id
  * @param updates - partial object of type `Goal`; only included fields are updated
  * @returns the updated goal
  * @throws {ApiError} if the request fails
  */
-export function updateGoal(id: string, updates: Partial<Omit<Goal, 'id'>>) {
-  return api.patch<Goal>(`/goals/update-goal/${id}`, updates)
+export function updateGoal(goalId: string, updates: Partial<Omit<Goal, 'id'>>) {
+  return api.patch<Goal>(`/goals/update-goal/${goalId}`, updates)
+}
+
+/**
+ * @param goalId - the goal's id
+ * @param newPriority - the new priority of the goal being moved
+ */
+export function reorderGoals(goalId: string, newPriority: number) {
+  return api.post<Goal>(`/goals/reorder-goals/${goalId}`, newPriority)
 }
 
 /**

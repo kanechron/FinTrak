@@ -3,8 +3,9 @@ using Action = FinTrak.Core.Entities.Action;
 using FinTrak.Core.Interfaces;
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Utilities;
-using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using FinTrak.Core.Exceptions;
 
 namespace FinTrak.Infrastructure.Services;
 
@@ -26,10 +27,10 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
     public async Task CreateRuleAsync(Rule rule, CancellationToken cancellationToken = default)
     {
         if (rule.Target is null)
-            throw new InvalidOperationException("Rule.Target is required.");
+            throw new BadRequestException("Rule does not have a Target");
 
         if (await _repo.PriorityExistsAsync(rule.UserId, rule.Target.Value, rule.Priority, rule.Id, cancellationToken))
-            throw new InvalidOperationException($"Priority {rule.Priority} is already in use for this target type.");
+            throw new ConflictException($"Priority {rule.Priority} is already in use for this target type.");
 
         await _repo.AddAsync(rule, cancellationToken);
     }
@@ -37,10 +38,10 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
     public async Task UpdateRuleAsync(Rule rule, CancellationToken cancellationToken = default)
     {
         if (rule.Target is null)
-            throw new InvalidOperationException("Rule.Target is required.");
+            throw new BadRequestException("Rule does not have a Target");
 
         if (await _repo.PriorityExistsAsync(rule.UserId, rule.Target.Value, rule.Priority, rule.Id, cancellationToken))
-            throw new InvalidOperationException($"Priority {rule.Priority} is already in use for this target type.");
+            throw new ConflictException($"Priority {rule.Priority} is already in use for this target type.");
 
         await _repo.SaveAsync(cancellationToken);
     }
@@ -48,7 +49,7 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
     public async Task UpdateRulePriorities(Guid userId, List<RuleDto> rules, CancellationToken cancellationToken)
     {
         if (rules.Select(r => r.Priority).Distinct().Count() != rules.Count)
-            throw new InvalidOperationException("Priorities in the reorder list must be unique.");
+            throw new BadRequestException("Priorities in the reorder list must be unique.");
 
         var ids = rules.Select(r => r.Id).ToList();
         var existingRules = await _repo.GetRulesForBulkUpdateAsync(userId, ids, cancellationToken);
@@ -222,7 +223,7 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
                 case ActionType.Exclude when action.ActionField == ActionField.Exclusion:
                     break;
                 default:
-                    throw new ValidationException($"Invalid action type {action.ActionType}. Please select valid type");
+                    throw new UnreachableException($"Action type {action.ActionType} has no handler.");
             }
         }
     }
@@ -247,7 +248,7 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
     {
         var lastId = Guid.Empty;
         var rule = await GetRuleAsync(userId, ruleId, cancellationToken);
-        if(rule == null) throw new Exception();
+        if(rule == null) throw new NotFoundException("Rule was not found or does not exist.");
         while(true)
         {
             var transactions = await _tRepo.GetPaginatedTransactions(userId, lastId, pageSize: 50, cancellationToken);

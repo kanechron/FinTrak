@@ -117,6 +117,8 @@ builder.Services.AddScoped<ILTEReportService, LTEReportService>();
 builder.Services.AddScoped<ISADReportService, SADReportService>();
 builder.Services.AddScoped<IRulesRepository, RulesRepository>();
 builder.Services.AddScoped<IRulesService, RulesService>();
+builder.Services.AddScoped<IGoalsService, GoalsService>();
+
 
 builder.Services.AddSingleton<ISyncRaceControlService, SyncRaceControlService>();
 

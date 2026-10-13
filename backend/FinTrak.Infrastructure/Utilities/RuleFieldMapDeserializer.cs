@@ -24,7 +24,7 @@ public class RuleFieldMapDeserializer
 
         if(result is null)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException("Fieldmap was unsupported type. Please report");
         }
 
         return result;

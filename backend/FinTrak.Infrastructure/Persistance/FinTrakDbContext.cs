@@ -41,7 +41,9 @@ namespace FinTrak.Infrastructure.Persistance
             .HasQueryFilter(g => g.DeletedAt == null)
             .HasMany(g => g.LinkedAccounts)
             .WithMany(a => a.LinkedGoals)
-            .UsingEntity(j => j.ToTable("GoalAccounts"));
+            .UsingEntity(j => j.ToTable("GoalAccounts"))
+            .HasIndex(g => new { g.UserId, g.Priority}).IsUnique()
+            .HasFilter("\"DeletedAt\" IS NULL");
             modelBuilder.Entity<Bill>().HasQueryFilter(b => b.DeletedAt == null);
             modelBuilder.Entity<Invite>().HasQueryFilter(i => i.UsedAt == null);
             modelBuilder.Entity<User>().HasQueryFilter(u => u.DeletedAt == null);

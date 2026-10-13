@@ -76,19 +76,11 @@ namespace FinTrak.Api.Controllers
                 newRule.IsActive = true;
             }
 
-                var ruleVal = await _val.ValidateAsync(newRule, cancellationToken);
-                if (ruleVal.IsValid)
-                {
-                    try
-                    {
-                        await _rules.CreateRuleAsync(newRule, cancellationToken);
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        return ValidationError(ex.Message);
-                    }
-                }
-                else return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
+            var ruleVal = await _val.ValidateAsync(newRule, cancellationToken);
+            if (!ruleVal.IsValid) return ValidationError(ruleVal.ToDictionary(), "Rule not valid.");
+
+            // BadRequest/Conflict exceptions from the service are turned into responses by ErrorHandlingMiddleware.
+            await _rules.CreateRuleAsync(newRule, cancellationToken);
 
             if(newRule.Recursive == true) _channel.Writer.TryWrite(new RecursiveRuleSavedEvent(UserId: GetUserId(), OccurredAt: DateTime.UtcNow));
 
@@ -98,15 +90,7 @@ namespace FinTrak.Api.Controllers
         [HttpPost("reorder-rules")]
         public async Task<IActionResult> UpdateRulePriorities([FromBody] List<RuleDto> list, CancellationToken cancellationToken)
         {
-            try
-            {
-                await _rules.UpdateRulePriorities(GetUserId(), list, cancellationToken);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return ValidationError(ex.Message);
-            }
-
+            await _rules.UpdateRulePriorities(GetUserId(), list, cancellationToken);
             return Ok(new { message = "Rules updated successfully." });
         }
 
@@ -116,14 +100,7 @@ namespace FinTrak.Api.Controllers
             var existingRule = await _rules.GetRuleAsync(GetUserId(), id, cancellationToken);
             if (existingRule == null) return NotFoundError("Rule not found.");
 
-            try
-            {
-                await _rules.ApplyRuleOnDemand(GetUserId(), id, cancellationToken);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return ValidationError(ex.Message);
-            }
+            await _rules.ApplyRuleOnDemand(GetUserId(), id, cancellationToken);
             return Ok(new {message = "Rule ran successfully."});
         }
 
@@ -155,16 +132,8 @@ namespace FinTrak.Api.Controllers
             existingRule.Conditions = rule.Conditions;
             existingRule.Actions = rule.Actions;
 
-            
-                try
-                {
-                    await _rules.UpdateRuleAsync(existingRule, cancellationToken);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return ValidationError(ex.Message);
-                }
-            
+            await _rules.UpdateRuleAsync(existingRule, cancellationToken);
+
             if(!wasRecursive && rule.Recursive) _channel.Writer.TryWrite(new RecursiveRuleSavedEvent(UserId: GetUserId(), OccurredAt: DateTime.UtcNow));
 
             return Ok(new { message = "Rule updated successfully." });

@@ -2,18 +2,20 @@
 
 ## Bugs / Stability
 - [x] **Bill detection coverage** — revisit detection logic; some recurring bills not surfacing for users with less transaction history or irregular amounts
-- [ ] **Retire the per-PlaidItem SemaphoreSlim sync lock** — added to fix a race condition where overlapping sync triggers (manual click + webhook, or two rapid manual clicks) for the same PlaidItem could both read the same stale cursor and double-insert transactions. This lock only coordinates within a single process/container. It silently stops working the moment sync is triggered from outside the main backend process — e.g. a scheduled auto-sync moved to its own worker/container, a queue consumer, or horizontal scaling to multiple backend replicas. If any of that happens, replace it with a DB-level mechanism (Postgres advisory lock, or an atomic claim via conditional UPDATE on PlaidItems) that's visible across processes.
+- [ ] **Only if FinTrak ever runs more than one copy of the backend: replace the per-PlaidItem SemaphoreSlim sync lock** — not needed today; FinTrak runs a single backend, where the lock works correctly. It prevents two overlapping syncs of the same PlaidItem (e.g. a double-clicked Sync button) from reading the same stale cursor and double-inserting transactions. The lock lives in one backend process's memory, so it can't see syncs running in a *different* process — a second backend replica, or sync moved into its own worker container. If that ever happens, replace it with a DB-level guard every process can see (Postgres advisory lock, or an atomic "claim" via conditional UPDATE on PlaidItems).
 - [ ] **Revisit `NormalizeNameUtil`** — expect to keep extending/reworking this as new merchant name formats show up (bank descriptor quirks, new institutions, etc.); no backfill needed for the current data (a DB reset after the last fix re-synced everything through the corrected logic), but check `NormalizeNameUtil.cs` itself when this comes up again rather than assuming it's finished.
-- [ ] **Expand ErrorHandlingMiddleware with typed exceptions** — `ApiBaseController`'s `NotFoundError`/`ValidationError`/`ForbiddenError` helpers only work from inside a controller action. Code in `FinTrak.Infrastructure` (repositories/services) has no access to those helpers or to `IActionResult` at all, so a failure deep in business logic can currently only throw a plain `Exception`, which the middleware flattens into a generic 500 even when it's really a 404/400/403. Fix: define custom exception types (e.g. `NotFoundException`) that carry their intended status code, and have the middleware's catch block map recognized exception types to the right status/`ErrorResponseDto` instead of always returning 500.
-- [ ] **Goals has zero priority-uniqueness enforcement** — unlike Rules (`PriorityExistsAsync`), nothing stops two Goals from sharing the same `Priority` for a user; `GoalsController.UpdateGoal` just assigns whatever priority is sent, no check, no dedicated `GoalsService` either.
+- [x] **Expand ErrorHandlingMiddleware with typed exceptions** — `ApiBaseController`'s `NotFoundError`/`ValidationError`/`ForbiddenError` helpers only work from inside a controller action. Code in `FinTrak.Infrastructure` (repositories/services) has no access to those helpers or to `IActionResult` at all, so a failure deep in business logic can currently only throw a plain `Exception`, which the middleware flattens into a generic 500 even when it's really a 404/400/403. Fix: define custom exception types (e.g. `NotFoundException`) that carry their intended status code, and have the middleware's catch block map recognized exception types to the right status/`ErrorResponseDto` instead of always returning 500.
+- [x] **Goals has zero priority-uniqueness enforcement** — unlike Rules (`PriorityExistsAsync`), nothing stops two Goals from sharing the same `Priority` for a user; `GoalsController.UpdateGoal` just assigns whatever priority is sent, no check, no dedicated `GoalsService` either.
 - [ ] **Full-list priority reindexing on every drag** — both Rules' and Goals' drag-and-drop reorder reassign sequential priorities to the *entire* list on every drag, not just the rows whose relative order actually changed; scales with total list size instead of the actual change.
 
-
- 
+## Design Improvements
+Not bugs, nothing here is broken today. These restructure existing code so it's easier to extend.
+- [ ] **Route all Plaid syncs through a dedicated sync channel** — today each sync trigger calls the sync logic directly. Instead, every trigger (manual Sync button, a future scheduled auto-sync configurable from Settings, Plaid webhooks, sync-after-linking) writes a "sync this PlaidItem" message to a `Channel`, and one `SyncBackgroundService` reads it and runs the sync, using the same pattern as the rules pipeline (scope per job, type-switch if more job types appear). Gains: one entry point and one place for sync logic; a single reader means two syncs of the same item never overlap; duplicate requests for an already-queued item can be skipped. Decide before building: (1) the manual Sync button currently waits for completion to show syncing/done/error, but with a channel the request returns immediately, so the UI needs job status (the existing `SyncQueue` entity could hold it for polling) or the request waits on its own job; (2) a single reader serializes every user's syncs, which is fine at current scale; adding parallel readers later means keeping a per-item guard (the existing semaphore);  
+- [ ] **Settings per tab not implemented** — The user cannot change their settings and save. More Later. 
 ## Transactions
-- [ ] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
-- [ ] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
-- [ ] **Bulk category assignment** — select multiple transactions and assign a category in one action
+- [x] **Rules engine** — apply rules to transactions (e.g. always assign a category to a merchant)
+- [x] **CSV/Excel import** — complement existing export; useful for users migrating from other finance apps
+- [x] **Bulk category assignment** — select multiple transactions and assign a category in one action
 - [ ] **De-normalize merchant names** — normalized names are stored all-lowercase; convert to Title Case for display
 
 ## Bills
@@ -26,7 +28,7 @@
 ## Reports
 - [ ] **Projected monthly outcome** — estimated income (detected from pay period frequency) minus confirmed bills; designed to give a directional picture of future financial health, not exact figures
 - [x] **Date range picker** — let users scope reports to a custom date range
-- [ ] **Net worth snapshot** — account balances (assets) minus outstanding bills (liabilities)
+
 - [x] **Linear Trend Extrapolation** — per-category spending forecast on the Reports page (trailing 12-month window, OLS regression, leave-one-out outlier confidence check); see CLAUDE.md's "LTE Forecasting" section for the full design
 - [x] **Spending anomaly detection** — Dashboard widget comparing each category's current-month running total against its trailing-12-month average via LTE's existing `CalculateDeviation`; scoped to category-level rather than per-merchant/transaction (merchant-name matching is unreliable) — see CLAUDE.md's "SAD (Spending Anomaly Detection)" section
 - [ ] **Category drift over time** — track month-over-month percentage share per category, not just raw totals, to surface shifts like "dining went from 12% to 22% of spend over 6 months" that flat totals hide
@@ -55,9 +57,9 @@
 - [ ] **Disclaimer (app UI)** — added to README; still needed in the app itself (footer or onboarding screen): FinTrak is a personal project, not a financial advisory tool; data shown is for informational purposes only and should not be taken as financial advice
 
 ## Testing
-- [ ] **Integration tests** — xUnit + `WebApplicationFactory`; cover PDF import dedup logic and Plaid sync at minimum
+- [x] **Integration tests** — xUnit + `WebApplicationFactory`; cover PDF import dedup logic and Plaid sync at minimum
 - [x] **CI pipeline** — GitHub Actions workflow that builds and runs tests on every push to `main`
-- [ ] **Frontend lint cleanup** — ~23 pre-existing ESLint errors across Reports.tsx, Transactions.tsx, Welcome.tsx (unused vars, `react-hooks/set-state-in-effect`, `react-hooks/static-components`); lint currently runs in CI as non-blocking (`continue-on-error`) until this is cleared, then it should become a hard gate
+- [x] **Frontend lint cleanup** — ~23 pre-existing ESLint errors across Reports.tsx, Transactions.tsx, Welcome.tsx (unused vars, `react-hooks/set-state-in-effect`, `react-hooks/static-components`); lint currently runs in CI as non-blocking (`continue-on-error`) until this is cleared, then it should become a hard gate
 - [x] **Run Prettier across the frontend** — `npm run format`/`format:check` scripts added and the codebase reformatted; format check is now a hard gate in CI
 
 ## Platform

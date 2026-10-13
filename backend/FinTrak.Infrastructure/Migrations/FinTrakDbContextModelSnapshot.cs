@@ -279,6 +279,10 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId", "Priority")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
                     b.ToTable("Goals");
                 });
 

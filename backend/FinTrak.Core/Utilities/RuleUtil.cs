@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using FinTrak.Core.Entities;
 using Action = FinTrak.Core.Entities.Action;
 
@@ -31,7 +31,7 @@ public static class RuleUtil
             ConditionField.DayOfMonth => Compare(date.Day, int.Parse(value), op),
             ConditionField.DayOfWeek => Compare((int)date.DayOfWeek, (int)Enum.Parse<DayOfWeek>(value, ignoreCase: true), op),
             ConditionField.Month => Compare(date.Month, int.Parse(value), op),
-            _ => throw new ValidationException($"Unhandled ConditionField: {condition.ConditionField}")
+            _ => throw new UnreachableException($"Unhandled ConditionField: {condition.ConditionField}")
         };
 
         return condition.Not ? !result : result;
@@ -51,7 +51,7 @@ public static class RuleUtil
             Operator.LESS_THAN => result < 0,
             Operator.GREATER_THAN_OR_EQUAL => result >= 0,
             Operator.LESS_THAN_OR_EQUAL => result <= 0,
-            _ => throw new ValidationException($"Operator {op} is not supported for {typeof(T).Name} comparisons.")
+            _ => throw new UnreachableException($"Operator {op} is not supported for {typeof(T).Name} comparisons.")
         };
     }
 
@@ -63,7 +63,7 @@ public static class RuleUtil
         {
             Operator.EQUALS => string.Equals(left, right, StringComparison.OrdinalIgnoreCase),
             Operator.CONTAINS => left.Contains(right, StringComparison.OrdinalIgnoreCase),
-            _ => throw new ValidationException($"Operator {op} is not supported for String comparisons.")
+            _ => throw new UnreachableException($"Operator {op} is not supported for String comparisons.")
         };
     }
 
@@ -81,7 +81,7 @@ public static class RuleUtil
                 transaction.IsCategoryLocked = true;
                 break;
             default:
-                throw new ValidationException($"Action field value {action.ActionField} is not valid. Please select valid field");
+                throw new UnreachableException($"Action field {action.ActionField} has no Set handler.");
         }
     }
 }
