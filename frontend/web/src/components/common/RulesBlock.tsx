@@ -46,12 +46,17 @@ export default function RulesBlock({ target }: Props) {
 
         const oldIndex = rules.findIndex((r) => r.id === active.id)
         const newIndex = rules.findIndex((r) => r.id === over.id)
-        const reordered = arrayMove(rules, oldIndex, newIndex)
-        const reorderedWithPriority = reordered.map((r, i) => ({ ...r, priority: i }))
 
-        //Source of possible rule flicker issue
+        // The moved rule takes the stored priority of the rule it was dropped on; the backend shifts the rest.
+        // Falsy check catches both "not found" and 0, which isn't a valid priority once Rules are 1-based.
+        const newPriority = rules.find((r) => r.id === over.id)?.priority
+        if (!newPriority) return
+
+        // Optimistic: show the new order right away, then refetch the server's real priorities.
+        setRules(arrayMove(rules, oldIndex, newIndex))
+
         try {
-            await reorderRules(reorderedWithPriority)
+            await reorderRules(active.id.toString(), newPriority)
             fetchRules()
         }
         catch {
@@ -115,8 +120,7 @@ export default function RulesBlock({ target }: Props) {
                         setSelectedRule(undefined)
                         fetchRules()
                     }}
-                    rule={selectedRule ?? undefined}
-                    nextPriority={Math.max(0, ...rules.map(r => r.priority)) + 1} />
+                    rule={selectedRule ?? undefined} />
             }
             {!showForm && (
                 <button

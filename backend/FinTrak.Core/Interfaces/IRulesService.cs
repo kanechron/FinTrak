@@ -15,8 +15,8 @@ public interface IRulesService
     /// <summary>Throws <see cref="InvalidOperationException"/> if Target is unset or the (UserId, Target, Priority) triple is already taken by a different rule.</summary>
     Task UpdateRuleAsync(Rule rule, CancellationToken cancellationToken = default);
 
-    /// <summary>Bulk-persists a new priority ordering. Throws <see cref="InvalidOperationException"/> if <paramref name="rules"/> contains duplicate priorities.</summary>
-    Task UpdateRulePriorities(Guid userId, List<RuleDto> rules, CancellationToken cancellationToken = default);
+    /// <summary>Moves one rule to <paramref name="newPriority"/> within its target's list, shifting the rules in between (same approach as Goals).</summary>
+    Task UpdateRulePriorityAsync(Guid userId, Guid ruleId, int newPriority, CancellationToken cancellationToken = default);
 
     Task DeleteRuleAsync(Rule rule, CancellationToken cancellationToken = default);
 

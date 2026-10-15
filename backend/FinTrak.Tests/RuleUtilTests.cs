@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using FinTrak.Core.Entities;
 using Action = FinTrak.Core.Entities.Action;
 using FinTrak.Core.Utilities;
@@ -348,7 +348,7 @@ public class RuleUtilTests
         ActionValue = KnownCategoryId.ToString()
     };
 
-    /// <summary>BillFlag has no case in SetAction, so it hits <c>default: throw new ValidationException</c>.</summary>
+    /// <summary>BillFlag has no case in SetAction, so it hits <c>default: throw new UnreachableException</c>.</summary>
     public static Action SetBillFlagAction() => new()
     {
         ActionField = ActionField.BillFlag,
@@ -456,7 +456,7 @@ public class RuleUtilTests
         var transaction = MatchingTransaction();
 
         var ex = Record.Exception(() => RuleUtil.ResolveConditionFieldValue(condition, transaction));
-        Assert.True(ex is ValidationException, $"{casename} was expected to throw ValidationException but threw {ex?.GetType().Name ?? "nothing"}");
+        Assert.True(ex is UnreachableException, $"{casename} was expected to throw UnreachableException but threw {ex?.GetType().Name ?? "nothing"}");
     }
 
     [Fact]
@@ -483,7 +483,7 @@ public class RuleUtilTests
 
     public static IEnumerable<object[]> ThrowingActions()
     {
-        yield return [nameof(SetBillFlagAction), SetBillFlagAction(), typeof(ValidationException)];
+        yield return [nameof(SetBillFlagAction), SetBillFlagAction(), typeof(UnreachableException)];
         yield return [nameof(SetCategoryNonGuidAction), SetCategoryNonGuidAction(), typeof(FormatException)];
     }
 

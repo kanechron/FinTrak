@@ -54,7 +54,6 @@ namespace FinTrak.Api.Controllers
                 Id = Guid.NewGuid(),
                 UserId = GetUserId(),
                 RuleName = rule.RuleName,
-                Priority = rule.Priority,
                 IsActive = rule.IsActive,
                 Recursive = rule.Recursive,
                 CreatedAt = DateTime.UtcNow,
@@ -87,10 +86,10 @@ namespace FinTrak.Api.Controllers
             return Ok(new { message = "Rule added successfully.", id = newRule.Id });
         }
 
-        [HttpPost("reorder-rules")]
-        public async Task<IActionResult> UpdateRulePriorities([FromBody] List<RuleDto> list, CancellationToken cancellationToken)
+        [HttpPost("reorder-rules/{ruleId}")]
+        public async Task<IActionResult> UpdateRulePriority(Guid ruleId, [FromBody] int newPriority, CancellationToken cancellationToken)
         {
-            await _rules.UpdateRulePriorities(GetUserId(), list, cancellationToken);
+            await _rules.UpdateRulePriorityAsync(GetUserId(), ruleId, newPriority, cancellationToken);
             return Ok(new { message = "Rules updated successfully." });
         }
 
@@ -124,7 +123,6 @@ namespace FinTrak.Api.Controllers
             var wasRecursive = existingRule.Recursive;
 
             existingRule.RuleName = rule.RuleName;
-            existingRule.Priority = rule.Priority;
             existingRule.IsActive = rule.IsActive;
             existingRule.Recursive = rule.Recursive;
             existingRule.Target = rule.Target;

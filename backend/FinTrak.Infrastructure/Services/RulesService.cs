@@ -29,8 +29,9 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
         if (rule.Target is null)
             throw new BadRequestException("Rule does not have a Target");
 
-        if (await _repo.PriorityExistsAsync(rule.UserId, rule.Target.Value, rule.Priority, rule.Id, cancellationToken))
-            throw new ConflictException($"Priority {rule.Priority} is already in use for this target type.");
+        // Server-assigned, never trusted from the client: new rules go to the end of their target's list.
+        // Reordering only happens through the reorder endpoint.
+        rule.Priority = await _repo.GetMaxPriorityAsync(rule.UserId, rule.Target.Value, cancellationToken) + 1;
 
         await _repo.AddAsync(rule, cancellationToken);
     }
@@ -40,43 +41,22 @@ public class RulesService(IRulesRepository repo, ITransactionRepository tRepo, I
         if (rule.Target is null)
             throw new BadRequestException("Rule does not have a Target");
 
-        if (await _repo.PriorityExistsAsync(rule.UserId, rule.Target.Value, rule.Priority, rule.Id, cancellationToken))
-            throw new ConflictException($"Priority {rule.Priority} is already in use for this target type.");
-
+        // Priority isn't editable here (only via the reorder endpoint), so there's no collision to check.
         await _repo.SaveAsync(cancellationToken);
     }
 
-    public async Task UpdateRulePriorities(Guid userId, List<RuleDto> rules, CancellationToken cancellationToken)
+    public async Task UpdateRulePriorityAsync(Guid userId, Guid ruleId, int newPriority, CancellationToken cancellationToken = default)
     {
-        if (rules.Select(r => r.Priority).Distinct().Count() != rules.Count)
-            throw new BadRequestException("Priorities in the reorder list must be unique.");
+        var rule = await _repo.GetByIdAsync(userId, ruleId, cancellationToken) ?? throw new NotFoundException("Rule not found");
+        var target = rule.Target ?? throw new BadRequestException("Rule does not have a Target");
+        var oldPriority = rule.Priority;
 
-        var ids = rules.Select(r => r.Id).ToList();
-        var existingRules = await _repo.GetRulesForBulkUpdateAsync(userId, ids, cancellationToken);
-        var newList = rules.ToDictionary(kvp => kvp.Id, kvp => kvp.Priority);
+        if (oldPriority == newPriority) throw new BadRequestException("New rule priority matches old rule priority");
+        if (newPriority <= 0) throw new BadRequestException("New priority invalid");
+        // Priorities are contiguous within a target's list, so anything past the current max would leave a gap.
+        if (newPriority > await _repo.GetMaxPriorityAsync(userId, target, cancellationToken)) throw new BadRequestException("New priority out of range");
 
-        // Two-phase write: a straight reorder can require two rules to swap priorities,
-        // which EF can't apply in any single order without an intermediate collision on
-        // the (UserId, Target, Priority) unique index. First move everything to a
-        // guaranteed-negative placeholder (never collides with a real priority, which is
-        // always >= 0), save, then set the real values and save again.
-        foreach (var rule in existingRules)
-        {
-            if (newList.TryGetValue(rule.Id, out int foundRule))
-            {
-                rule.Priority = -(foundRule + 1);
-            }
-        }
-        await _repo.SaveAsync(cancellationToken);
-
-        foreach (var rule in existingRules)
-        {
-            if (newList.TryGetValue(rule.Id, out int foundRule))
-            {
-                rule.Priority = foundRule;
-            }
-        }
-        await _repo.SaveAsync(cancellationToken);
+        await _repo.UpdateRulePrioritiesAsync(userId, target, ruleId, oldPriority, newPriority, cancellationToken);
     }
 
     /// <summary>

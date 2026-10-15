@@ -8,11 +8,14 @@ public interface IRulesRepository
     Task<List<Rule>> GetByTargetAsync(Guid userId, string target, CancellationToken cancellationToken = default);
     Task<Rule?> GetByIdAsync(Guid userId, Guid ruleId, CancellationToken cancellationToken = default);
 
-    /// <summary>Fetches the subset of <paramref name="ruleIds"/> owned by <paramref name="userId"/>, tracked by the context, ready for in-place mutation and a single <see cref="SaveAsync"/>.</summary>
-    Task<List<Rule>> GetRulesForBulkUpdateAsync(Guid userId, List<Guid> ruleIds, CancellationToken cancellationToken = default);
+    /// <summary>Highest priority among this user's rules for <paramref name="targetType"/>, or 0 if they have none — new rules get this + 1.</summary>
+    Task<int> GetMaxPriorityAsync(Guid userId, TargetType targetType, CancellationToken cancellationToken = default);
 
-    /// <summary>Checks for an existing rule at the same (UserId, TargetType, Priority). Pass the rule's own Id via <paramref name="excludeRuleId"/> when updating, so it doesn't collide with itself.</summary>
-    Task<bool> PriorityExistsAsync(Guid userId, TargetType targetType, int priority, Guid? excludeRuleId = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Moves <paramref name="ruleId"/> from <paramref name="oldPriority"/> to <paramref name="newPriority"/> within the user's
+    /// <paramref name="targetType"/> list, shifting only the rules in between. Runs in one transaction.
+    /// </summary>
+    Task UpdateRulePrioritiesAsync(Guid userId, TargetType targetType, Guid ruleId, int oldPriority, int newPriority, CancellationToken cancellationToken = default);
 
     Task AddAsync(Rule rule, CancellationToken cancellationToken = default);
     Task DeleteAsync(Rule rule, CancellationToken cancellationToken = default);

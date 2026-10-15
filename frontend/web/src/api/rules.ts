@@ -113,12 +113,13 @@ export function getRuleFieldmap() : Promise<FieldMap> {
 
 /**
  * Create a new rule
- * @remarks 'id', 'userId', 'createdAt', 'deletedAt' are set server-side, and 'kind' is derived server-side
- * from the actions (any 'Exclusion' action makes it an Exclusion rule)
- * @throws {ApiError} if Target is unset or (userId, target, priority) collides with an existing rule
+ * @remarks 'id', 'userId', 'createdAt', 'deletedAt' are set server-side; 'kind' is derived server-side
+ * from the actions (any 'Exclusion' action makes it an Exclusion rule); 'priority' is assigned server-side
+ * (end of the target's list) and only changes via {@link reorderRules}
+ * @throws {ApiError} if Target is unset or the rule fails validation
  */
 export function addRule(
-  rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind'>
+  rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind' | 'priority'>
 ): Promise<{ message: string; id: string }> {
   return api.post('/rules/add-rule', rule)
 }
@@ -126,12 +127,12 @@ export function addRule(
 /**
  *
  * @param id ID of the rule being updated
- * @param rule Entire rule object ('kind' is ignored — the server keeps the stored kind)
+ * @param rule Entire rule object. The server keeps the stored 'kind' and 'priority'; priority only changes via {@link reorderRules}
  * @returns
  */
 export function updateRule(
     id: string,
-    rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind'>
+    rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind' | 'priority'>
 ): Promise<{ message: string }> {
     return api.patch(`/rules/update-rule/${id}`, rule)
 }
@@ -145,9 +146,10 @@ export function deleteRule(id: string): Promise<{ message: string }> {
 }
 
 /**
- * Bulk-persist a new priority ordering for a set of rules in one request.
- * @param rules the full, reordered list of rules with their new priorities set
+ * Move one rule to a new priority; the server shifts the rules in between.
+ * @param ruleId the rule being moved
+ * @param newPriority the priority it should end up with (the stored priority of the rule it was dropped on)
  */
-export function reorderRules(rules: Rule[]): Promise<{ message: string }> {
-  return api.post('/rules/reorder-rules', rules)
+export function reorderRules(ruleId: string, newPriority: number): Promise<{ message: string }> {
+  return api.post(`/rules/reorder-rules/${ruleId}`, newPriority)
 }

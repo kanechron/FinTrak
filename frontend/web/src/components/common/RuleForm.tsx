@@ -14,6 +14,7 @@ import {
   updateRule,
 } from '../../api/rules'
 import { ApiError } from '../../api/client'
+import { getParentCategories, type Category } from '../../api/categories'
 import { labelClass, inputClass, errorClass, checkboxClass, primaryButtonClass } from '../modals/modalTheme'
 import { useFieldMap } from '../../hooks/FieldMapProvider'
 import { useToast } from '../../hooks/ToastProvider'
@@ -23,7 +24,6 @@ interface Props {
   onCancel: () => void
   onSuccess: () => void
   rule?: Rule
-  nextPriority: number
 }
 
 function newCondition(): Condition {
@@ -52,7 +52,7 @@ function newExclusionAction(): Action {
   }
 }
 
-export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriority }: Props) {
+export default function RuleForm({ onSuccess, onCancel, target, rule }: Props) {
   // Field Map
   const fieldmap = useFieldMap(target)
   const toast = useToast()
@@ -62,7 +62,7 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
   // Rule-level fields
   const [ruleName, setRuleName] = useState('')
   const [isActive, setIsActive] = useState(true)
-  const [priority, setPriority] = useState(nextPriority)
+  // No priority here: the server assigns it on create (end of the list), and it only changes via drag-and-drop reorder.
   const [recursive, setRecursive] = useState(false)
   const [trigger, setTrigger] = useState<TriggerType>(TRIGGER_TYPES[0])
 
@@ -71,6 +71,15 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
   // Conditions/Actions
   const [conditions, setConditions] = useState<Condition[]>([newCondition()])
   const [actions, setActions] = useState<Action[]>([newAction()])
+
+  // Options for Category actions. Parent categories only: SetAction writes CategoryId (the parent), not CategoryDetailedId.
+  const [categories, setCategories] = useState<Category[]>([])
+
+  useEffect(() => {
+    getParentCategories()
+      .then(setCategories)
+      .catch(() => toast.error({ title: 'Failed to load categories', content: 'Category actions will be unavailable.' }))
+  }, [])
 
   function updateCondition(index: number, patch: Partial<Condition>) {
     setConditions(prev => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)))
@@ -131,13 +140,12 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
         // Exclusion rules can't be activated/deactivated after saving, so they're always created active.
         isActive: isExclusionRule ? true : isActive,
         target,
-        priority,
       }
       if (isEdit) {
-        await updateRule(rule.id, { ...payload })
+        await updateRule(rule.id, payload)
       }
       else {
-        await addRule({ ...payload, priority: nextPriority })
+        await addRule(payload)
       }
       toast.success({
         title: 'Rule saved',
@@ -157,7 +165,6 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
     if (rule) {
       setRuleName(rule.ruleName)
       setIsActive(rule.isActive)
-      setPriority(rule.priority)
       setRecursive(rule.recursive)
       setTrigger(rule.trigger ?? TRIGGER_TYPES[0])
       setConditions(rule.conditions)
@@ -166,7 +173,6 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
     else {
       setRuleName('')
       setIsActive(true)
-      setPriority(nextPriority)
       setRecursive(false)
       setTrigger(TRIGGER_TYPES[0])
       setConditions([newCondition()])
@@ -355,12 +361,11 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                       value={action.actionField}
                       onChange={(e) => {
                         const field = e.target.value as ActionField
-                        // Value meanings differ between exclusion and normal actions, so switching between them clears it.
-                        const switchedKind = (field === 'Exclusion') !== (action.actionField === 'Exclusion')
+                        // Each field's value means something different (a name, a category id, a flag), so changing the field clears it.
                         updateAction(i, {
                           actionField: field,
                           actionType: fieldmap.actions[field][0],
-                          ...(switchedKind ? { actionValue: '' } : {}),
+                          ...(field !== action.actionField ? { actionValue: '' } : {}),
                         })
                       }}
                       className={inputClass}
@@ -400,6 +405,20 @@ export default function RuleForm({ onSuccess, onCancel, target, rule, nextPriori
                             disabled={actions.some((a, ai) => ai !== i && a.actionField === 'Exclusion' && a.actionValue === flag)}
                           >
                             {flag}
+                          </option>
+                        ))}
+                      </select>
+                    ) : action.actionField === 'Category' ? (
+                      // Shows category names, stores the category id, which is what SetAction and the validator expect.
+                      <select
+                        value={action.actionValue}
+                        onChange={(e) => updateAction(i, { actionValue: e.target.value })}
+                        className={inputClass}
+                      >
+                        <option value="" disabled>Select category...</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
                           </option>
                         ))}
                       </select>
