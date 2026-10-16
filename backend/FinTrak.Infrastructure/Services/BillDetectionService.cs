@@ -4,8 +4,7 @@ using FinTrak.Core.Interfaces;
 using FinTrak.Core.Entities;
 using FuzzySharp;
 using FinTrak.Core.Utilities;
-using System.Text.RegularExpressions;
-using Microsoft.VisualBasic;
+
 
 namespace FinTrak.Infrastructure.Services
 {
@@ -53,6 +52,7 @@ namespace FinTrak.Infrastructure.Services
             .Where(t =>
             t.DeletedAt == null &&
             t.UserId == userId &&
+            !t.Exclusions.HasFlag(Exclusion.Bills) &&
             t.IsPending == false &&
             t.Date >= DateOnly.FromDateTime(DateTime.Today.AddMonths(-6)) &&
             t.Date <= DateOnly.FromDateTime(DateTime.Today))

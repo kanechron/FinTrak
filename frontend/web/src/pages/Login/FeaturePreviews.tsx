@@ -378,6 +378,57 @@ export function LTEForecastPreview() {
   )
 }
 
+// A rule as "conditions → actions": two condition rows (field, operator chip, value) on the
+// left, an arrow, and two action rows on the right — mirrors how RuleCard reads.
+export function RulesPreview() {
+  const conditions = [
+    { field: 30, value: 20 },
+    { field: 26, value: 16 },
+  ]
+  const actions = [{ value: 52 }, { value: 40 }]
+  return (
+    <Frame>
+      {/* conditions */}
+      <rect x="14" y="44" width="94" height="62" rx="8" fill="var(--raised)" />
+      {conditions.map((c, i) => (
+        <g key={i} transform={`translate(22, ${58 + i * 24})`}>
+          <rect width={c.field} height="7" rx="3" fill="var(--ink-2)" />
+          <rect
+            x="34"
+            y="-2"
+            width="20"
+            height="11"
+            rx="5.5"
+            fill="none"
+            stroke="var(--s1)"
+            strokeWidth="1.2"
+          />
+          <rect x="58" width={c.value} height="7" rx="3" fill="var(--ink-3)" opacity="0.6" />
+        </g>
+      ))}
+
+      {/* flow arrow */}
+      <path
+        d="M114 75h14m0 0l-5-5m5 5l-5 5"
+        stroke="var(--s1)"
+        strokeWidth="1.6"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* actions */}
+      <rect x="136" y="44" width="90" height="62" rx="8" fill="var(--raised)" />
+      {actions.map((a, i) => (
+        <g key={i} transform={`translate(144, ${58 + i * 24})`}>
+          <rect y="-0.5" width="8" height="8" rx="2" fill="var(--s2)" />
+          <rect x="14" width={a.value} height="7" rx="3" fill="var(--ink-2)" />
+        </g>
+      ))}
+    </Frame>
+  )
+}
+
 export function GoalsPreview() {
   const rows = [
     { label: 58, pct: 0.8, color: 'var(--s1)' },

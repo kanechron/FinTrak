@@ -27,6 +27,7 @@ public class BudgetRepository(FinTrakDbContext db) : IBudgetRepository
                 Spent = _db.Transactions
                     .Where(t =>
                         t.DeletedAt == null &&
+                        !t.Exclusions.HasFlag(Exclusion.Budget) &&
                         t.Amount > 0 &&
                         t.UserId == userId &&
                         t.CategoryId == b.CategoryId &&

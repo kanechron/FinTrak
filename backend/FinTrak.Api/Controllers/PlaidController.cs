@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json.Serialization;
 using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Services;
+using System.Threading.Channels;
+using Microsoft.EntityFrameworkCore.Internal;
 
 namespace FinTrak.Api.Controllers
 {
@@ -26,10 +28,11 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("plaid")]
     [Authorize]
-    public class PlaidController(FinTrakDbContext db, ISyncRaceControlService sync) : ControllerBase
+    public class PlaidController(FinTrakDbContext db, ISyncRaceControlService sync, Channel<IRuleTriggerEvent> channel) : ControllerBase
     {
         private readonly FinTrakDbContext _db = db;
         private readonly ISyncRaceControlService _sync = sync;
+        private readonly Channel<IRuleTriggerEvent> _channel = channel;
 
 
         private Guid GetUserId() =>
@@ -168,7 +171,7 @@ namespace FinTrak.Api.Controllers
 
         /// <summary>
         /// Syncs transactions for all of the user's linked Plaid items.
-        /// Uses Plaid's cursor-based sync â€” only fetches changes since the last sync.
+        /// Uses Plaid's cursor-based sync only fetches changes since the last sync.
         /// </summary>
         [HttpPost("sync")]
         [EnableRateLimiting("expensive")]
@@ -176,6 +179,7 @@ namespace FinTrak.Api.Controllers
         {
 
             var userId = GetUserId();
+            //Works the same as `var ids = new List<Guid>();`
             var items = await _db.PlaidItems
                 .Where(p => p.UserId == userId)
                 .ToListAsync(ct);
@@ -192,6 +196,8 @@ namespace FinTrak.Api.Controllers
 
             await _db.SaveChangesAsync(ct);
 
+           
+
             return Ok();
         }
 
@@ -200,7 +206,7 @@ namespace FinTrak.Api.Controllers
             var cursor = item.TransactionCursor;
             var hasMore = true;
             var userId = item.UserId;
-
+            List<Guid> ids = [];
 
 
             while (hasMore)
@@ -272,6 +278,9 @@ namespace FinTrak.Api.Controllers
                     return (category, categoryDetailed);
                 }
 
+                // FinTrak Transaction.Ids (not Plaid's TransactionIds) touched on this page — handed to the rules engine after save.
+                List<Guid> channelIds = [];
+
                 // Handle added transactions
                 foreach (var t in response.Added)
                 {
@@ -290,22 +299,32 @@ namespace FinTrak.Api.Controllers
                         existing.MerchantNameRaw = t.Name ?? string.Empty;
 #pragma warning restore CS0612 // Type or member is obsolete
 #pragma warning disable CS0612 // Type or member is obsolete
-                        existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                       
+                        if(!existing.IsMerchantNameLocked)
+                        {
+                         existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
 #pragma warning restore CS0612 // Type or member is obsolete
 #pragma warning disable CS0612 // Type or member is obsolete
                         existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
-#pragma warning restore CS0612 // Type or member is obsolete
-                        existing.CategoryId = category?.Id;
-                        existing.CategoryDetailedId = categoryDetailed?.Id;
+                        }
+                        #pragma warning restore CS0612 // Type or member is obsolete
+                        if(!existing.IsCategoryLocked)
+                        {
+                            existing.CategoryId = category?.Id;
+                            existing.CategoryDetailedId = categoryDetailed?.Id;
+                        }
+
+                        channelIds.Add(existing.Id);
                     }
                     else
                     {
-#pragma warning disable CS0612 // Type or member is obsolete
-#pragma warning disable CS0612 // Type or member is obsolete
+                        var newId = Guid.NewGuid();
+                        channelIds.Add(newId);
+
 #pragma warning disable CS0612 // Type or member is obsolete
                         _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
                         {
-                            Id = Guid.NewGuid(),
+                            Id = newId,
                             UserId = userId,
                             AccountId = account?.Id ?? Guid.Empty,
                             PlaidTransactionId = t.TransactionId,
@@ -322,9 +341,7 @@ namespace FinTrak.Api.Controllers
                             CategoryDetailedId = categoryDetailed?.Id
 
                         });
-#pragma warning restore CS0612 // Type or member is obsolete
-#pragma warning restore CS0612 // Type or member is obsolete
-#pragma warning restore CS0612 // Type or member is obsolete
+                #pragma warning restore CS0612 // Type or member is obsolete
                     }
                 }
 
@@ -348,14 +365,22 @@ namespace FinTrak.Api.Controllers
 
                     existing.Amount = t.Amount;
                     existing.IsPending = t.Pending!.Value;
+
+                    if (!existing.IsMerchantNameLocked)
+                    {
 #pragma warning disable CS0612 // Type or member is obsolete
-                    existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                        existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
+                        existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
 #pragma warning restore CS0612 // Type or member is obsolete
-#pragma warning disable CS0612 // Type or member is obsolete
-                    existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
-#pragma warning restore CS0612 // Type or member is obsolete
-                    existing.CategoryId = category?.Id;
-                    existing.CategoryDetailedId = categoryDetailed?.Id;
+                    }
+
+                    if (!existing.IsCategoryLocked)
+                    {
+                        existing.CategoryId = category?.Id;
+                        existing.CategoryDetailedId = categoryDetailed?.Id;
+                    }
+
+                    channelIds.Add(existing.Id);
                 }
 
 
@@ -374,6 +399,8 @@ namespace FinTrak.Api.Controllers
                 }
 
                 await _db.SaveChangesAsync(ct);
+
+                _channel.Writer.TryWrite(new SyncCompletedEvent(userId, channelIds, DateTime.UtcNow));
 
                 cursor = response.NextCursor;
                 hasMore = response.HasMore;
@@ -477,6 +504,7 @@ namespace FinTrak.Api.Controllers
 
             item.DeletedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
+            
 
             return Ok();
         }

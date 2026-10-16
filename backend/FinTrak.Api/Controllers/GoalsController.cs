@@ -7,17 +7,17 @@ using FinTrak.Api.Validation;
 
 namespace FinTrak.Api.Controllers
 {
-    public class GoalsController(IGoalRepository repo, IAccountRepository accountRepo, IMapper mapper, GoalValidator validator) : ApiBaseController
+    public class GoalsController(IAccountRepository accountRepo, IMapper mapper, GoalValidator validator, IGoalsService goals) : ApiBaseController
     {
-        private readonly IGoalRepository _repo = repo;
         private readonly IAccountRepository _accountRepo = accountRepo;
         private readonly IMapper _mapper = mapper;
         private readonly GoalValidator _validator = validator;
+        private readonly IGoalsService _goals = goals;
 
         [HttpGet("get-goals")]
         public async Task<IActionResult> GetGoals(CancellationToken cancellationToken)
         {
-            var goals = await _repo.GetByUserIdAsync(GetUserId(), cancellationToken);
+            var goals = await _goals.GetByUserIdAsync(GetUserId(), cancellationToken);
             return Ok(_mapper.Map<List<GoalDto>>(goals));
         }
 
@@ -41,46 +41,32 @@ namespace FinTrak.Api.Controllers
                 CurrentAmount = 0m,
                 CreatedAt = DateTime.UtcNow,
                 TargetDate = goal.TargetDate,
-                LinkedAccounts = linkedAccounts,
-                Priority = await _repo.GetMaxPriorityAsync(cancellationToken) + 1
+                LinkedAccounts = linkedAccounts
             };
 
-            await _repo.AddAsync(newGoal, cancellationToken);
+
+            await _goals.AddAsync(GetUserId(), newGoal, cancellationToken);
             return Ok(new { message = "Goal added successfully.", id = newGoal.Id });
+        }
+
+        [HttpPost("reorder-goals/{goalId}")]
+        public async Task<IActionResult> UpdateGoalsPriority(Guid goalId, [FromBody] int newPriority, CancellationToken cancellationToken)
+        {   
+            await _goals.UpdateGoalPrioritiesAsync(GetUserId(), goalId, newPriority, cancellationToken);
+            return Ok(new { message = "Goals updated successfully"});
         }
 
         [HttpPatch("update-goal/{id}")]
         public async Task<IActionResult> UpdateGoal(Guid id, [FromBody] Goal goal, CancellationToken cancellationToken)
         {
-            var existingGoal = await _repo.GetByIdAsync(id, cancellationToken);
-            if (existingGoal == null) return NotFound(new { message = "Goal not found." });
-            if (existingGoal.UserId != GetUserId()) return Forbid();
-
-            var accountIds = goal.LinkedAccounts?.Select(a => a.Id).ToList() ?? [];
-            var allAccounts = await _accountRepo.GetByUserIdAsync(GetUserId(), cancellationToken);
-            var linkedAccounts = allAccounts.Where(a => accountIds.Contains(a.Id)).ToList();
-            existingGoal.LinkedAccounts = linkedAccounts.Count > 0 ? linkedAccounts : existingGoal.LinkedAccounts;
-
-            existingGoal.Name = string.IsNullOrWhiteSpace(goal.Name) ? existingGoal.Name : goal.Name;
-            existingGoal.TargetAmount = goal.TargetAmount > 0 ? goal.TargetAmount : existingGoal.TargetAmount;
-            existingGoal.CurrentAmount = goal.CurrentAmount >= 0 ? goal.CurrentAmount : existingGoal.CurrentAmount;
-            existingGoal.TargetDate = goal.TargetDate ?? existingGoal.TargetDate;
-            existingGoal.Priority = goal.Priority >= 0 ? goal.Priority : existingGoal.Priority;
-
-            await _repo.SaveAsync(cancellationToken);
+            await _goals.UpdateGoalAsync(GetUserId(), id, goal, cancellationToken);
             return Ok(new { message = "Goal updated successfully." });
         }
 
         [HttpDelete("delete-goal/{id}")]
         public async Task<IActionResult> DeleteGoal(Guid id, CancellationToken cancellationToken)
         {
-            var existingGoal = await _repo.GetByIdAsync(id, cancellationToken);
-            if (existingGoal == null) return NotFound(new { message = "Goal not found." });
-            if (existingGoal.UserId != GetUserId()) return Forbid();
-
-            existingGoal.DeletedAt = DateTime.UtcNow;
-            existingGoal.IsActive = false;
-            await _repo.SaveAsync(cancellationToken);
+            await _goals.DeleteGoalAsync(GetUserId(), id, cancellationToken);
             return Ok(new { message = "Goal deleted successfully." });
         }
     }

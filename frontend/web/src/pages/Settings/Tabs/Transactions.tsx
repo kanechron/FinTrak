@@ -1,7 +1,11 @@
-export default function Transactions() {
+import RulesBlock from "../../../components/common/RulesBlock"
+
+
+
+
+export default function Transactions()  {
+  const target = "Transaction"
   return (
-    <div>
-      <p className="text-[13px] text-ink-3">Coming soon.</p>
-    </div>
+    <RulesBlock target={target}/>
   )
 }

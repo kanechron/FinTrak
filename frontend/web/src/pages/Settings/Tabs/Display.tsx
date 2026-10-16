@@ -1,3 +1,5 @@
+import RulesBlock from "../../../components/common/RulesBlock";
+
 export default function Display() {
   return (
     <div>

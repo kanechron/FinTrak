@@ -1,7 +1,7 @@
+import RulesBlock from "../../../components/common/RulesBlock";
+
 export default function Budgets() {
   return (
-    <div>
-      <p className="text-[13px] text-ink-3">Coming soon.</p>
-    </div>
+    <RulesBlock target={'Budget'}/>
   )
 }

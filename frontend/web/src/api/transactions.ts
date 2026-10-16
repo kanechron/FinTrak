@@ -10,6 +10,8 @@ export interface Transaction {
   categoryId: string | null
   categoryDetailedId: string | null
   pending: boolean
+  /** [Flags] enum serialized as a comma-separated string, e.g. "None" or "Budget, Reports" */
+  exclusions: string
 }
 
 export interface TransactionAddPayload {

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Timer } from './hooks/InactivityLogoutHook'
 import { ToastProvider } from './hooks/ToastProvider'
+import { FieldMapProvider } from './hooks/FieldMapProvider'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Transactions from './pages/Transactions/Transactions'
 import Budgets from './pages/Budgets/Budgets'
@@ -36,6 +37,8 @@ function App() {
     checkAuth().then(setAuthed)
   }, [])
 
+
+
   // Show nothing while auth check is in flight to avoid a flash of the wrong page.
   if (authed === null) return null
 
@@ -61,7 +64,7 @@ function App() {
                     <Route path="/goals" element={<Goals />} />
                     <Route path="/bills" element={<Bills />} />
                     <Route path="/reports" element={<Reports />} />
-                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/settings" element={<FieldMapProvider> <Settings /> </FieldMapProvider>} />
                   </Routes>
                 </div>
               </ToastProvider>

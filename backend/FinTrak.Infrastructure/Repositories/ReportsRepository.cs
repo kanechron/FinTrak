@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
 using FinTrak.Core.DTOs;
+using FinTrak.Core.Entities;
 using FinTrak.Core.Interfaces;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
         .Where(t =>
         t.UserId == userId &&
         t.DeletedAt == null &&
+        !t.Exclusions.HasFlag(Exclusion.Reports) &&
         t.CategoryId != null &&
         !CategoryBlacklist.Contains(t.Category!.Name) &&
         t.Date >= DateOnly.FromDateTime(new DateTime(DateTime.Now.Year - 1, DateTime.Now.Month, 1)) &&
@@ -54,6 +56,7 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
             .Where(t =>
                 t.DeletedAt == null &&
                 t.UserId == userId &&
+                !t.Exclusions.HasFlag(Exclusion.Reports) &&
                 t.CategoryId != null &&
                 t.Date >= DateOnly.FromDateTime(DateTime.Now.AddDays(1 - DateTime.Now.Day))
             )
@@ -83,7 +86,8 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 && t.Date >= from
                 && t.Date <= to
                 && t.CategoryId != null
-                && t.UserId == userId);
+                && t.UserId == userId
+                && !t.Exclusions.HasFlag(Exclusion.Reports));
 
         if (categoryIds != null && categoryIds.Length > 0)
             transactionsQuery = transactionsQuery.Where(t => categoryIds.Contains(t.CategoryId!.Value));
@@ -109,7 +113,8 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 && t.Date <= to
                 && t.UserId == userId
                 && t.CategoryId == categoryId
-                && t.CategoryDetailedId != null)
+                && t.CategoryDetailedId != null
+                && !t.Exclusions.HasFlag(Exclusion.Reports))
             .Join(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, c) => new { t.Amount, c.Name, c.Id, t.CategoryDetailed })
             .Where(x => (!x.CategoryDetailed!.Name.StartsWith("TRANSFER_") || x.CategoryDetailed.Name.Contains("_FROM_APPS")) && !x.CategoryDetailed.Name.StartsWith("INCOME"))
             .GroupBy(x => new { x.Name, x.Id })
@@ -128,7 +133,8 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 && t.Date != null
                 && t.Date >= from
                 && t.Date <= to
-                && t.UserId == userId)
+                && t.UserId == userId
+                && !t.Exclusions.HasFlag(Exclusion.Reports))
             .GroupJoin(_db.Categories, t => t.CategoryDetailedId, c => c.Id, (t, cats) => new { t, cats })
             .SelectMany(x => x.cats.DefaultIfEmpty(), (x, c) => new { x.t.Date, x.t.Amount, DetailName = c == null ? null : c.Name })
             .Where(x => x.DetailName == null || (!(x.DetailName.StartsWith("TRANSFER") && !x.DetailName.Contains("_FROM_APPS")) && !x.DetailName.StartsWith("INCOME")))
@@ -150,6 +156,7 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 && t.Date >= from
                 && t.Date <= to
                 && t.UserId == userId
+                && !t.Exclusions.HasFlag(Exclusion.Reports)
                 && (t.CategoryDetailedId == null || !(t.CategoryDetailed!.Name.StartsWith("TRANSFER") && !t.CategoryDetailed!.Name.Contains("_FROM_APPS"))))
             .Include(i => i.Category)
             .Include(i => i.CategoryDetailed)
@@ -175,7 +182,8 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 && t.Date != null
                 && t.Date >= from
                 && t.Date <= to
-                && t.UserId == userId)
+                && t.UserId == userId
+                && !t.Exclusions.HasFlag(Exclusion.Reports))
             .GroupBy(t => new { t.Date!.Value.Year, t.Date!.Value.Month })
             .Select(g => new CashFlowDto
             {
@@ -199,7 +207,8 @@ public class ReportsRepository(FinTrakDbContext db) : IReportsRepository
                 && t.Date != null
                 && t.Date >= from
                 && t.Date <= to
-                && t.UserId == userId)
+                && t.UserId == userId
+                && !t.Exclusions.HasFlag(Exclusion.Reports))
             .Include(i => i.Category)
             .Include(i => i.CategoryDetailed)
             .Select(g => new TransactionDto

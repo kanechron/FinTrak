@@ -25,20 +25,6 @@ export default function Budgets() {
 
   return (
     <main className="max-w-[76rem] mx-auto px-3 py-8">
-      <BudgetFormModal
-        isOpen={addModalOpen || !!selectedBudget}
-        budget={selectedBudget ?? undefined}
-        onClose={() => {
-          setAddModalOpen(false)
-          setSelectedBudget(null)
-        }}
-        onSuccess={() => {
-          setAddModalOpen(false)
-          setSelectedBudget(null)
-          fetchBudgets()
-        }}
-      />
-
       <BalanceCard availableBalance={availableBalance} accounts={accounts} />
 
       <hr className="border-line my-12" />

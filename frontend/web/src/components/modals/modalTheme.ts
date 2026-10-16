@@ -21,6 +21,9 @@ export const inputClass =
 export const primaryButtonClass =
   'w-full bg-s1 hover:opacity-90 text-white text-sm font-semibold rounded-lg px-4 py-2 cursor-pointer transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
 
+export const shadedPrimaryButtonClass =
+  'w-full bg-s1/50 text-white/70 text-sm font-semibold rounded-lg px-4 py-2 cursor-not-allowed'
+
 export const checkboxClass = 'accent-s1 w-4 h-4 cursor-pointer'
 
 export function chipClass(active: boolean) {

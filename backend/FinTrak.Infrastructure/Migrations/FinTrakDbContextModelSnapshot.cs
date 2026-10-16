@@ -93,7 +93,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("PlaidItemId");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Bill", b =>
@@ -148,7 +148,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Bills", (string)null);
+                    b.ToTable("Bills");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Budget", b =>
@@ -202,7 +202,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Budgets", (string)null);
+                    b.ToTable("Budgets");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Category", b =>
@@ -237,7 +237,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Goal", b =>
@@ -279,7 +279,11 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Goals", (string)null);
+                    b.HasIndex("UserId", "Priority")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("Goals");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Invite", b =>
@@ -307,7 +311,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("Token");
 
-                    b.ToTable("Invites", (string)null);
+                    b.ToTable("Invites");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.MerchantAlias", b =>
@@ -336,7 +340,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("RawName")
                         .IsUnique();
 
-                    b.ToTable("MerchantAliases", (string)null);
+                    b.ToTable("MerchantAliases");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.PlaidItem", b =>
@@ -388,7 +392,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("PlaidItemId")
                         .IsUnique();
 
-                    b.ToTable("PlaidItems", (string)null);
+                    b.ToTable("PlaidItems");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.RefreshToken", b =>
@@ -418,7 +422,54 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.Rule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Recursive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Target")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Trigger")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Target", "Priority")
+                        .IsUnique()
+                        .HasFilter("\"DeletedAt\" IS NULL");
+
+                    b.ToTable("Rules");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.SyncQueue", b =>
@@ -453,7 +504,7 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("PlaidItemId");
 
-                    b.ToTable("SyncQueue", (string)null);
+                    b.ToTable("SyncQueue");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.Transaction", b =>
@@ -495,7 +546,16 @@ namespace FinTrak.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Exclusions")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsCategoryLocked")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsManual")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsMerchantNameLocked")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPending")
@@ -527,7 +587,42 @@ namespace FinTrak.Infrastructure.Migrations
 
                     b.HasIndex("PlaidTransactionId");
 
-                    b.ToTable("Transactions", (string)null);
+                    b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.TransactionExclusion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Flags")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SourceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("SourceType", "SourceId", "TransactionId")
+                        .IsUnique();
+
+                    b.ToTable("TransactionExclusions");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.User", b =>
@@ -565,7 +660,7 @@ namespace FinTrak.Infrastructure.Migrations
                     b.HasIndex("GoogleId")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("AccountGoal", b =>
@@ -621,6 +716,69 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Navigation("Detail");
                 });
 
+            modelBuilder.Entity("FinTrak.Core.Entities.Rule", b =>
+                {
+                    b.OwnsMany("FinTrak.Core.Entities.Action", "Actions", b1 =>
+                        {
+                            b1.Property<Guid>("RuleId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<int>("ActionField");
+
+                            b1.Property<int>("ActionType");
+
+                            b1.Property<string>("ActionValue")
+                                .IsRequired();
+
+                            b1.HasKey("RuleId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Rules");
+
+                            b1
+                                .ToJson("Actions")
+                                .HasColumnType("jsonb");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RuleId");
+                        });
+
+                    b.OwnsMany("FinTrak.Core.Entities.Condition", "Conditions", b1 =>
+                        {
+                            b1.Property<Guid>("RuleId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<int>("ConditionField");
+
+                            b1.Property<int?>("ConditionOperator");
+
+                            b1.Property<string>("ConditionValue")
+                                .IsRequired();
+
+                            b1.Property<Guid>("GroupId");
+
+                            b1.Property<bool>("Not");
+
+                            b1.HasKey("RuleId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Rules");
+
+                            b1
+                                .ToJson("Conditions")
+                                .HasColumnType("jsonb");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RuleId");
+                        });
+
+                    b.Navigation("Actions");
+
+                    b.Navigation("Conditions");
+                });
+
             modelBuilder.Entity("FinTrak.Core.Entities.SyncQueue", b =>
                 {
                     b.HasOne("FinTrak.Core.Entities.PlaidItem", "PlaidItem")
@@ -645,6 +803,17 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("CategoryDetailed");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.TransactionExclusion", b =>
+                {
+                    b.HasOne("FinTrak.Core.Entities.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Transaction");
                 });
 #pragma warning restore 612, 618
         }

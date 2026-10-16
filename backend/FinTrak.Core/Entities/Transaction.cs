@@ -1,5 +1,4 @@
-namespace FinTrak.Core.Entities
-{
+namespace FinTrak.Core.Entities;
     /// <summary>
     /// Represents a financial transaction, sourced either from Plaid or entered manually.
     /// </summary>
@@ -28,8 +27,20 @@ namespace FinTrak.Core.Entities
         /// <summary>Normalized merchant name after the dedup pipeline has run.</summary>
         public string MerchantName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// When true, Plaid Modified-sync events must not overwrite <see cref="MerchantName"/>/<see cref="MerchantNameNormalized"/> —
+        /// a rule action has deliberately set them. Flip back to false to allow the next sync to overwrite it again.
+        /// </summary>
+        public bool IsMerchantNameLocked { get; set; } = false;
+
         /// <summary>FK to the assigned category. Null until categorized.</summary>
         public Guid? CategoryId { get; set; } = null;
+
+        /// <summary>
+        /// When true, Plaid Modified-sync events must not overwrite <see cref="CategoryId"/> —
+        /// a rule action has deliberately set it. Flip back to false to allow the next sync to overwrite it again.
+        /// </summary>
+        public bool IsCategoryLocked { get; set; } = false;
 
         /// <summary>Navigation property for the assigned category.</summary>
         public Category? Category { get; set; }
@@ -61,5 +72,23 @@ namespace FinTrak.Core.Entities
 
         /// <summary>The date the transaction occurred, as reported by the bank.</summary>
         public DateOnly? Date { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        /// <summary>
+        /// Where this transaction is left out (budgets, bills, reports). Always the bitwise OR of the
+        /// <see cref="TransactionExclusion.Flags"/> on its receipts — never set directly, only via the rules pipeline.
+        /// Stored as an integer so queries can filter with <c>HasFlag</c> in SQL.
+        /// </summary>
+        public Exclusion Exclusions { get; set; } = Exclusion.None;
+
     }
-}
+
+    /// <summary>Places a transaction can be excluded from. Combine with <c>|</c>; each value is its own bit.</summary>
+    [Flags]
+    public enum Exclusion
+    {
+        None = 0,
+        Budget = 1,
+        Bills = 2,
+        Reports = 4
+    }
+
