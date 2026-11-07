@@ -3,13 +3,13 @@ import { getBudgets, type Budget } from '../../api/budgets'
 import { getAccounts, type Account } from '../../api/accounts'
 import BalanceCard from '../../components/common/BalanceCard'
 import BudgetList from '../../components/common/BudgetList'
-import BudgetFormModal from '../../components/modals/BudgetFormModal'
+// import BudgetFormModal from '../../components/modals/BudgetFormModal'
 
 export default function Budgets() {
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [addModalOpen, setAddModalOpen] = useState(false)
-  const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null)
+  // const [addModalOpen, setAddModalOpen] = useState(false)
+  // const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null)
 
   const fetchBudgets = () => getBudgets().then(setBudgets)
   const fetchAccounts = () => getAccounts().then(setAccounts)
