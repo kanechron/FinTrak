@@ -36,9 +36,12 @@ function App() {
   // On mount, check if the user is already authenticated.
   // null = still checking, true = authenticated, false = not authenticated.
   useEffect(() => {
-    checkAuth().then(setAuthed)
-    getSettings().then((s) => setTimeout(s.inactivityTimeout))
+    checkAuth().then((ok) => {
+      setAuthed(ok)
+      if (ok) getSettings().then((s) => setTimeout(s.inactivityTimeout)).catch(() => {})
+    })
   }, [])
+
 
   // Show nothing while auth check is in flight to avoid a flash of the wrong page.
   if (authed === null) return null

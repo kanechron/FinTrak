@@ -41,7 +41,7 @@ namespace FinTrak.Infrastructure.Migrations
 
             migrationBuilder.Sql("""
                 INSERT INTO "Settings" ("Id", "UserId", "CreatedAt", "DeletedAt", "InactivityTimeout", "TransactionPageSize", "AutoSync", "AutomaticReports", "AutoReportsFrequency", "AutoReportsMethod", "NotificationMethod", "NotificationType")
-                    SELECT gen_random_uuid(), "Id", CURRENT_TIMESTAMP, null, 30, 50, false, 0, 0, 0, 0, 0 FROM "Users"
+                    SELECT gen_random_uuid(), "Id", CURRENT_TIMESTAMP, null, 30, 50, false, 0, 0, 0, 0, 0 FROM "Users";
             """);
         }
 

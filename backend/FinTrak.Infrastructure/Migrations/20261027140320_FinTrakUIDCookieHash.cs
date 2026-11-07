@@ -18,7 +18,7 @@ namespace FinTrak.Infrastructure.Migrations
                 defaultValue: new byte[0]);
 
             migrationBuilder.Sql("""
-                DELETE FROM "RefreshTokens"
+                DELETE FROM "RefreshTokens";
             """);
 
             migrationBuilder.CreateIndex(
