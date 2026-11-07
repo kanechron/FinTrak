@@ -1,7 +1,8 @@
 
 using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Events;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Api.Validation;
 using FinTrak.Core.DTOs;
 using System.Threading.Channels;

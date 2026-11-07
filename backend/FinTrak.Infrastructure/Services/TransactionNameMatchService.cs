@@ -1,6 +1,6 @@
 using FinTrak.Core.Utilities;
 using FinTrak.Infrastructure.Persistance;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Infrastructure.Services;

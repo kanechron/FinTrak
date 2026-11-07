@@ -3,7 +3,7 @@ using FinTrak.Core.Entities;
 using Action = FinTrak.Core.Entities.Action;
 using FinTrak.Infrastructure.Utilities;
 using FinTrak.Api.Validation;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 
 
 namespace FinTrak.Tests;
@@ -229,5 +229,6 @@ internal class FakeCategoryRepository(bool exists = true) : ICategoryRepository
         Task.FromResult(new List<Category>());
     public Task<List<Category>> GetDetailedAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(new List<Category>());
+    public void Add(Category category) { }
 }
 

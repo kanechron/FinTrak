@@ -12,14 +12,16 @@ using Anthropic.SDK;
 using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
 using FinTrak.Infrastructure.Utilities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Events;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using FluentValidation;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using FinTrak.Api.Validation;
 using System.Threading.Channels;
-using SQLitePCL;
 using FinTrak.Infrastructure.EventHandlers;
+using FinTrak.Core.Entities;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
@@ -94,6 +96,8 @@ builder.Services.AddHostedService<DbDeleteService>();  // custom service to perm
 builder.Services.AddHostedService<RecurringDateService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
 builder.Services.AddHostedService<RulesBackgroundService>();
+builder.Services.AddHostedService<AutoSyncTimer>();
+builder.Services.AddHostedService<NotificationDeliveryService>();
 
 
 // -------------------------------------------------------------------------
@@ -118,9 +122,10 @@ builder.Services.AddScoped<ISADReportService, SADReportService>();
 builder.Services.AddScoped<IRulesRepository, RulesRepository>();
 builder.Services.AddScoped<IRulesService, RulesService>();
 builder.Services.AddScoped<IGoalsService, GoalsService>();
-
-
+builder.Services.AddScoped<INotificationBoxer, NotificationBoxer>();
 builder.Services.AddSingleton<ISyncRaceControlService, SyncRaceControlService>();
+builder.Services.AddScoped<AutoSyncService>();
+builder.Services.AddScoped<EmailSenderService>();
 
 
 
@@ -138,12 +143,16 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IAccountReactivationRepository, UserRepostory>();
 builder.Services.AddScoped<IReportsRepository, ReportsRepository>();
 builder.Services.AddScoped<ITransactionExclusionRepository, TransactionExclusionRepository>();
+builder.Services.AddScoped<IPlaidSyncRepository, PlaidSyncRepository>();
+builder.Services.AddScoped<ISettingRepository, SettingRepository>();
+builder.Services.AddScoped<IPlaidSyncService, PlaidSyncService>();
 
 // -------------------------------------------------------------------------
 // Channels
 // -------------------------------------------------------------------------
 
 builder.Services.AddSingleton(Channel.CreateUnbounded<IRuleTriggerEvent>());
+builder.Services.AddSingleton(Channel.CreateUnbounded<Notification>());
 
 // -------------------------------------------------------------------------
 // Events
@@ -345,8 +354,8 @@ app.UseRateLimiter();
 app.UseAuthentication();
 
 
-app.UseMiddleware<ErrorHandlingMiddleware>();  // custom middleware to catch unhandled exceptions and return JSON error responses instead of crashing the server
-app.UseMiddleware<SilentRefreshMiddleware>();  // custom middleware to transparently renew auth cookies using refresh tokens
+app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<SilentRefreshMiddleware>();
 
 app.UseAuthorization();
 app.MapControllers();

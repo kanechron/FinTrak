@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { getTransactions, type Transaction } from '../../api/transactions'
+import { getTransactionsPaginated, type Transaction } from '../../api/transactions'
+import { getSettings, type Settings } from '../../api/settings'
 import { formatAmount } from '../../utils/format'
 import { truncate } from '../../utils/truncate'
 // import TransactionFormModal from '../../components/modals/TransactionFormModal' — edit temporarily disabled
@@ -10,6 +11,8 @@ export default function Transactions() {
   // — Data
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [categoryIds, setCategoryIds] = useState<Category[]>([])
+  const [transactionCount, setTransactionCount] = useState<number>(0)
+  const [settings, setSettings] = useState<Settings>()
 
   // — UI state
   const [loading, setLoading] = useState(false)
@@ -27,8 +30,27 @@ export default function Transactions() {
   // — Data fetchers
   const fetchTransactions = () => {
     setLoading(true)
-    getTransactions(fromDate?.toString(), toDate?.toString())
-      .then((t) => setTransactions(t))
+    getTransactionsPaginated(undefined, undefined, fromDate?.toString(), toDate?.toString())
+      .then((t) => {
+        setTransactions(t)
+        setTransactionCount(t.length)
+      })
+      .catch(() => setError('Failed to load transactions.'))
+      .finally(() => setLoading(false))
+  }
+
+  const fetchMoreTransactions = () => {
+    setLoading(true)
+    getTransactionsPaginated(
+      transactions.at(-1)?.id,
+      transactions.at(-1)?.date,
+      fromDate?.toString(),
+      toDate?.toString()
+    )
+      .then((t) => {
+        setTransactions((prev) => [...prev, ...t])
+        setTransactionCount(t.length)
+      })
       .catch(() => setError('Failed to load transactions.'))
       .finally(() => setLoading(false))
   }
@@ -38,9 +60,16 @@ export default function Transactions() {
       .then((c) => setCategoryIds(c))
       .catch(() => setError('Failed to load categories'))
 
+  const fetchSettings = () => {
+    getSettings()
+      .then((c) => setSettings(c))
+      .catch(() => setError('Failed to load settinsg'))
+  }
+
   // — On mount
   useEffect(() => {
     fetchTransactions()
+    fetchSettings()
     fetchCategories().finally(() => setLoading(false))
   }, [])
 
@@ -255,6 +284,16 @@ export default function Transactions() {
                   </p>
                 </div>
               ))}
+            {transactionCount >= (settings?.transactionPageSize ?? 50) && (
+              <div className="flex justify-center py-6">
+                <button
+                  className="text-[13px] font-semibold text-s1 hover:text-ink transition-colors"
+                  onClick={fetchMoreTransactions}
+                >
+                  Load more
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

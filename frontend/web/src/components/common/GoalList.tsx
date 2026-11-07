@@ -37,8 +37,7 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
   // Separate mouse/touch sensors (rather than PointerSensor) so touch gets its own
   // activation constraint: a short delay + movement tolerance before a drag starts,
   // so a tap-and-scroll on the handle isn't immediately hijacked as a drag.
-  
-  
+
   const handleDelete = async (goalId: string) => {
     try {
       await deleteGoal(goalId)
@@ -52,9 +51,9 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
     try {
       await reorderGoals(goalId, newPriority)
       onGoalAdded()
-      toast.success({title: 'Goals reordered successfully', content: ''})
+      toast.success({ title: 'Goals reordered successfully', content: '' })
     } catch (error) {
-      toast.error({ title: 'Failed to reorder goals', content: ''})
+      toast.error({ title: 'Failed to reorder goals', content: '' })
     }
   }
 
@@ -62,7 +61,7 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
   )
-  
+
   // Fall back to prop data before the first fetch completes
   const displayGoals = localGoals.length > 0 ? localGoals : (goals ?? [])
 
@@ -75,7 +74,7 @@ export default function GoalList({ goals = [], onGoalAdded, accounts }: Props) {
     const reordered = arrayMove(displayGoals, oldIndex, newIndex)
     const reorderedWithPriority = reordered.map((g, i) => ({ ...g, priority: i + 1 }))
     const newPriority = displayGoals.find((g) => g.id === over.id)?.priority
-    if(!newPriority) return
+    if (!newPriority) return
 
     setLocalGoals(reorderedWithPriority)
 

@@ -10,8 +10,6 @@ interface Props {
   onUpdate: () => void
 }
 
-
-
 export default function RuleCard({ rule, onDelete, onClick, onUpdate }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rule.id,
@@ -41,8 +39,8 @@ export default function RuleCard({ rule, onDelete, onClick, onUpdate }: Props) {
         <p className="text-[11.5px] text-ink-3 mt-0.5">
           {isExclusion ? (
             <>
-              {rule.conditions.length} condition{rule.conditions.length === 1 ? '' : 's'} · Excludes from{' '}
-              {rule.actions.map((a) => a.actionValue).join(', ')}
+              {rule.conditions.length} condition{rule.conditions.length === 1 ? '' : 's'} · Excludes
+              from {rule.actions.map((a) => a.actionValue).join(', ')}
             </>
           ) : (
             <>
@@ -60,8 +58,9 @@ export default function RuleCard({ rule, onDelete, onClick, onUpdate }: Props) {
           </span>
         ) : (
           <span
-            className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${rule.isActive ? 'text-good bg-good/15' : 'text-ink-3 bg-raised'
-              }`}
+            className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
+              rule.isActive ? 'text-good bg-good/15' : 'text-ink-3 bg-raised'
+            }`}
           >
             {rule.isActive ? 'Active' : 'Inactive'}
           </span>
@@ -73,7 +72,11 @@ export default function RuleCard({ rule, onDelete, onClick, onUpdate }: Props) {
               ? [{ label: 'Delete', onClick: () => onDelete(rule.id), danger: true }]
               : [
                   { label: 'Edit', onClick: onClick },
-                  { label: rule.isActive ? 'Deactivate' : 'Activate', onClick: () => updateRule(rule.id, { ...rule, isActive: !rule.isActive }).then(onUpdate) },
+                  {
+                    label: rule.isActive ? 'Deactivate' : 'Activate',
+                    onClick: () =>
+                      updateRule(rule.id, { ...rule, isActive: !rule.isActive }).then(onUpdate),
+                  },
                   { label: 'Delete', onClick: () => onDelete(rule.id), danger: true },
                 ]
           }

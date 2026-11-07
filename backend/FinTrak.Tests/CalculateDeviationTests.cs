@@ -1,4 +1,4 @@
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using static FinTrak.Core.Utilities.SpendingStatisticsUtil;
 
 

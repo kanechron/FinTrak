@@ -1,6 +1,7 @@
 using FinTrak.Core.Entities;
 using Action = FinTrak.Core.Entities.Action;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Utilities;
 using System.Diagnostics;

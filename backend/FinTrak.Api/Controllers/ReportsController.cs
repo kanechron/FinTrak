@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace FinTrak.Api.Controllers

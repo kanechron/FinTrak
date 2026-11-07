@@ -1,7 +1,7 @@
 
 
 using System.Threading.Channels;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Events;
 using FinTrak.Infrastructure.EventHandlers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

@@ -10,7 +10,8 @@ using System.Text.RegularExpressions;
 using FinTrak.Core.Utilities;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json.Serialization;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Events;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Infrastructure.Services;
 using System.Threading.Channels;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -28,11 +29,11 @@ namespace FinTrak.Api.Controllers
     [ApiController]
     [Route("plaid")]
     [Authorize]
-    public class PlaidController(FinTrakDbContext db, ISyncRaceControlService sync, Channel<IRuleTriggerEvent> channel) : ControllerBase
+    public class PlaidController(FinTrakDbContext db, ISyncRaceControlService sync, Channel<IRuleTriggerEvent> channel, IPlaidSyncService syncSvc) : ControllerBase
     {
         private readonly FinTrakDbContext _db = db;
-        private readonly ISyncRaceControlService _sync = sync;
         private readonly Channel<IRuleTriggerEvent> _channel = channel;
+        private readonly IPlaidSyncService _syncSvc = syncSvc;
 
 
         private Guid GetUserId() =>
@@ -175,297 +176,16 @@ namespace FinTrak.Api.Controllers
         /// </summary>
         [HttpPost("sync")]
         [EnableRateLimiting("expensive")]
-        public async Task<IActionResult> Sync([FromServices] PlaidClient plaid, CancellationToken ct)
+        public async Task<IActionResult> Sync(CancellationToken ct)
         {
 
             var userId = GetUserId();
-            //Works the same as `var ids = new List<Guid>();`
-            var items = await _db.PlaidItems
-                .Where(p => p.UserId == userId)
-                .ToListAsync(ct);
-
-            var categoryCache = (await _db.Categories.ToListAsync())
-                .GroupBy(c => c.Name)
-                .ToDictionary(g => g.Key, g => g.First());
-
-            foreach (var item in items)
-            {
-                using var _ = await _sync.AcquireAsync(item.Id, ct);
-                await SyncItemAsync(item, plaid, categoryCache, ct);
-            }
-
+            await _syncSvc.SyncAsync(userId, ct);
             await _db.SaveChangesAsync(ct);
-
-           
-
             return Ok();
         }
 
-        private async Task SyncItemAsync(PlaidItem item, PlaidClient plaid, Dictionary<string, Category> categoryCache, CancellationToken ct)
-        {
-            var cursor = item.TransactionCursor;
-            var hasMore = true;
-            var userId = item.UserId;
-            List<Guid> ids = [];
-
-
-            while (hasMore)
-            {
-                var response = await plaid.TransactionsSyncAsync(
-                    new Going.Plaid.Transactions.TransactionsSyncRequest
-                    {
-                        AccessToken = item.AccessToken,
-                        Cursor = cursor,
-                        Options = new() { DaysRequested = 730 }
-                    });
-
-                if (response.Error != null)
-                {
-                    item.Status = FinTrak.Core.Entities.PlaidItemStatus.Error;
-                    item.ErrorCode = response.Error.ErrorCode.ToString();
-                    break;
-                }
-
-
-                var incomingTransactionIds = response.Added.Select(t => t.TransactionId).ToList();
-                var existingTransactionsList = await _db.Transactions
-                .IgnoreQueryFilters()
-                .Where(trans => trans.UserId == userId && incomingTransactionIds.Contains(trans.PlaidTransactionId))
-                .ToListAsync(ct);
-
-                var existingTransactions = existingTransactionsList
-                    .GroupBy(t => t.PlaidTransactionId!)
-                    .ToDictionary(g => g.Key, g => g.First());
-
-
-                var incomingAccountIds = response.Added.Select(t => t.AccountId).ToList();
-                var accounts = await _db.Accounts
-                    .Where(a => a.UserId == userId && incomingAccountIds.Contains(a.PlaidAccountId))
-                    .ToDictionaryAsync(a => a.PlaidAccountId, ct);
-
-
-                (Category? category, Category? categoryDetailed) ResolveCategories(string? name, Going.Plaid.Entity.PersonalFinanceCategory? personalFinanceCategory)
-                {
-                    var categoryName = name?.ToLower().Contains("deposit") == true
-                        ? "INCOME"
-                        : personalFinanceCategory?.Primary ?? string.Empty;
-                    var detailedCategoryName = name?.ToLower().Contains("deposit") == true
-                        ? string.Empty
-                        : personalFinanceCategory?.Detailed ?? string.Empty;
-
-                    Category? category = null;
-                    if (!string.IsNullOrEmpty(categoryName))
-                    {
-                        if (!categoryCache.TryGetValue(categoryName, out category))
-                        {
-                            category = new Category { Id = Guid.NewGuid(), Name = categoryName, IsSystem = true };
-                            _db.Categories.Add(category);
-                            categoryCache[categoryName] = category;
-                        }
-                    }
-
-                    Category? categoryDetailed = null;
-                    if (!string.IsNullOrEmpty(detailedCategoryName))
-                    {
-                        if (!categoryCache.TryGetValue(detailedCategoryName, out categoryDetailed))
-                        {
-                            categoryDetailed = new Category { Id = Guid.NewGuid(), Name = detailedCategoryName, DetailId = category?.Id, IsSystem = true };
-                            _db.Categories.Add(categoryDetailed);
-                            categoryCache[detailedCategoryName] = categoryDetailed;
-                        }
-                    }
-
-                    return (category, categoryDetailed);
-                }
-
-                // FinTrak Transaction.Ids (not Plaid's TransactionIds) touched on this page — handed to the rules engine after save.
-                List<Guid> channelIds = [];
-
-                // Handle added transactions
-                foreach (var t in response.Added)
-                {
-
-                    existingTransactions.TryGetValue(t.TransactionId!, out var existing);
-
-                    accounts.TryGetValue(t.AccountId!, out var account);
-
-#pragma warning disable CS0612 // Type or member is obsolete
-                    var (category, categoryDetailed) = ResolveCategories(t.Name, t.PersonalFinanceCategory);
-#pragma warning restore CS0612 // Type or member is obsolete
-
-                    if (existing != null)
-                    {
-#pragma warning disable CS0612 // Type or member is obsolete
-                        existing.MerchantNameRaw = t.Name ?? string.Empty;
-#pragma warning restore CS0612 // Type or member is obsolete
-#pragma warning disable CS0612 // Type or member is obsolete
-                       
-                        if(!existing.IsMerchantNameLocked)
-                        {
-                         existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
-#pragma warning restore CS0612 // Type or member is obsolete
-#pragma warning disable CS0612 // Type or member is obsolete
-                        existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
-                        }
-                        #pragma warning restore CS0612 // Type or member is obsolete
-                        if(!existing.IsCategoryLocked)
-                        {
-                            existing.CategoryId = category?.Id;
-                            existing.CategoryDetailedId = categoryDetailed?.Id;
-                        }
-
-                        channelIds.Add(existing.Id);
-                    }
-                    else
-                    {
-                        var newId = Guid.NewGuid();
-                        channelIds.Add(newId);
-
-#pragma warning disable CS0612 // Type or member is obsolete
-                        _db.Transactions.Add(new FinTrak.Core.Entities.Transaction
-                        {
-                            Id = newId,
-                            UserId = userId,
-                            AccountId = account?.Id ?? Guid.Empty,
-                            PlaidTransactionId = t.TransactionId,
-                            Amount = t.Amount,
-                            MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName(),
-                            MerchantNameRaw = t.Name ?? string.Empty,
-                            MerchantName = t.MerchantName ?? t.Name ?? string.Empty,
-                            Date = t.AuthorizedDate ?? t.Date,
-                            IsPending = t.Pending!.Value,
-                            IsManual = false,
-                            DedupStatus = FinTrak.Core.Entities.DedupStatus.Accepted,
-                            CreatedAt = DateTime.UtcNow,
-                            CategoryId = category?.Id,
-                            CategoryDetailedId = categoryDetailed?.Id
-
-                        });
-                #pragma warning restore CS0612 // Type or member is obsolete
-                    }
-                }
-
-
-                var modifiedIds = response.Modified.Select(t => t.TransactionId).ToList();
-                var existingModified = await _db.Transactions
-                    .Where(t => t.UserId == userId && modifiedIds.Contains(t.PlaidTransactionId))
-                    .ToDictionaryAsync(t => t.PlaidTransactionId!);
-
-
-                // Handle modified transactions
-                foreach (var t in response.Modified)
-                {
-                    existingModified.TryGetValue(t.TransactionId!, out var existing);
-
-                    if (existing == null) continue;
-
-#pragma warning disable CS0612 // Type or member is obsolete
-                    var (category, categoryDetailed) = ResolveCategories(t.Name, t.PersonalFinanceCategory);
-#pragma warning restore CS0612 // Type or member is obsolete
-
-                    existing.Amount = t.Amount;
-                    existing.IsPending = t.Pending!.Value;
-
-                    if (!existing.IsMerchantNameLocked)
-                    {
-#pragma warning disable CS0612 // Type or member is obsolete
-                        existing.MerchantName = t.MerchantName ?? t.Name ?? string.Empty;
-                        existing.MerchantNameNormalized = (t.MerchantName ?? t.Name ?? string.Empty).NormalizeName();
-#pragma warning restore CS0612 // Type or member is obsolete
-                    }
-
-                    if (!existing.IsCategoryLocked)
-                    {
-                        existing.CategoryId = category?.Id;
-                        existing.CategoryDetailedId = categoryDetailed?.Id;
-                    }
-
-                    channelIds.Add(existing.Id);
-                }
-
-
-                var removedIds = response.Removed.Select(t => t.TransactionId).ToList();
-                var existingRemoved = await _db.Transactions
-                    .Where(t => t.UserId == userId && removedIds.Contains(t.PlaidTransactionId!))
-                    .ToDictionaryAsync(t => t.PlaidTransactionId!);
-
-                // Handle removed transactions
-                foreach (var t in response.Removed)
-                {
-                    existingRemoved.TryGetValue(t.TransactionId!, out var existing);
-
-                    if (existing != null)
-                        existing.DeletedAt = DateTime.UtcNow;
-                }
-
-                await _db.SaveChangesAsync(ct);
-
-                _channel.Writer.TryWrite(new SyncCompletedEvent(userId, channelIds, DateTime.UtcNow));
-
-                cursor = response.NextCursor;
-                hasMore = response.HasMore;
-            }
-
-            item.TransactionCursor = cursor;
-            item.LastSyncedAt = DateTime.UtcNow;
-
-            // Refresh account balances
-            var balanceResponse = await plaid.AccountsGetAsync(
-                new Going.Plaid.Accounts.AccountsGetRequest
-                {
-                    AccessToken = item.AccessToken
-                });
-
-
-
-
-            // Handle accounts and balances
-            if (balanceResponse.Error == null)
-            {
-                var balanceAccountIds = balanceResponse.Accounts.Select(a => a.AccountId).ToList();
-                var existingBalanceAccounts = await _db.Accounts
-                    .Where(a => a.UserId == userId && balanceAccountIds.Contains(a.PlaidAccountId))
-                    .ToDictionaryAsync(a => a.PlaidAccountId);
-
-                foreach (var a in balanceResponse.Accounts)
-                {
-                    existingBalanceAccounts.TryGetValue(a.AccountId, out var account);
-
-                    if (account == null)
-                    {
-                        _db.Accounts.Add(new FinTrak.Core.Entities.Account
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = userId,
-                            PlaidItemId = item.Id,
-                            PlaidAccountId = a.AccountId,
-                            Name = a.Name,
-                            OfficialName = a.OfficialName,
-                            Mask = a.Mask ?? string.Empty,
-                            Type = a.Type switch
-                            {
-                                Going.Plaid.Entity.AccountType.Depository => Core.Entities.AccountType.Depository,
-                                Going.Plaid.Entity.AccountType.Credit => FinTrak.Core.Entities.AccountType.Credit,
-                                Going.Plaid.Entity.AccountType.Loan => FinTrak.Core.Entities.AccountType.Loan,
-                                Going.Plaid.Entity.AccountType.Investment => FinTrak.Core.Entities.AccountType.Investment,
-                                _ => FinTrak.Core.Entities.AccountType.Depository
-                            },
-                            Subtype = a.Subtype?.ToString(),
-                            CurrentBalance = (decimal?)a.Balances.Current,
-                            AvailableBalance = (decimal?)a.Balances.Available,
-                            BalanceLastUpdated = DateTime.UtcNow,
-                            CreatedAt = DateTime.UtcNow
-                        });
-                    }
-                    else
-                    {
-                        account.CurrentBalance = (decimal?)a.Balances.Current;
-                        account.AvailableBalance = (decimal?)a.Balances.Available;
-                        account.BalanceLastUpdated = DateTime.UtcNow;
-                    }
-                }
-            }
-        }
+        
 
         /// <summary>
         /// Lists the user's connected banks (Plaid items).
@@ -504,7 +224,7 @@ namespace FinTrak.Api.Controllers
 
             item.DeletedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
-            
+
 
             return Ok();
         }
@@ -519,10 +239,8 @@ namespace FinTrak.Api.Controllers
             var item = await _db.PlaidItems.FirstOrDefaultAsync(p => p.PlaidItemId == payload.ItemId, ct);
             if (item == null) return Ok();
 
-            var categoryCache = (await _db.Categories.ToListAsync(ct))
-                .ToDictionary(c => c.Name, c => c);
-            using var _ = await _sync.AcquireAsync(item!.Id, ct);
-            await SyncItemAsync(item!, plaid, categoryCache, ct);
+            await _syncSvc.SyncAsync(item.UserId, ct);
+            await _db.SaveChangesAsync(ct);
 
             return Ok();
         }

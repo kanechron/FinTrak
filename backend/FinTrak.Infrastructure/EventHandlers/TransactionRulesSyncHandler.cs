@@ -1,4 +1,5 @@
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Events;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Core.Entities;
 
 namespace FinTrak.Infrastructure.EventHandlers;
