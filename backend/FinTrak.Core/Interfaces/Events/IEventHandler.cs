@@ -1,5 +1,5 @@
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Events;
 
 public interface IEventHandler<TEvent> where TEvent : IRuleTriggerEvent
 {

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using FinTrak.Infrastructure.Persistance;
 
 namespace FinTrak.Infrastructure.Repositories;

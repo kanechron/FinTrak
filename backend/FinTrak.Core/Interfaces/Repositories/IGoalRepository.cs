@@ -1,7 +1,7 @@
 using FinTrak.Core.Entities;
 using Microsoft.VisualBasic;
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Repositories;
 
 public interface IGoalRepository
 {

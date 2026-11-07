@@ -1,6 +1,6 @@
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using FluentValidation;
 
 

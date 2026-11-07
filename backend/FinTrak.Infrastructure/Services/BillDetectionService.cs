@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Infrastructure.Persistance;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Core.Entities;
 using FuzzySharp;
 using FinTrak.Core.Utilities;

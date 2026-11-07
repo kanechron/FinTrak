@@ -1,4 +1,4 @@
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 
 namespace FinTrak.Core.Utilities;
 

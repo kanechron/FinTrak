@@ -17,7 +17,7 @@ export const OPERATORS = [
   'GREATER_THAN_OR_EQUAL',
   'LESS_THAN_OR_EQUAL',
   // 'IN', — temporarily disabled until multi-value (list membership) matching is implemented on the backend
-  undefined
+  undefined,
 ] as const
 export type Operator = (typeof OPERATORS)[number]
 
@@ -79,9 +79,6 @@ export interface RuleFieldMapDto {
 
 export type FieldMap = Record<TargetType, RuleFieldMapDto>
 
-
-
-
 /**
  * Get all rules for the current user
  * @returns array of all non soft-deleted rules
@@ -91,12 +88,12 @@ export function getRules(): Promise<Rule[]> {
 }
 
 /**
- * 
- * @param target 
- * @returns 
+ *
+ * @param target
+ * @returns
  */
 export function getRulesByTarget(target: string): Promise<Rule[]> {
-    return api.get<Rule[]>(`/rules/get-rules-by-target/${target}`)
+  return api.get<Rule[]>(`/rules/get-rules-by-target/${target}`)
 }
 
 /**
@@ -107,7 +104,7 @@ export function getRule(id: string): Promise<Rule> {
   return api.get<Rule>(`/rules/get-rule/${id}`)
 }
 
-export function getRuleFieldmap() : Promise<FieldMap> {
+export function getRuleFieldmap(): Promise<FieldMap> {
   return api.get<FieldMap>(`/rules/get-rule-field-map`)
 }
 
@@ -131,10 +128,10 @@ export function addRule(
  * @returns
  */
 export function updateRule(
-    id: string,
-    rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind' | 'priority'>
+  id: string,
+  rule: Omit<Rule, 'id' | 'userId' | 'createdAt' | 'deletedAt' | 'kind' | 'priority'>
 ): Promise<{ message: string }> {
-    return api.patch(`/rules/update-rule/${id}`, rule)
+  return api.patch(`/rules/update-rule/${id}`, rule)
 }
 
 /**

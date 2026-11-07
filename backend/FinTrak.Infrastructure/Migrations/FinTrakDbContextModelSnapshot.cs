@@ -404,6 +404,10 @@ namespace FinTrak.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("DeviceTokenHash")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -421,6 +425,9 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeviceTokenHash")
+                        .IsUnique();
 
                     b.ToTable("RefreshTokens");
                 });
@@ -470,6 +477,53 @@ namespace FinTrak.Infrastructure.Migrations
                         .HasFilter("\"DeletedAt\" IS NULL");
 
                     b.ToTable("Rules");
+                });
+
+            modelBuilder.Entity("FinTrak.Core.Entities.Setting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AutoReportsFrequency")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AutoReportsMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("AutoSync")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("AutomaticReports")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InactivityTimeout")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NotificationMethod")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NotificationType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TransactionPageSize")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("FinTrak.Core.Entities.SyncQueue", b =>

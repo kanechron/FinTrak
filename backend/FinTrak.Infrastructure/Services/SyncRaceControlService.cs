@@ -1,6 +1,6 @@
 
 using System.Collections.Concurrent;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Services;
 
 namespace FinTrak.Infrastructure.Services
 {

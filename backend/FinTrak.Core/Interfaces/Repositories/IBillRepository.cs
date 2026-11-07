@@ -1,6 +1,6 @@
 using FinTrak.Core.Entities;
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Repositories;
 
 public interface IBillRepository
 {

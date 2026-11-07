@@ -1,6 +1,6 @@
 using FinTrak.Core.Entities;
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Repositories;
 
 /// <summary>
 /// Reads and writes <see cref="TransactionExclusion"/> receipts. Every method is scoped to <c>userId</c>.

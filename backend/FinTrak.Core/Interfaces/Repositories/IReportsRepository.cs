@@ -1,6 +1,6 @@
 using FinTrak.Core.DTOs;
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Repositories;
 
 public interface IReportsRepository
 {

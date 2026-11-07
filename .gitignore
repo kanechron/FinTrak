@@ -14,3 +14,5 @@ obj/
 *.user
 *.suo
 .vs/
+
+*.drawio

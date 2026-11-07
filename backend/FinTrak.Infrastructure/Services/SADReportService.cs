@@ -1,6 +1,7 @@
 
 using FinTrak.Core.DTOs;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using static FinTrak.Core.Utilities.SpendingStatisticsUtil;
 
 namespace FinTrak.Infrastructure.Services;

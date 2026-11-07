@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
-using Going.Plaid.Entity;
 
 namespace FinTrak.Api.Controllers
 {
@@ -121,7 +120,7 @@ namespace FinTrak.Api.Controllers
             if (string.IsNullOrEmpty(codeVerifier))
                 return BadRequest("Session expired. Please try logging in again.");
 
-            // Exchange the authorization code for an access token, refresh token, and ID token.
+            // Exchange the authorization code for an access token, refresh token, and ID token. We don't use the access token.
             using var http = new HttpClient();
             var tokenResponse = await http.PostAsync("https://oauth2.googleapis.com/token",
                 new FormUrlEncodedContent(new Dictionary<string, string>
@@ -147,6 +146,7 @@ namespace FinTrak.Api.Controllers
             // GoogleJsonWebSignature.ValidateAsync handles all cryptographic verification.
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken);
 
+            //Looks user up by GoogleID to see if they exist in the DB already.
             var user = await _db.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.GoogleId == payload.Subject);
 
             //If user has previously deactivated their account, route to reactivation regardless of
@@ -168,6 +168,7 @@ namespace FinTrak.Api.Controllers
 
             if (state == "register") user = await RegisterUser(payload, _db);
     
+            var uidcookie = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
 
             if (tokenJson.TryGetProperty("refresh_token", out var rtElement))
             {
@@ -178,6 +179,7 @@ namespace FinTrak.Api.Controllers
                     Id = Guid.NewGuid(),
                     UserId = user!.Id,
                     Token = rtElement.GetString()!,
+                    DeviceTokenHash = SHA256.HashData(Encoding.UTF8.GetBytes(uidcookie)),
                     CreatedAt = DateTime.UtcNow,
                     ExpiresAt = DateTime.UtcNow.AddDays(60)
                 });
@@ -204,8 +206,10 @@ namespace FinTrak.Api.Controllers
             // Clear the PKCE code_verifier from session since it's no longer needed after successful login.
             HttpContext.Session.Remove("code_verifier");
 
-            // Also set a separate cookie with the user's ID for easy access in the frontend (e.g. to associate Plaid items with the user).
-            Response.Cookies.Append("fintrak_uid", user.Id.ToString(), new CookieOptions
+
+            // Long-lived device token cookie (HTTP-only, never readable by JS). The DB stores only its SHA-256 hash.
+            // SilentRefreshMiddleware hashes this value to find the user's session row once the auth cookie expires.
+            Response.Cookies.Append("fintrak_uid", uidcookie, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
@@ -266,8 +270,14 @@ namespace FinTrak.Api.Controllers
                 Email = payload.Email,
                 GoogleId = payload.Subject
             };
+            var settings = new Setting
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id
+            };
 
             _db.Users.Add(user);
+            _db.Settings.Add(settings);
             return user;
         }
     }

@@ -91,6 +91,23 @@ export function getTransactionsByDetailedCategory(
   )
 }
 
+export function getTransactionsPaginated(
+  lastId?: string,
+  lastDate?: string,
+  from?: string,
+  to?: string
+): Promise<Transaction[]> {
+  const params = new URLSearchParams()
+  if (lastId != undefined) params.append('lastId', lastId.toString())
+  if (lastDate != undefined) params.append('lastDate', lastDate.toString())
+  if (from != undefined) params.append('from', from.toString())
+  if (to != undefined) params.append('to', to.toString())
+  const query = params.toString()
+  return api.get<Transaction[]>(
+    `/transactions/get-transactions-paginated/${query ? `?${query}` : ''}`
+  )
+}
+
 /**
  * Create a new manual transaction
  * @param transaction - object of type `TransactionAddPayload`

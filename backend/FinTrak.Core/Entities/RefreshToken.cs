@@ -14,6 +14,9 @@ namespace FinTrak.Core.Entities
         /// <summary>The Google refresh token string. Treat as a secret — never expose to the client.</summary>
         public string Token { get; set; } = string.Empty;
 
+        ///<summary>Holds a stand-in ID token</summary>
+        public byte[] DeviceTokenHash { get; set; } = [];
+
         /// <summary>When the token expires. Defaults to 7 days from creation.</summary>
         public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddDays(7);
 

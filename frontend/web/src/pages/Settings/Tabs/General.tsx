@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { parsePdf } from '../../../api/transactions'
+import { type SettingsRequest } from '../../../api/settings'
+import { checkboxClass } from '../../../components/modals/modalTheme'
 
-export default function General() {
+interface Props {
+  onSave: (changes: Partial<SettingsRequest>) => void
+  autoSync: boolean | undefined
+  inactivityTimeout: number
+}
+
+export default function General({ onSave, autoSync, inactivityTimeout }: Props) {
   const [file, setFile] = useState<File | null>(null)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -48,6 +56,41 @@ export default function General() {
       >
         Submit
       </button>
+
+      <div className="border-t border-line my-8" />
+
+      <p className="text-[13.5px] font-semibold text-ink mb-1">Auto-sync</p>
+      <p className="text-[12.5px] text-ink-3 mb-4 max-w-md">
+        Sync your linked accounts automatically once a day.
+      </p>
+
+      <label className="inline-flex items-center gap-3 text-sm text-ink-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={autoSync ?? false}
+          onChange={(e) => onSave({ autoSync: e.target.checked })}
+          className={checkboxClass}
+        />
+        Enable daily auto-sync
+      </label>
+
+      <div className="border-t border-line my-8" />
+
+      <p className="text-[13.5px] font-semibold text-ink mb-1">Inactivity timeout</p>
+      <p className="text-[12.5px] text-ink-3 mb-4 max-w-md">
+        Log out automatically after this many minutes without activity.
+      </p>
+
+      <label className="inline-flex items-center gap-3 text-sm text-ink-2">
+        <input
+          type="number"
+          min={1}
+          value={inactivityTimeout}
+          onChange={(e) => onSave({ inactivityTimeout: e.target.valueAsNumber })}
+          className="w-20 text-xs bg-transparent border border-line rounded-lg px-3 py-1.5 text-ink-2 placeholder-ink-3 focus:outline-none focus:border-line-2"
+        />
+        minutes
+      </label>
     </div>
   )
 }

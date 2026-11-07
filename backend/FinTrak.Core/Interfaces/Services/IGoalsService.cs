@@ -1,7 +1,7 @@
 
 using FinTrak.Core.Entities;
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Services;
 
 public interface IGoalsService
 {

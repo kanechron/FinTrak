@@ -1,6 +1,6 @@
 using FinTrak.Core.Entities;
 
-namespace FinTrak.Core.Interfaces;
+namespace FinTrak.Core.Interfaces.Events;
 
 /// <summary>
 /// Marker for anything that can pass through the rule-trigger channel. Concrete events

@@ -1,5 +1,9 @@
+using System.Runtime.Intrinsics.Arm;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using FinTrak.Core.Exceptions;
 using FinTrak.Infrastructure.Persistance;
 using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -19,26 +23,22 @@ namespace FinTrak.Api.Middleware
     /// If the refresh token is missing, expired, or revoked, the middleware does
     /// nothing and lets the request fall through unauthenticated.
     /// </summary>
-    public class SilentRefreshMiddleware
+    public class SilentRefreshMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
-
-        public SilentRefreshMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
-
+        private readonly RequestDelegate _next = next;
         public async Task InvokeAsync(HttpContext context, FinTrakDbContext db)
         {
             // Only attempt refresh if the user is not already authenticated.
             if (!context.User.Identity?.IsAuthenticated ?? true)
             {
                 var uidCookie = context.Request.Cookies["fintrak_uid"];
-                if (Guid.TryParse(uidCookie, out var userId))
+                
+                if (uidCookie is not null)
                 {
+                    var hash = SHA256.HashData(Encoding.UTF8.GetBytes(uidCookie));
                     // Look up a valid, non-expired, non-revoked refresh token for this user.
                     var storedToken = await db.RefreshTokens
-                        .Where(t => t.UserId == userId
+                        .Where(t => t.DeviceTokenHash == hash
                                  && t.RevokedAt == null
                                  && t.ExpiresAt > DateTime.UtcNow)
                         .OrderByDescending(t => t.CreatedAt)
@@ -50,6 +50,7 @@ namespace FinTrak.Api.Middleware
                         if (newIdToken != null)
                         {
                             // Re-issue the auth cookie with fresh claims.
+                            var userId = storedToken.UserId;
                             var claims = new List<Claim>
                             {
                                 new(ClaimTypes.NameIdentifier, userId.ToString()),

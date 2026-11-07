@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
 using FinTrak.Core.DTOs;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 

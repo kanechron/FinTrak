@@ -1,6 +1,7 @@
 using FinTrak.Core.Entities;
 using FinTrak.Core.Exceptions;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 
 namespace FinTrak.Infrastructure.Services;
 

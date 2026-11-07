@@ -26,6 +26,7 @@ namespace FinTrak.Infrastructure.Persistance
         public DbSet<SyncQueue> SyncQueue => Set<SyncQueue>();
         public DbSet<Rule> Rules => Set<Rule>();
         public DbSet<TransactionExclusion> TransactionExclusions => Set<TransactionExclusion>();
+        public DbSet<Setting> Settings => Set<Setting>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -64,6 +65,8 @@ namespace FinTrak.Infrastructure.Persistance
             // One receipt per source per transaction. Also serves "delete all receipts for this source" lookups.
             // (TransactionId gets its own index automatically as a foreign key, for "what else excludes this transaction?")
             modelBuilder.Entity<TransactionExclusion>().HasIndex(e => new { e.SourceType, e.SourceId, e.TransactionId }).IsUnique();
+            modelBuilder.Entity<RefreshToken>().HasIndex(r => r.DeviceTokenHash).IsUnique();
+            modelBuilder.Entity<Setting>().HasIndex(s => s.UserId).IsUnique();
 
             // Relationships
             // Cascade so receipts disappear when DbDeleteService hard-deletes a transaction after its retention period.
@@ -117,6 +120,7 @@ namespace FinTrak.Infrastructure.Persistance
             modelBuilder.Entity<TransactionExclusion>()
                 .Property(e => e.SourceType)
                 .HasConversion<string>();
+                
 
             // Deliberately NOT stored as strings: TransactionExclusion.Flags and Transaction.Exclusions are
             // [Flags] enums that queries filter with bitwise checks (HasFlag / bit_or), which only work on integers.
