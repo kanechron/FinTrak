@@ -1,21 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Core.Entities;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinTrak.Core.BackgroundServices
 {
-    public class BillsAutoDetectService : BackgroundService
+    public class BillsAutoDetectService(IServiceScopeFactory scopeFactory) : BackgroundService
     {
-        private readonly IServiceScopeFactory _scopeFactory;
-
-        public BillsAutoDetectService(IServiceScopeFactory scopeFactory)
-        {
-            _scopeFactory = scopeFactory;
-        }
-
+        private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+        
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)

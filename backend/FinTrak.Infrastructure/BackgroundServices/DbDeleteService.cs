@@ -1,4 +1,4 @@
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Infrastructure.Persistance;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

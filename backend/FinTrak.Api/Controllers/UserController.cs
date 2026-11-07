@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FinTrak.Api.Utilities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using Going.Plaid;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;

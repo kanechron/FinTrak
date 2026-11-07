@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using static FinTrak.Core.Utilities.RecurringDateUtil;
 using FinTrak.Core.DTOs;
 using FinTrak.Api.Validation;

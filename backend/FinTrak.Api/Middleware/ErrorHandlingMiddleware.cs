@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using FinTrak.Core.DTOs;
+using FinTrak.Core.Exceptions;
+using Microsoft.Extensions.Options;
 
 namespace FinTrak.Api.Middleware
 {
@@ -11,20 +14,25 @@ namespace FinTrak.Api.Middleware
             {
                 await next(context);
             }
+            catch (AppException ex)
+            {
+                logger.LogWarning("{StatusCode} for {Method} {Path}: {Message}", ex.StatusCode, context.Request.Method, context.Request.Path, ex.Message);
+                await WriteError(context, ex.StatusCode, ex.Message, ex.Code);
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
-                await WriteError(context, HttpStatusCode.InternalServerError, "An unexpected error occurred");
+                await WriteError(context, (int)HttpStatusCode.InternalServerError, "An unexpected error occurred");
             }
         }
 
-        private static async Task WriteError(HttpContext context, HttpStatusCode status, string message, string? detail = null)
+        private static async Task WriteError(HttpContext context, int status, string message, string? code = null)
         {
-            context.Response.StatusCode = (int)status;
+            context.Response.StatusCode = status;
             context.Response.ContentType = "application/json";
 
-            var body = new { error = message, detail };
-            await context.Response.WriteAsync(JsonSerializer.Serialize(body));
+            var body = new ErrorResponseDto() { Message = message, Code = code };
+            await context.Response.WriteAsync(JsonSerializer.Serialize(body, JsonSerializerOptions.Web));
         }
     }
 }

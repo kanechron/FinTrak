@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import General from './Tabs/General'
 import Account from './Tabs/Account'
@@ -8,25 +8,40 @@ import Budgets from './Tabs/Budgets'
 import Goals from './Tabs/Goals'
 import Bills from './Tabs/Bills'
 import Reports from './Tabs/Reports'
+import type { TargetType } from '../../api/rules'
+import {
+  type Settings,
+  type SettingsRequest,
+  getSettings,
+  updateSettings,
+} from '../../api/settings'
 
 type Section =
   'general' | 'account' | 'display' | 'transactions' | 'budgets' | 'goals' | 'bills' | 'reports'
 
-const navGroups = [
+interface NavItem {
+  id: Section
+  label: string
+  target?: TargetType
+}
+
+const navGroups: { items: NavItem[] }[] = [
   {
     items: [
-      { id: 'general' as Section, label: 'General' },
-      { id: 'account' as Section, label: 'Account' },
-      { id: 'display' as Section, label: 'Display' },
+      { id: 'general' as Section, label: 'General', target: undefined },
+      { id: 'account' as Section, label: 'Account', target: undefined },
+      // Hidden until built: Display is a placeholder
+      // { id: 'display' as Section, label: 'Display', target: undefined },
     ],
   },
   {
     items: [
-      { id: 'transactions' as Section, label: 'Transactions' },
-      { id: 'budgets' as Section, label: 'Budgets' },
-      { id: 'goals' as Section, label: 'Goals' },
-      { id: 'bills' as Section, label: 'Bills' },
-      { id: 'reports' as Section, label: 'Reports' },
+      { id: 'transactions' as Section, label: 'Transactions', target: 'Transaction' },
+      // Hidden until built: Budget rules have no backend logic yet; Goals, Bills, and Reports are placeholders
+      // { id: 'budgets' as Section, label: 'Budgets', target: 'Budget' },
+      // { id: 'goals' as Section, label: 'Goals', target: 'Goal' },
+      // { id: 'bills' as Section, label: 'Bills', target: 'Bill' },
+      // { id: 'reports' as Section, label: 'Reports', target: 'Report' },
     ],
   },
 ]
@@ -35,6 +50,27 @@ export default function Settings() {
   const navigate = useNavigate()
   const [active, setActive] = useState<Section>('general')
   const [mobileOpen, setMobileOpen] = useState(false)
+  // const [loaded, setLoaded] = useState(false)
+  const [settings, setSettings] = useState<Settings>()
+
+  async function fetchSettings() {
+    try {
+      setSettings(await getSettings())
+    } catch {}
+  }
+
+  async function handleSave(changes: Partial<SettingsRequest>) {
+    if (!settings) return
+    const merged = { ...settings, ...changes }
+    try {
+      await updateSettings(merged)
+      setSettings(merged)
+    } catch {}
+  }
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
 
   const activeLabel = navGroups.flatMap((g) => g.items).find((s) => s.id === active)?.label
 
@@ -93,10 +129,21 @@ export default function Settings() {
         <div
           className={`${mobileOpen ? 'flex' : 'hidden'} sm:flex flex-1 min-w-0 sm:pl-10 sm:border-l sm:border-line min-h-96 flex-col`}
         >
-          {active === 'general' && <General />}
+          {active === 'general' && (
+            <General
+              onSave={handleSave}
+              autoSync={settings?.autoSync ?? false}
+              inactivityTimeout={settings?.inactivityTimeout ?? 30}
+            />
+          )}
           {active === 'account' && <Account />}
           {active === 'display' && <Display />}
-          {active === 'transactions' && <Transactions />}
+          {active === 'transactions' && (
+            <Transactions
+              onSave={handleSave}
+              transactionPageSize={settings?.transactionPageSize ?? 50}
+            />
+          )}
           {active === 'budgets' && <Budgets />}
           {active === 'goals' && <Goals />}
           {active === 'bills' && <Bills />}

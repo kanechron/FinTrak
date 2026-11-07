@@ -1,4 +1,3 @@
-using FinTrak.Core.Interfaces;
 using static FinTrak.Core.Utilities.SpendingStatisticsUtil;
 
 namespace FinTrak.Tests;

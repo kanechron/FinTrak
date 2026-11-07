@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 using FinTrak.Api.Validation;

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using FinTrak.Infrastructure.Persistance;
 using FinTrak.Infrastructure.Services;
 using FinTrak.Core.Utilities;
@@ -35,6 +36,7 @@ public class BillRepository(FinTrakDbContext db, ITransactionNameMatchService tM
         .Where(t => 
         t.DeletedAt == null &&
         t.UserId == userId &&
+        !t.Exclusions.HasFlag(Exclusion.Bills) &&
         t.Amount > 0 &&
         //Name and Amount
         (Math.Abs(billAmount - (t.Amount ?? 0m)) / billAmount <= 0.01m &&

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 

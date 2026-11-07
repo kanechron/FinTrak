@@ -1,3 +1,4 @@
+using FinTrak.Core.Exceptions;
 using Going.Plaid;
 
 namespace FinTrak.Api.Utilities
@@ -18,7 +19,7 @@ namespace FinTrak.Api.Utilities
 
             if (response.Error != null && response.Error.ErrorCode != "ITEM_NOT_FOUND")
             {
-                throw new Exception($"Failed to remove Plaid item: {response.Error.ErrorMessage}");
+                throw new PlaidRevocationException($"Failed to remove Plaid item: {response.Error.ErrorMessage}");
             }
         }
     }

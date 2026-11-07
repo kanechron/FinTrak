@@ -1,0 +1,21 @@
+{
+    "Transaction":
+    {
+        "Conditions":
+        {
+            "MerchantName": ["EQUALS", "CONTAINS"],
+            "Amount": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"],
+            "TransactionDate": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"],
+            "DayOfMonth": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"],
+            "DayOfWeek": ["EQUALS"],
+            "Month": ["EQUALS", "GREATER_THAN", "LESS_THAN", "GREATER_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL"]
+        },
+        "Actions":
+        {
+            "Category": ["Set"],
+            "MerchantName": ["Set"],
+            "Exclusion": ["Exclude"],
+            "BillFlag": ["Set", "Exclude"]
+        }
+    }
+}

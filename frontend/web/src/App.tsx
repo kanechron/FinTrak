@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Timer } from './hooks/InactivityLogoutHook'
 import { ToastProvider } from './hooks/ToastProvider'
+import { FieldMapProvider } from './hooks/FieldMapProvider'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Transactions from './pages/Transactions/Transactions'
 import Budgets from './pages/Budgets/Budgets'
@@ -11,6 +12,7 @@ import Reports from './pages/Reports/Reports'
 import Settings from './pages/Settings/Settings'
 import Login from './pages/Login/Login'
 import Navbar from './components/layout/Navbar'
+import { getSettings } from './api/settings'
 
 // Checks if the user is authenticated by calling a protected endpoint.
 // Returns true if the server responds with 200, false if 401.
@@ -29,11 +31,13 @@ async function checkAuth(): Promise<boolean> {
 
 function App() {
   const [authed, setAuthed] = useState<boolean | null>(null)
+  const [timeout, setTimeout] = useState<number>(30)
 
   // On mount, check if the user is already authenticated.
   // null = still checking, true = authenticated, false = not authenticated.
   useEffect(() => {
     checkAuth().then(setAuthed)
+    getSettings().then((s) => setTimeout(s.inactivityTimeout))
   }, [])
 
   // Show nothing while auth check is in flight to avoid a flash of the wrong page.
@@ -49,10 +53,7 @@ function App() {
             authed ? (
               <ToastProvider>
                 <div className="min-h-screen bg-page text-ink">
-                  <Timer timer={1800} />{' '}
-                  {/* 1800 = 30 minutes in seconds
-                  REMINDER: Add configurable timeout to settings
-                  */}
+                  <Timer timer={timeout * 60} />
                   <Navbar />
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
@@ -61,7 +62,15 @@ function App() {
                     <Route path="/goals" element={<Goals />} />
                     <Route path="/bills" element={<Bills />} />
                     <Route path="/reports" element={<Reports />} />
-                    <Route path="/settings" element={<Settings />} />
+                    <Route
+                      path="/settings"
+                      element={
+                        <FieldMapProvider>
+                          {' '}
+                          <Settings />{' '}
+                        </FieldMapProvider>
+                      }
+                    />
                   </Routes>
                 </div>
               </ToastProvider>

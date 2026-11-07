@@ -11,16 +11,23 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Anthropic.SDK;
 using FinTrak.Infrastructure.Services;
 using FinTrak.Infrastructure.Repositories;
-using FinTrak.Core.Interfaces;
+using FinTrak.Infrastructure.Utilities;
+using FinTrak.Core.Interfaces.Events;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using FluentValidation;
 using System.Threading.RateLimiting;
-using System.Globalization;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Identity;
+using FinTrak.Api.Validation;
+using System.Threading.Channels;
+using FinTrak.Infrastructure.EventHandlers;
+using FinTrak.Core.Entities;
 
 // Load environment variables from .env before anything else.
 // All configuration (DB, auth, Plaid, etc.) is sourced from environment variables,
 // never hardcoded or committed to source control.
 LoadEnv();
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,13 +95,22 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddHostedService<DbDeleteService>();  // custom service to permanently delete soft-deleted records after a retention period
 builder.Services.AddHostedService<RecurringDateService>();
 builder.Services.AddHostedService<BillsAutoDetectService>();
+builder.Services.AddHostedService<RulesBackgroundService>();
+builder.Services.AddHostedService<AutoSyncTimer>();
+builder.Services.AddHostedService<NotificationDeliveryService>();
 
 
 // -------------------------------------------------------------------------
 // Services
 // -------------------------------------------------------------------------
 
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+//Throws error when 
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(
+    ServiceLifetime.Scoped,
+    filter => 
+        filter.ValidatorType != typeof(ConditionValidator) && 
+        filter.ValidatorType != typeof(ActionValidator)
+);
 
 builder.Services.AddScoped<IPdfImportService, PdfImportService>();
 builder.Services.AddScoped<ITransactionNameMatchService, TransactionNameMatchService>();
@@ -103,8 +119,13 @@ builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<IAccountManagementService, DeleteUserAccountService>();
 builder.Services.AddScoped<ILTEReportService, LTEReportService>();
 builder.Services.AddScoped<ISADReportService, SADReportService>();
-
+builder.Services.AddScoped<IRulesRepository, RulesRepository>();
+builder.Services.AddScoped<IRulesService, RulesService>();
+builder.Services.AddScoped<IGoalsService, GoalsService>();
+builder.Services.AddScoped<INotificationBoxer, NotificationBoxer>();
 builder.Services.AddSingleton<ISyncRaceControlService, SyncRaceControlService>();
+builder.Services.AddScoped<AutoSyncService>();
+builder.Services.AddScoped<EmailSenderService>();
 
 
 
@@ -121,7 +142,32 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IAccountReactivationRepository, UserRepostory>();
 builder.Services.AddScoped<IReportsRepository, ReportsRepository>();
+builder.Services.AddScoped<ITransactionExclusionRepository, TransactionExclusionRepository>();
+builder.Services.AddScoped<IPlaidSyncRepository, PlaidSyncRepository>();
+builder.Services.AddScoped<ISettingRepository, SettingRepository>();
+builder.Services.AddScoped<IPlaidSyncService, PlaidSyncService>();
 
+// -------------------------------------------------------------------------
+// Channels
+// -------------------------------------------------------------------------
+
+builder.Services.AddSingleton(Channel.CreateUnbounded<IRuleTriggerEvent>());
+builder.Services.AddSingleton(Channel.CreateUnbounded<Notification>());
+
+// -------------------------------------------------------------------------
+// Events
+// -------------------------------------------------------------------------
+
+builder.Services.AddScoped<IEventHandler<SyncCompletedEvent>, TransactionRulesSyncHandler>();
+builder.Services.AddScoped<IEventHandler<RecursiveRuleSavedEvent>, TransactionRulesSyncHandler>();
+builder.Services.AddScoped<IEventHandler<PDFImportEvent>, TransactionRulesSyncHandler>();
+
+
+// -------------------------------------------------------------------------
+// JSON
+// -------------------------------------------------------------------------
+
+builder.Services.AddSingleton(new RuleFieldMapDeserializer().ParseRuleFieldmap());
 
 // -------------------------------------------------------------------------
 // Database
@@ -239,6 +285,8 @@ builder.Services.AddSession(options =>
 // -------------------------------------------------------------------------
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
+    //Make it so any enums are stored and read for their string values,
+    //not integer values
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -264,14 +312,17 @@ builder.Services.AddControllers()
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "FinTrak API", Version = "v1" });
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "FinTrak.Api.xml"));
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "FinTrak.Core.xml"));
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
+
 
 var app = builder.Build();
 
@@ -279,8 +330,6 @@ var app = builder.Build();
 // Middleware pipeline
 // -------------------------------------------------------------------------
 // Order matters here — each middleware runs in the order it is registered.
-
-
 
 if (app.Environment.IsDevelopment())
 {
@@ -305,8 +354,8 @@ app.UseRateLimiter();
 app.UseAuthentication();
 
 
-app.UseMiddleware<ErrorHandlingMiddleware>();  // custom middleware to catch unhandled exceptions and return JSON error responses instead of crashing the server
-app.UseMiddleware<SilentRefreshMiddleware>();  // custom middleware to transparently renew auth cookies using refresh tokens
+app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<SilentRefreshMiddleware>();
 
 app.UseAuthorization();
 app.MapControllers();
@@ -319,11 +368,9 @@ app.Run();
 // Helpers
 // -------------------------------------------------------------------------
 
-/// <summary>
-/// Walks up the directory tree from the current working directory to find
-/// and load a .env file, setting each key-value pair as an environment variable.
-/// Handles inline # comments and quoted values.
-/// </summary>
+// Walks up the directory tree from the current working directory to find
+// and load a .env file, setting each key-value pair as an environment variable.
+// Handles inline # comments and quoted values.
 static void LoadEnv()
 {
     var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -361,10 +408,8 @@ static void LoadEnv()
     }
 }
 
-/// <summary>
-/// Reads a required environment variable. Throws if the variable is not set
-/// and no fallback is provided, so misconfiguration is caught at startup.
-/// </summary>
+// Reads a required environment variable. Throws if the variable is not set
+// and no fallback is provided, so misconfiguration is caught at startup.
 static string Env(string key, string? fallback = null) =>
     System.Environment.GetEnvironmentVariable(key)
     ?? fallback

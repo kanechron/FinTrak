@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using FinTrak.Core.Entities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
 using FinTrak.Infrastructure.Persistance;
 
 namespace FinTrak.Infrastructure.Repositories;
@@ -27,6 +27,7 @@ public class BudgetRepository(FinTrakDbContext db) : IBudgetRepository
                 Spent = _db.Transactions
                     .Where(t =>
                         t.DeletedAt == null &&
+                        !t.Exclusions.HasFlag(Exclusion.Budget) &&
                         t.Amount > 0 &&
                         t.UserId == userId &&
                         t.CategoryId == b.CategoryId &&

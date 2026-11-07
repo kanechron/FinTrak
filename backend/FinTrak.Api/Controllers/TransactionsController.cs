@@ -1,29 +1,44 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FinTrak.Core.Entities;
 using FinTrak.Core.Utilities;
-using FinTrak.Core.Interfaces;
+using FinTrak.Core.Interfaces.Repositories;
+using FinTrak.Core.Interfaces.Services;
 using AutoMapper;
 using FinTrak.Core.DTOs;
 using FinTrak.Api.Validation;
 using Microsoft.AspNetCore.RateLimiting;
+using FinTrak.Core.Exceptions;
 
 namespace FinTrak.Api.Controllers
 {
-    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService, TransactionValidator tValidator) : ApiBaseController
+    public class TransactionsController(ITransactionRepository repo, IMapper mapper, IPdfImportService pdfImportService, ITransactionNameMatchService tService, TransactionValidator tValidator, ISettingRepository setRepo) : ApiBaseController
     {
         private readonly ITransactionRepository _repo = repo;
         private readonly IMapper _mapper = mapper;
         private readonly IPdfImportService _pdfImportService = pdfImportService;
         private readonly ITransactionNameMatchService _tService = tService;
         private readonly TransactionValidator _tValidator = tValidator;
+        private readonly ISettingRepository _setRepo = setRepo;
 
         [HttpGet("get-transactions")]
         public async Task<IActionResult> GetTransactions([FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
         {
-            var fromDate = DateOnly.TryParse(from, out var f) ? f : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
-            var toDate = DateOnly.TryParse(to, out var t) ? t : DateOnly.FromDateTime(DateTime.UtcNow);
+            DateOnly fromDate = DateOnly.TryParse(from, out var f) ? f : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
+            DateOnly toDate = DateOnly.TryParse(to, out var t) ? t : DateOnly.FromDateTime(DateTime.UtcNow);
 
             var transactions = await _repo.GetByUserIdAsync(GetUserId(), fromDate, toDate, cancellationToken);
+            return Ok(_mapper.Map<List<TransactionDto>>(transactions));
+        }
+
+        [HttpGet("get-transactions-paginated")]
+        public async Task<IActionResult> GetPaginatedTransactions([FromQuery] Guid lastId, [FromQuery] DateOnly? lastDate, [FromQuery] string? from, [FromQuery] string? to, CancellationToken cancellationToken)
+        {
+            DateOnly fromDate = DateOnly.TryParse(from, out var f) ? f : DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(-1));
+            DateOnly toDate = DateOnly.TryParse(to, out var t) ? t : DateOnly.FromDateTime(DateTime.UtcNow);
+            lastDate ??= DateOnly.MaxValue;
+
+            var pageSize = await _setRepo.GetByUserIdAsync(GetUserId(), cancellationToken) ?? throw new BadRequestException("User not found");
+            var transactions = await _repo.GetPaginatedTransactions(GetUserId(), lastId, lastDate, fromDate, toDate, pageSize.TransactionPageSize, cancellationToken);
             return Ok(_mapper.Map<List<TransactionDto>>(transactions));
         }
 
